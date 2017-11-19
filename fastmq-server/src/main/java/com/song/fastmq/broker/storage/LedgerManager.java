@@ -5,12 +5,11 @@ package com.song.fastmq.broker.storage;
  */
 public interface LedgerManager {
 
-
-
     String getName();
 
-    void addEntry(byte[] data) throws InterruptedException, LedgerStorageException;
+    Position addEntry(byte[] data) throws InterruptedException, LedgerStorageException;
 
-    void asyncAddEntry(byte[] data, AsyncCallback<Void, LedgerStorageException> asyncCallback);
+    void asyncAddEntry(byte[] data, AsyncCallback<Position, LedgerStorageException> asyncCallback);
 
+    void close() throws InterruptedException, LedgerStorageException;
 }

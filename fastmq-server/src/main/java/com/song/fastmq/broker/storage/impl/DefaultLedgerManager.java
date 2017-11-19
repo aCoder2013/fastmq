@@ -7,6 +7,7 @@ import com.song.fastmq.broker.storage.LedgerMetadata;
 import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerStream;
 import com.song.fastmq.broker.storage.LedgerStreamStorage;
+import com.song.fastmq.broker.storage.Position;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import java.util.LinkedList;
@@ -18,11 +19,15 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by song on 2017/11/5.
  */
 public class DefaultLedgerManager implements LedgerManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultLedgerManager.class);
 
     private final String name;
 
@@ -97,22 +102,40 @@ public class DefaultLedgerManager implements LedgerManager {
         return name;
     }
 
-    @Override public void addEntry(byte[] data) throws InterruptedException, LedgerStorageException {
+    @Override public Position addEntry(byte[] data) throws InterruptedException, LedgerStorageException {
         try {
-            this.currentLedgerHandle.addEntry(data);
+            long entryId = this.currentLedgerHandle.addEntry(data);
+            return new Position(this.currentLedgerHandle.getId(), entryId);
         } catch (BKException e) {
             throw new LedgerStorageException(e);
         }
     }
 
-    @Override public void asyncAddEntry(byte[] data, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
+    @Override public void asyncAddEntry(byte[] data, AsyncCallback<Position, LedgerStorageException> asyncCallback) {
+        if (state.get() == State.LEDGER_CLOSING || state.get() == State.LEDGER_CREATING) {
+            // TODO: 2017/11/19 queue this request
+            asyncCallback.onThrowable(new LedgerStorageException("There is no ready ledger to write to!"));
+            return;
+        }
         this.currentLedgerHandle.asyncAddEntry(data, (rc, lh, entryId, ctx) -> {
             if (rc == BookieException.Code.OK) {
-                asyncCallback.onCompleted(null, new ZkVersion(0));
+                asyncCallback.onCompleted(new Position(lh.getId(), entryId), new ZkVersion(0));
             } else {
                 asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
             }
         }, null);
+    }
+
+    @Override public void close() throws InterruptedException, LedgerStorageException {
+        if (state.get() == State.CLOSED) {
+            logger.warn("LedgerManager is closed,so just ignore this close quest.");
+        }
+        try {
+            this.currentLedgerHandle.close();
+            state.set(State.CLOSED);
+        } catch (BKException e) {
+            throw new LedgerStorageException(e);
+        }
     }
 
     public LedgerHandle getCurrentLedgerHandle() {
