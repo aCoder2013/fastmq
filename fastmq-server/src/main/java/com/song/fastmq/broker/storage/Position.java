@@ -5,9 +5,12 @@ package com.song.fastmq.broker.storage;
  */
 public class Position {
 
-    private final long ledgerId;
+    private long ledgerId;
 
-    private final long entryId;
+    private long entryId;
+
+    public Position() {
+    }
 
     public Position(long ledgerId, long entryId) {
         this.ledgerId = ledgerId;

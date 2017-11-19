@@ -2,23 +2,31 @@ package com.song.fastmq.broker.storage.impl;
 
 import com.song.fastmq.broker.storage.AsyncCallback;
 import com.song.fastmq.broker.storage.CommonPool;
-import com.song.fastmq.broker.storage.LedgerManager;
+import com.song.fastmq.broker.storage.LedgerEntryWrapper;
 import com.song.fastmq.broker.storage.LedgerInfo;
-import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
+import com.song.fastmq.broker.storage.LedgerManager;
+import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Position;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +49,9 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private final LedgerStreamStorage ledgerStreamStorage;
 
-    private final NavigableMap<Long, LedgerInfo> ledgers = new ConcurrentSkipListMap<>();
+    private final NavigableMap<Long/*Ledger id*/, LedgerInfo> ledgers = new ConcurrentSkipListMap<>();
+
+    private final Map<Long/*Ledger id*/, CompletableFuture<LedgerHandle>> ledgerCache = new ConcurrentHashMap<>();
 
     private final AtomicReference<State> state = new AtomicReference<>();
 
@@ -133,9 +143,68 @@ public class DefaultLedgerManager implements LedgerManager {
         }, null);
     }
 
+    @Override public List<LedgerEntryWrapper> readEntries(int numberToRead,
+        Position position) throws InterruptedException, LedgerStorageException {
+        CompletableFuture<List<LedgerEntryWrapper>> future = new CompletableFuture<>();
+        asyncReadEntries(numberToRead, position, new AsyncCallbacks.ReadEntryCallback() {
+            @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
+                future.complete(entries);
+            }
+
+            @Override public void readEntryFailed(Throwable throwable) {
+                future.completeExceptionally(throwable);
+            }
+        });
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof InterruptedException) {
+                throw (InterruptedException) e.getCause();
+            }
+            throw new LedgerStorageException(e.getCause());
+        }
+    }
+
+    @Override
+    public void asyncReadEntries(int numberToRead, Position position,
+        AsyncCallbacks.ReadEntryCallback callback) {
+        CompletableFuture<LedgerHandle> completableFuture = ledgerCache.computeIfAbsent(position.getLedgerId(), ledgerId -> {
+            CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+            this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
+                if (rc == BookieException.Code.OK) {
+                    future.complete(lh);
+                } else {
+                    future.completeExceptionally(BookieException.create(rc));
+                }
+            }, null);
+            return future;
+        });
+        // TODO: 2017/11/19 custom thread pool
+        CommonPool.executeBlocking(() -> {
+            System.out.println("executeBlocking");
+            try {
+                LedgerHandle ledgerHandle = completableFuture.get();
+                ledgerHandle.asyncReadEntries(position.getEntryId(), position.getEntryId() + numberToRead, (rc, lh, seq, ctx) -> {
+                    if (rc == BookieException.Code.OK) {
+                        List<LedgerEntryWrapper> ledgerEntries = new LinkedList<>();
+                        while (seq.hasMoreElements()) {
+                            org.apache.bookkeeper.client.LedgerEntry entry = seq.nextElement();
+                            ledgerEntries.add(new LedgerEntryWrapperImpl(entry.getEntry(), new Position(entry.getLedgerId(), entry.getEntryId())));
+                        }
+                        callback.readEntryComplete(ledgerEntries);
+                    } else {
+                        callback.readEntryFailed(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                    }
+                }, null);
+            } catch (Exception e) {
+                callback.readEntryFailed(new LedgerStorageException(e));
+            }
+        });
+    }
+
     @Override public void close() throws InterruptedException, LedgerStorageException {
         if (state.get() == State.CLOSED) {
-            logger.warn("LedgerManager is closed,so just ignore this close quest.");
+            logger.warn("LedgerManager is closed,so we just ignore this close quest.");
         }
         try {
             this.currentLedgerHandle.close();
