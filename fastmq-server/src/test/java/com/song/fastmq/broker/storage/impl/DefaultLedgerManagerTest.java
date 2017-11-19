@@ -11,6 +11,7 @@ import com.song.fastmq.common.utils.JsonUtils;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -42,7 +43,6 @@ public class DefaultLedgerManagerTest {
         ledgerManager = new DefaultLedgerManager("JustATest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), new DefaultLedgerStreamStorage(zookeeper));
         ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void result, Version version) {
-                System.out.println("Done");
                 initLatch.countDown();
             }
 
@@ -93,9 +93,30 @@ public class DefaultLedgerManagerTest {
 
     @Test
     public void read() throws Exception {
-        Position position = JsonUtils.get().readValue("{\"ledgerId\":3,\"entryId\":0}", Position.class);
-        List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(99, position);
-        wrappers.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Position> positionAtomicReference = new AtomicReference<>();
+        ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Position, LedgerStorageException>() {
+            @Override public void onCompleted(Position result, Version version) {
+                positionAtomicReference.set(result);
+                latch.countDown();
+            }
+
+            @Override public void onThrowable(LedgerStorageException throwable) {
+                throwable.printStackTrace();
+                latch.countDown();
+            }
+        });
+        latch.await();
+        try {
+            List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(2, positionAtomicReference.get());
+            System.out.println(wrappers.size());
+            wrappers.forEach(wrapper -> {
+                System.out.println(new String(wrapper.getData()));
+                Assert.assertEquals("Hello World", new String(wrapper.getData()));
+            });
+        } catch (InterruptedException | LedgerStorageException e) {
+            e.printStackTrace();
+        }
     }
 
     @After

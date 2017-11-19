@@ -156,6 +156,7 @@ public class DefaultLedgerManager implements LedgerManager {
             }
         });
         try {
+            // TODO: 2017/11/19 timeout
             return future.get();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof InterruptedException) {
@@ -168,23 +169,23 @@ public class DefaultLedgerManager implements LedgerManager {
     @Override
     public void asyncReadEntries(int numberToRead, Position position,
         AsyncCallbacks.ReadEntryCallback callback) {
-        CompletableFuture<LedgerHandle> completableFuture = ledgerCache.computeIfAbsent(position.getLedgerId(), ledgerId -> {
-            CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-            this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
-                if (rc == BookieException.Code.OK) {
-                    future.complete(lh);
-                } else {
-                    future.completeExceptionally(BookieException.create(rc));
-                }
-            }, null);
-            return future;
-        });
         // TODO: 2017/11/19 custom thread pool
         CommonPool.executeBlocking(() -> {
-            System.out.println("executeBlocking");
+            CompletableFuture<LedgerHandle> completableFuture = ledgerCache.computeIfAbsent(position.getLedgerId(), ledgerId -> {
+                CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+                this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
+                    if (rc == BookieException.Code.OK) {
+                        future.complete(lh);
+                    } else {
+                        future.completeExceptionally(BookieException.create(rc));
+                    }
+                }, null);
+                return future;
+            });
             try {
                 LedgerHandle ledgerHandle = completableFuture.get();
-                ledgerHandle.asyncReadEntries(position.getEntryId(), position.getEntryId() + numberToRead, (rc, lh, seq, ctx) -> {
+                long lastEntryId = Math.min(position.getEntryId() + numberToRead - 1, ledgerHandle.getLastAddConfirmed());
+                ledgerHandle.asyncReadEntries(position.getEntryId(), lastEntryId, (rc, lh, seq, ctx) -> {
                     if (rc == BookieException.Code.OK) {
                         List<LedgerEntryWrapper> ledgerEntries = new LinkedList<>();
                         while (seq.hasMoreElements()) {
