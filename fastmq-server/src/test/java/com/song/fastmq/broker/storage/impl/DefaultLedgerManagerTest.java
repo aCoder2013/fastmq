@@ -72,6 +72,7 @@ public class DefaultLedgerManagerTest {
             });
         }
         downLatch.await();
+        // TODO: 2017/11/19 make sure entry is actually stored into bookie
         Assert.assertEquals(100, atomicInteger.get());
     }
 
