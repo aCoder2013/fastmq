@@ -5,11 +5,14 @@ import java.util.List;
 /**
  * Created by song on 2017/11/5.
  */
-public class LedgerStream {
+public class LedgerInfoManager {
 
+    /**
+     * Name of this ledger
+     */
     private String name;
 
-    private List<LedgerMetadata> ledgers;
+    private List<LedgerInfo> ledgers;
 
     public String getName() {
         return name;
@@ -19,11 +22,11 @@ public class LedgerStream {
         this.name = name;
     }
 
-    public List<LedgerMetadata> getLedgers() {
+    public List<LedgerInfo> getLedgers() {
         return ledgers;
     }
 
-    public void setLedgers(List<LedgerMetadata> ledgers) {
+    public void setLedgers(List<LedgerInfo> ledgers) {
         this.ledgers = ledgers;
     }
 }

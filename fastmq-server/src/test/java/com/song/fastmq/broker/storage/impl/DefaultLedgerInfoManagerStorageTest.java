@@ -2,9 +2,9 @@ package com.song.fastmq.broker.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
 import com.song.fastmq.broker.storage.AsyncCallback;
-import com.song.fastmq.broker.storage.LedgerMetadata;
+import com.song.fastmq.broker.storage.LedgerInfo;
 import com.song.fastmq.broker.storage.LedgerStorageException;
-import com.song.fastmq.broker.storage.LedgerStream;
+import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.common.utils.JsonUtils;
@@ -21,7 +21,7 @@ import org.junit.Test;
 /**
  * Created by song on 2017/11/5.
  */
-public class DefaultLedgerStreamStorageTest {
+public class DefaultLedgerInfoManagerStorageTest {
 
     private ZooKeeper zookeeper;
 
@@ -45,8 +45,8 @@ public class DefaultLedgerStreamStorageTest {
     @Test
     public void getLedgerStream() throws Exception {
         String ledgerName = "HelloWorldTest1";
-        LedgerStream ledgerStream = ledgerStreamStorage.getLedgerStream(ledgerName);
-        String json = JsonUtils.get().writeValueAsString(ledgerStream);
+        LedgerInfoManager ledgerInfoManager = ledgerStreamStorage.getLedgerStream(ledgerName);
+        String json = JsonUtils.get().writeValueAsString(ledgerInfoManager);
         JsonAssert.with(json).assertEquals("$.name", ledgerName);
     }
 
@@ -55,10 +55,10 @@ public class DefaultLedgerStreamStorageTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         String ledgerName = "HelloWorldTest1";
-        ledgerStreamStorage.asyncGetLedgerStream(ledgerName, new AsyncCallback<LedgerStream, LedgerStorageException>() {
+        ledgerStreamStorage.asyncGetLedgerStream(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
 
-            @Override public void onCompleted(LedgerStream result, Version version) {
-                result.setLedgers(Collections.singletonList(new LedgerMetadata()));
+            @Override public void onCompleted(LedgerInfoManager result, Version version) {
+                result.setLedgers(Collections.singletonList(new LedgerInfo()));
                 ledgerStreamStorage.asyncUpdateLedgerStream(ledgerName, result, version, new AsyncCallback<Void, LedgerStorageException>() {
 
                     @Override public void onCompleted(Void result, Version version) {

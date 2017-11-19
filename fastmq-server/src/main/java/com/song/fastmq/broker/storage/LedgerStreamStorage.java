@@ -13,7 +13,7 @@ public interface LedgerStreamStorage {
      * @throws InterruptedException
      * @throws LedgerStorageException
      */
-    LedgerStream getLedgerStream(String ledgerName) throws InterruptedException, LedgerStorageException;
+    LedgerInfoManager getLedgerStream(String ledgerName) throws InterruptedException, LedgerStorageException;
 
     /**
      * Get ledger asynchronously
@@ -22,9 +22,9 @@ public interface LedgerStreamStorage {
      * @param asyncCallback
      * @see #getLedgerStream(String)
      */
-    void asyncGetLedgerStream(String name, AsyncCallback<LedgerStream, LedgerStorageException> asyncCallback);
+    void asyncGetLedgerStream(String name, AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback);
 
-    void asyncUpdateLedgerStream(String name, LedgerStream ledgerStream, Version version,
+    void asyncUpdateLedgerStream(String name, LedgerInfoManager ledgerInfoManager, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback);
 
     /**

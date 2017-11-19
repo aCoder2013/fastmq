@@ -3,9 +3,9 @@ package com.song.fastmq.broker.storage.impl;
 import com.song.fastmq.broker.storage.AsyncCallback;
 import com.song.fastmq.broker.storage.CommonPool;
 import com.song.fastmq.broker.storage.LedgerManager;
-import com.song.fastmq.broker.storage.LedgerMetadata;
+import com.song.fastmq.broker.storage.LedgerInfo;
 import com.song.fastmq.broker.storage.LedgerStorageException;
-import com.song.fastmq.broker.storage.LedgerStream;
+import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Position;
 import com.song.fastmq.broker.storage.Version;
@@ -41,7 +41,7 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private final LedgerStreamStorage ledgerStreamStorage;
 
-    private final NavigableMap<Long, LedgerMetadata> ledgers = new ConcurrentSkipListMap<>();
+    private final NavigableMap<Long, LedgerInfo> ledgers = new ConcurrentSkipListMap<>();
 
     private final AtomicReference<State> state = new AtomicReference<>();
 
@@ -56,8 +56,8 @@ public class DefaultLedgerManager implements LedgerManager {
     }
 
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
-        CommonPool.executeBlocking(() -> ledgerStreamStorage.asyncGetLedgerStream(name, new AsyncCallback<LedgerStream, LedgerStorageException>() {
-            @Override public void onCompleted(LedgerStream result, Version version) {
+        CommonPool.executeBlocking(() -> ledgerStreamStorage.asyncGetLedgerStream(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+            @Override public void onCompleted(LedgerInfoManager result, Version version) {
                 ledgerVersion = version.getVersion();
                 if (CollectionUtils.isNotEmpty(result.getLedgers())) {
                     result.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
@@ -66,17 +66,17 @@ public class DefaultLedgerManager implements LedgerManager {
                     bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
                         if (rc == BookieException.Code.OK) {
                             long ledgerId = lh.getId();
-                            LedgerMetadata ledgerMetadata = new LedgerMetadata();
-                            ledgerMetadata.setLedgerId(ledgerId);
-                            ledgerMetadata.setTimestamp(System.currentTimeMillis());
+                            LedgerInfo ledgerInfo = new LedgerInfo();
+                            ledgerInfo.setLedgerId(ledgerId);
+                            ledgerInfo.setTimestamp(System.currentTimeMillis());
                             if (result.getLedgers() == null) {
                                 result.setLedgers(new LinkedList<>());
                             }
-                            result.getLedgers().add(ledgerMetadata);
+                            result.getLedgers().add(ledgerInfo);
                             ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
                                 @Override public void onCompleted(Void result, Version version) {
                                     ledgerVersion = version.getVersion();
-                                    ledgers.put(ledgerId, ledgerMetadata);
+                                    ledgers.put(ledgerId, ledgerInfo);
                                     currentLedgerHandle = lh;
                                     state.set(State.LEDGER_OPENED);
                                     asyncCallback.onCompleted(null, version);
