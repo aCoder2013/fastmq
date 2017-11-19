@@ -104,14 +104,21 @@ public class DefaultLedgerManager implements LedgerManager {
 
     @Override public Position addEntry(byte[] data) throws InterruptedException, LedgerStorageException {
         try {
+            checkLedgerManagerIsOpen();
             long entryId = this.currentLedgerHandle.addEntry(data);
             return new Position(this.currentLedgerHandle.getId(), entryId);
-        } catch (BKException e) {
+        } catch (Exception e) {
             throw new LedgerStorageException(e);
         }
     }
 
     @Override public void asyncAddEntry(byte[] data, AsyncCallback<Position, LedgerStorageException> asyncCallback) {
+        try {
+            checkLedgerManagerIsOpen();
+        } catch (LedgerStorageException e) {
+            asyncCallback.onThrowable(e);
+            return;
+        }
         if (state.get() == State.LEDGER_CLOSING || state.get() == State.LEDGER_CREATING) {
             // TODO: 2017/11/19 queue this request
             asyncCallback.onThrowable(new LedgerStorageException("There is no ready ledger to write to!"));
@@ -135,6 +142,12 @@ public class DefaultLedgerManager implements LedgerManager {
             state.set(State.CLOSED);
         } catch (BKException e) {
             throw new LedgerStorageException(e);
+        }
+    }
+
+    private void checkLedgerManagerIsOpen() throws LedgerStorageException {
+        if (state.get() == State.CLOSED) {
+            throw new LedgerStorageException("ManagedLedger " + name + " has already been closed");
         }
     }
 
