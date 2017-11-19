@@ -9,9 +9,10 @@ import com.song.fastmq.broker.storage.LedgerStream;
 import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -37,6 +38,8 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private final NavigableMap<Long, LedgerMetadata> ledgers = new ConcurrentSkipListMap<>();
 
+    private final AtomicReference<State> state = new AtomicReference<>();
+
     public DefaultLedgerManager(String name, BookKeeperConfig config,
         BookKeeper bookKeeper,
         LedgerStreamStorage storage) {
@@ -44,6 +47,7 @@ public class DefaultLedgerManager implements LedgerManager {
         bookKeeperConfig = config;
         this.bookKeeper = bookKeeper;
         this.ledgerStreamStorage = storage;
+        this.state.set(State.NONE);
     }
 
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
@@ -52,42 +56,35 @@ public class DefaultLedgerManager implements LedgerManager {
                 ledgerVersion = version.getVersion();
                 if (CollectionUtils.isNotEmpty(result.getLedgers())) {
                     result.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
-                    Long lastLedgerId = ledgers.lastKey();
-                    bookKeeper.asyncOpenLedger(lastLedgerId, bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
+                }
+                bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(), bookKeeperConfig.getWriteQuorumSize(),
+                    bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
                         if (rc == BookieException.Code.OK) {
-                            currentLedgerHandle = lh;
-                            asyncCallback.onCompleted(null, new ZkVersion(0));
+                            long ledgerId = lh.getId();
+                            LedgerMetadata ledgerMetadata = new LedgerMetadata();
+                            ledgerMetadata.setLedgerId(ledgerId);
+                            ledgerMetadata.setTimestamp(System.currentTimeMillis());
+                            if (result.getLedgers() == null) {
+                                result.setLedgers(new LinkedList<>());
+                            }
+                            result.getLedgers().add(ledgerMetadata);
+                            ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
+                                @Override public void onCompleted(Void result, Version version) {
+                                    ledgerVersion = version.getVersion();
+                                    ledgers.put(ledgerId, ledgerMetadata);
+                                    currentLedgerHandle = lh;
+                                    state.set(State.LEDGER_OPENED);
+                                    asyncCallback.onCompleted(null, version);
+                                }
+
+                                @Override public void onThrowable(LedgerStorageException throwable) {
+                                    asyncCallback.onThrowable(throwable);
+                                }
+                            });
                         } else {
                             asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
                         }
                     }, null);
-                } else {
-                    bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(), bookKeeperConfig.getWriteQuorumSize(),
-                        bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
-                            if (rc == BookieException.Code.OK) {
-                                long ledgerId = lh.getId();
-                                LedgerMetadata ledgerMetadata = new LedgerMetadata();
-                                ledgerMetadata.setLedgerId(ledgerId);
-                                ledgerMetadata.setTimestamp(System.currentTimeMillis());
-                                if (result.getLedgers() == null) {
-                                    result.setLedgers(new ArrayList<>());
-                                }
-                                result.getLedgers().add(ledgerMetadata);
-                                ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
-                                    @Override public void onCompleted(Void result, Version version) {
-                                        ledgerVersion = version.getVersion();
-                                        asyncCallback.onCompleted(null, version);
-                                    }
-
-                                    @Override public void onThrowable(LedgerStorageException throwable) {
-                                        asyncCallback.onThrowable(throwable);
-                                    }
-                                });
-                            } else {
-                                asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
-                            }
-                        }, null);
-                }
             }
 
             @Override public void onThrowable(LedgerStorageException throwable) {
@@ -116,5 +113,19 @@ public class DefaultLedgerManager implements LedgerManager {
                 asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
             }
         }, null);
+    }
+
+    public LedgerHandle getCurrentLedgerHandle() {
+        return currentLedgerHandle;
+    }
+
+    enum State {
+        NONE,
+        LEDGER_OPENED,
+        LEDGER_CLOSING,
+        LEDGER_CLOSED,
+        LEDGER_CREATING,
+        CLOSED,
+        FENCED,
     }
 }

@@ -5,6 +5,7 @@ import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -53,9 +54,25 @@ public class DefaultLedgerManagerTest {
         Assert.assertEquals("JustATest", ledgerManager.getName());
     }
 
-    @Test
+    @Test(timeout = 3000)
     public void addEntry() throws Exception {
-        ledgerManager.addEntry("Hello World".getBytes());
+        int count = 100;
+        AtomicInteger atomicInteger = new AtomicInteger();
+        final CountDownLatch downLatch = new CountDownLatch(100);
+        for (int i = 0; i < count; i++) {
+            ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Void, LedgerStorageException>() {
+                @Override public void onCompleted(Void result, Version version) {
+                    downLatch.countDown();
+                    atomicInteger.incrementAndGet();
+                }
+
+                @Override public void onThrowable(LedgerStorageException throwable) {
+                    throwable.printStackTrace();
+                }
+            });
+        }
+        downLatch.await();
+        Assert.assertEquals(100, atomicInteger.get());
     }
 
     @Test
