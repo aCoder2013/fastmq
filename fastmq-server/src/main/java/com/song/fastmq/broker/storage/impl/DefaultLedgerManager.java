@@ -217,7 +217,7 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private void checkLedgerManagerIsOpen() throws LedgerStorageException {
         if (state.get() == State.CLOSED) {
-            throw new LedgerStorageException("ManagedLedger " + name + " has already been closed");
+            throw new LedgerStorageException("LedgerManager " + name + " has already been closed");
         }
     }
 

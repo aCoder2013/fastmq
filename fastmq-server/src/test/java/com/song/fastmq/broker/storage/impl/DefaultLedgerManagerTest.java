@@ -108,7 +108,7 @@ public class DefaultLedgerManagerTest {
         });
         latch.await();
         try {
-            List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(2, positionAtomicReference.get());
+            List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(1, positionAtomicReference.get());
             System.out.println(wrappers.size());
             wrappers.forEach(wrapper -> {
                 System.out.println(new String(wrapper.getData()));
