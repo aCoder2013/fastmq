@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
@@ -40,6 +41,8 @@ public class DefaultLedgerManager implements LedgerManager {
     private final String name;
 
     private volatile int ledgerVersion;
+
+    private AtomicInteger lastPosition = new AtomicInteger(-1);
 
     private volatile LedgerHandle currentLedgerHandle;
 
@@ -116,6 +119,7 @@ public class DefaultLedgerManager implements LedgerManager {
         try {
             checkLedgerManagerIsOpen();
             long entryId = this.currentLedgerHandle.addEntry(data);
+            lastPosition.getAndIncrement();
             return new Position(this.currentLedgerHandle.getId(), entryId);
         } catch (Exception e) {
             throw new LedgerStorageException(e);
@@ -136,6 +140,7 @@ public class DefaultLedgerManager implements LedgerManager {
         }
         this.currentLedgerHandle.asyncAddEntry(data, (rc, lh, entryId, ctx) -> {
             if (rc == BookieException.Code.OK) {
+                lastPosition.getAndIncrement();
                 asyncCallback.onCompleted(new Position(lh.getId(), entryId), new ZkVersion(0));
             } else {
                 asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
@@ -184,7 +189,13 @@ public class DefaultLedgerManager implements LedgerManager {
             });
             try {
                 LedgerHandle ledgerHandle = completableFuture.get();
-                long lastEntryId = Math.min(position.getEntryId() + numberToRead - 1, ledgerHandle.getLastAddConfirmed());
+                long lastAddConfirmed;
+                if (ledgerHandle.getId() == currentLedgerHandle.getId()) {
+                    lastAddConfirmed = lastPosition.get();
+                } else {
+                    lastAddConfirmed = ledgerHandle.getLastAddConfirmed();
+                }
+                long lastEntryId = Math.min(position.getEntryId() + numberToRead - 1, lastAddConfirmed);
                 ledgerHandle.asyncReadEntries(position.getEntryId(), lastEntryId, (rc, lh, seq, ctx) -> {
                     if (rc == BookieException.Code.OK) {
                         List<LedgerEntryWrapper> ledgerEntries = new LinkedList<>();
