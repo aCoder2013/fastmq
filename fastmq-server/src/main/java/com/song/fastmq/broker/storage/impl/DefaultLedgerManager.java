@@ -69,46 +69,51 @@ public class DefaultLedgerManager implements LedgerManager {
     }
 
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
-        CommonPool.executeBlocking(() -> ledgerStreamStorage.asyncGetLedgerStream(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
-            @Override public void onCompleted(LedgerInfoManager result, Version version) {
-                ledgerVersion = version.getVersion();
-                if (CollectionUtils.isNotEmpty(result.getLedgers())) {
-                    result.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
-                }
-                bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(), bookKeeperConfig.getWriteQuorumSize(),
-                    bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
-                        if (rc == BookieException.Code.OK) {
-                            long ledgerId = lh.getId();
-                            LedgerInfo ledgerInfo = new LedgerInfo();
-                            ledgerInfo.setLedgerId(ledgerId);
-                            ledgerInfo.setTimestamp(System.currentTimeMillis());
-                            if (result.getLedgers() == null) {
-                                result.setLedgers(new LinkedList<>());
+        if (state.compareAndSet(State.NONE, State.INITIALIZING)) {
+            CommonPool.executeBlocking(() -> ledgerStreamStorage.asyncGetLedgerStream(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+                @Override public void onCompleted(LedgerInfoManager result, Version version) {
+                    ledgerVersion = version.getVersion();
+                    if (CollectionUtils.isNotEmpty(result.getLedgers())) {
+                        result.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
+                    }
+                    bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(), bookKeeperConfig.getWriteQuorumSize(),
+                        bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
+                            if (rc == BookieException.Code.OK) {
+                                long ledgerId = lh.getId();
+                                LedgerInfo ledgerInfo = new LedgerInfo();
+                                ledgerInfo.setLedgerId(ledgerId);
+                                ledgerInfo.setTimestamp(System.currentTimeMillis());
+                                if (result.getLedgers() == null) {
+                                    result.setLedgers(new LinkedList<>());
+                                }
+                                result.getLedgers().add(ledgerInfo);
+                                ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
+                                    @Override public void onCompleted(Void result, Version version) {
+                                        ledgerVersion = version.getVersion();
+                                        ledgers.put(ledgerId, ledgerInfo);
+                                        currentLedgerHandle = lh;
+                                        state.set(State.LEDGER_OPENED);
+                                        asyncCallback.onCompleted(null, version);
+                                        logger.info("Finish to initialize LedgerManager");
+                                    }
+
+                                    @Override public void onThrowable(LedgerStorageException throwable) {
+                                        asyncCallback.onThrowable(throwable);
+                                    }
+                                });
+                            } else {
+                                asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
                             }
-                            result.getLedgers().add(ledgerInfo);
-                            ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
-                                @Override public void onCompleted(Void result, Version version) {
-                                    ledgerVersion = version.getVersion();
-                                    ledgers.put(ledgerId, ledgerInfo);
-                                    currentLedgerHandle = lh;
-                                    state.set(State.LEDGER_OPENED);
-                                    asyncCallback.onCompleted(null, version);
-                                }
+                        }, null);
+                }
 
-                                @Override public void onThrowable(LedgerStorageException throwable) {
-                                    asyncCallback.onThrowable(throwable);
-                                }
-                            });
-                        } else {
-                            asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
-                        }
-                    }, null);
-            }
-
-            @Override public void onThrowable(LedgerStorageException throwable) {
-                asyncCallback.onThrowable(throwable);
-            }
-        }));
+                @Override public void onThrowable(LedgerStorageException throwable) {
+                    asyncCallback.onThrowable(throwable);
+                }
+            }));
+        } else {
+            asyncCallback.onThrowable(new LedgerStorageException("Already initialized!"));
+        }
     }
 
     @Override public String getName() {
@@ -239,6 +244,7 @@ public class DefaultLedgerManager implements LedgerManager {
 
     enum State {
         NONE,
+        INITIALIZING,
         LEDGER_OPENED,
         LEDGER_CLOSING,
         LEDGER_CLOSED,
