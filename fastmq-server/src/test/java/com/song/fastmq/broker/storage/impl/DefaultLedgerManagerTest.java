@@ -134,6 +134,6 @@ public class DefaultLedgerManagerTest {
 
     @After
     public void tearDown() throws Exception {
-
+        ledgerManager.close();
     }
 }
