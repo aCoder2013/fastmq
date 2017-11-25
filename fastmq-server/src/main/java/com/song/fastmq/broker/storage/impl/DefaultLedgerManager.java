@@ -217,6 +217,7 @@ public class DefaultLedgerManager implements LedgerManager {
     @Override public void close() throws InterruptedException, LedgerStorageException {
         if (state.get() == State.CLOSED) {
             logger.warn("LedgerManager is closed,so we just ignore this close quest.");
+            return;
         }
         try {
             this.currentLedgerHandle.close();
