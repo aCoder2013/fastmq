@@ -98,6 +98,7 @@ public class DefaultLedgerManagerTest {
         ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Position, LedgerStorageException>() {
             @Override public void onCompleted(Position result, Version version) {
                 positionAtomicReference.set(result);
+                System.out.println(JsonUtils.toJsonQuietly(result));
                 latch.countDown();
             }
 
@@ -117,6 +118,18 @@ public class DefaultLedgerManagerTest {
         } catch (InterruptedException | LedgerStorageException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void readEntryInsertedBefore() throws Exception {
+        String json = "{\"ledgerId\":5,\"entryId\":0}\n";
+        Position position = JsonUtils.fromJson(json, Position.class);
+        List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(1, position);
+        Assert.assertTrue(wrappers != null && wrappers.size() > 0);
+        wrappers.forEach(wrapper -> {
+            Assert.assertEquals("Hello World", new String(wrapper.getData()));
+            System.out.println(JsonUtils.toJsonQuietly(wrapper));
+        });
     }
 
     @After
