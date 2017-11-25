@@ -8,15 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonUtils {
 
-    private static final ThreadLocal<ObjectMapper> mapperFactory = new ThreadLocal<ObjectMapper>() {
-
-        @Override protected ObjectMapper initialValue() {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
-            return mapper;
-        }
-    };
+    private static final ThreadLocal<ObjectMapper> mapperFactory = ThreadLocal.withInitial(() -> {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+        return mapper;
+    });
 
     public static ObjectMapper get() {
         return mapperFactory.get();
