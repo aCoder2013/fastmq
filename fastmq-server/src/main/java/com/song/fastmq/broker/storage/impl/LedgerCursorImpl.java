@@ -101,14 +101,16 @@ public class LedgerCursorImpl implements LedgerCursor {
         }
         // TODO: 2017/11/27 Store offset in bookeeper instead of zookeeper
         readPosition = JsonUtils.fromJson(new String(result.data), Position.class);
-        this.scheduledPersistPositionPool.scheduleAtFixedRate(() -> {
-            try {
-                Stat stat = zookeeper.setData(LEDGER_CURSOR_PREFIX + name, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
-                this.currentVersion = new ZkVersion(stat.getVersion());
-            } catch (KeeperException | InterruptedException | JsonUtils.JsonException e) {
-                logger.error("Persist read position failed_" + e.getMessage(), e);
-            }
-        }, 10, 5, TimeUnit.SECONDS);
+        this.scheduledPersistPositionPool.scheduleAtFixedRate(this::persistReadPosition, 10, 5, TimeUnit.SECONDS);
+    }
+
+    private void persistReadPosition() {
+        try {
+            Stat stat = zookeeper.setData(LEDGER_CURSOR_PREFIX + name, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
+            this.currentVersion = new ZkVersion(stat.getVersion());
+        } catch (KeeperException | InterruptedException | JsonUtils.JsonException e) {
+            logger.error("Persist read position failed_" + e.getMessage(), e);
+        }
     }
 
     @Override public String name() {
@@ -127,10 +129,12 @@ public class LedgerCursorImpl implements LedgerCursor {
     }
 
     @Override public void close() {
+        persistReadPosition();
         this.scheduledPersistPositionPool.shutdown();
     }
 
     @Override public void asyncClose(AsyncCallbacks.CloseLedgerCursorCallback callback) {
+        persistReadPosition();
         this.scheduledPersistPositionPool.shutdown();
     }
 }
