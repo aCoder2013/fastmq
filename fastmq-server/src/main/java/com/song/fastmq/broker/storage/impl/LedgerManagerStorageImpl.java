@@ -1,12 +1,12 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.song.fastmq.broker.storage.AsyncCallback;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.BadVersionException;
-import com.song.fastmq.broker.storage.CommonPool;
+import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
-import com.song.fastmq.broker.storage.LedgerStreamStorage;
+import com.song.fastmq.broker.storage.LedgerManagerStorage;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.common.utils.JsonUtils;
 import java.io.IOException;
@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by song on 2017/11/5.
  */
-public class DefaultLedgerStreamStorage implements LedgerStreamStorage {
+public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultLedgerStreamStorage.class);
+    private static final Logger logger = LoggerFactory.getLogger(LedgerManagerStorageImpl.class);
 
     private static final String LEDGER_NAME_PREFIX_NAME = "/fastmq/bk-ledgers";
 
@@ -32,7 +32,7 @@ public class DefaultLedgerStreamStorage implements LedgerStreamStorage {
 
     private final ZooKeeper zooKeeper;
 
-    public DefaultLedgerStreamStorage(ZooKeeper zooKeeper) throws Exception {
+    public LedgerManagerStorageImpl(ZooKeeper zooKeeper) throws Exception {
         this.zooKeeper = zooKeeper;
         if (zooKeeper.exists(LEDGER_NAME_PREFIX_NAME, false) == null) {
             ZkUtils.createFullPathOptimistic(zooKeeper, LEDGER_NAME_PREFIX_NAME, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -40,10 +40,10 @@ public class DefaultLedgerStreamStorage implements LedgerStreamStorage {
     }
 
     @Override
-    public LedgerInfoManager getLedgerStream(String ledgerName) throws InterruptedException, LedgerStorageException {
+    public LedgerInfoManager getLedgerManager(String ledgerName) throws InterruptedException, LedgerStorageException {
         final LedgerResult ledgerResult = new LedgerResult();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncGetLedgerStream(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+        asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
 
             @Override public void onCompleted(LedgerInfoManager result, Version version) {
                 ledgerResult.ledgerInfoManager = result;
@@ -62,7 +62,7 @@ public class DefaultLedgerStreamStorage implements LedgerStreamStorage {
         return ledgerResult.ledgerInfoManager;
     }
 
-    @Override public void asyncGetLedgerStream(String name,
+    @Override public void asyncGetLedgerManager(String name,
         AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> zooKeeper.getData(LEDGER_NAME_PREFIX + name, false, (rc, path, ctx, data, stat) -> {
             if (rc == KeeperException.Code.OK.intValue()) {
@@ -97,7 +97,7 @@ public class DefaultLedgerStreamStorage implements LedgerStreamStorage {
         }, null));
     }
 
-    @Override public void asyncUpdateLedgerStream(String name, LedgerInfoManager ledgerInfoManager, Version version,
+    @Override public void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             byte[] bytes;

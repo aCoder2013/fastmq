@@ -1,11 +1,11 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
-import com.song.fastmq.broker.storage.AsyncCallback;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.LedgerInfo;
 import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
-import com.song.fastmq.broker.storage.LedgerStreamStorage;
+import com.song.fastmq.broker.storage.LedgerManagerStorage;
 import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.common.utils.JsonUtils;
 import java.util.Collections;
@@ -25,7 +25,7 @@ public class DefaultLedgerInfoManagerStorageTest {
 
     private ZooKeeper zookeeper;
 
-    private LedgerStreamStorage ledgerStreamStorage;
+    private LedgerManagerStorage ledgerManagerStorage;
 
     @Before
     public void setUp() throws Exception {
@@ -39,13 +39,13 @@ public class DefaultLedgerInfoManagerStorageTest {
             latch.countDown();
         });
         latch.await();
-        ledgerStreamStorage = new DefaultLedgerStreamStorage(zookeeper);
+        ledgerManagerStorage = new LedgerManagerStorageImpl(zookeeper);
     }
 
     @Test
     public void getLedgerStream() throws Exception {
         String ledgerName = "HelloWorldTest1";
-        LedgerInfoManager ledgerInfoManager = ledgerStreamStorage.getLedgerStream(ledgerName);
+        LedgerInfoManager ledgerInfoManager = ledgerManagerStorage.getLedgerManager(ledgerName);
         String json = JsonUtils.get().writeValueAsString(ledgerInfoManager);
         JsonAssert.with(json).assertEquals("$.name", ledgerName);
     }
@@ -55,11 +55,11 @@ public class DefaultLedgerInfoManagerStorageTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         String ledgerName = "HelloWorldTest1";
-        ledgerStreamStorage.asyncGetLedgerStream(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+        ledgerManagerStorage.asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
 
             @Override public void onCompleted(LedgerInfoManager result, Version version) {
                 result.setLedgers(Collections.singletonList(new LedgerInfo()));
-                ledgerStreamStorage.asyncUpdateLedgerStream(ledgerName, result, version, new AsyncCallback<Void, LedgerStorageException>() {
+                ledgerManagerStorage.asyncUpdateLedgerManager(ledgerName, result, version, new AsyncCallback<Void, LedgerStorageException>() {
 
                     @Override public void onCompleted(Void result, Version version) {
                         counter.incrementAndGet();
@@ -86,7 +86,7 @@ public class DefaultLedgerInfoManagerStorageTest {
     public void asyncRemoveLedger() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
-        ledgerStreamStorage.asyncRemoveLedger("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
+        ledgerManagerStorage.asyncRemoveLedger("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void result, Version version) {
                 counter.incrementAndGet();
                 latch.countDown();

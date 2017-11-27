@@ -1,4 +1,6 @@
-package com.song.fastmq.broker.storage;
+package com.song.fastmq.broker.storage.concurrent;
+
+import com.song.fastmq.broker.storage.Version;
 
 /**
  * Created by song on 2017/11/5.

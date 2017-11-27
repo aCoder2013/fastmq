@@ -1,11 +1,11 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.song.fastmq.broker.storage.AsyncCallback;
 import com.song.fastmq.broker.storage.LedgerEntryWrapper;
 import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.Position;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import com.song.fastmq.common.utils.JsonUtils;
 import java.util.List;
@@ -23,9 +23,9 @@ import org.junit.Test;
 /**
  * Created by song on 下午10:02.
  */
-public class DefaultLedgerManagerTest {
+public class LedgerManagerImplTest {
 
-    private DefaultLedgerManager ledgerManager;
+    private LedgerManagerImpl ledgerManager;
 
     @Before
     public void setUp() throws Exception {
@@ -40,7 +40,7 @@ public class DefaultLedgerManagerTest {
         });
         latch.await();
         CountDownLatch initLatch = new CountDownLatch(1);
-        ledgerManager = new DefaultLedgerManager("JustATest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), new DefaultLedgerStreamStorage(zookeeper));
+        ledgerManager = new LedgerManagerImpl("JustATest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), zookeeper, new LedgerManagerStorageImpl(zookeeper));
         ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void result, Version version) {
                 initLatch.countDown();

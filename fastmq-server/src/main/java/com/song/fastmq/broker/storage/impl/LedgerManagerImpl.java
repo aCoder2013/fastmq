@@ -1,16 +1,16 @@
 package com.song.fastmq.broker.storage.impl;
 
-import com.song.fastmq.broker.storage.AsyncCallback;
-import com.song.fastmq.broker.storage.CommonPool;
 import com.song.fastmq.broker.storage.LedgerEntryWrapper;
 import com.song.fastmq.broker.storage.LedgerInfo;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerManager;
+import com.song.fastmq.broker.storage.LedgerManagerStorage;
 import com.song.fastmq.broker.storage.LedgerStorageException;
-import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Position;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.concurrent.AsyncCallbacks;
+import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,15 +28,16 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by song on 2017/11/5.
  */
-public class DefaultLedgerManager implements LedgerManager {
+public class LedgerManagerImpl implements LedgerManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultLedgerManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(LedgerManagerImpl.class);
 
     private final String name;
 
@@ -50,7 +51,9 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private final BookKeeper bookKeeper;
 
-    private final LedgerStreamStorage ledgerStreamStorage;
+    private final ZooKeeper zooKeeper;
+
+    private final LedgerManagerStorage ledgerManagerStorage;
 
     private final NavigableMap<Long/*Ledger id*/, LedgerInfo> ledgers = new ConcurrentSkipListMap<>();
 
@@ -58,19 +61,20 @@ public class DefaultLedgerManager implements LedgerManager {
 
     private final AtomicReference<State> state = new AtomicReference<>();
 
-    public DefaultLedgerManager(String name, BookKeeperConfig config,
+    public LedgerManagerImpl(String name, BookKeeperConfig config,
         BookKeeper bookKeeper,
-        LedgerStreamStorage storage) {
+        ZooKeeper keeper, LedgerManagerStorage storage) {
         this.name = name;
         bookKeeperConfig = config;
         this.bookKeeper = bookKeeper;
-        this.ledgerStreamStorage = storage;
+        zooKeeper = keeper;
+        this.ledgerManagerStorage = storage;
         this.state.set(State.NONE);
     }
 
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         if (state.compareAndSet(State.NONE, State.INITIALIZING)) {
-            CommonPool.executeBlocking(() -> ledgerStreamStorage.asyncGetLedgerStream(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+            CommonPool.executeBlocking(() -> ledgerManagerStorage.asyncGetLedgerManager(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
                 @Override public void onCompleted(LedgerInfoManager result, Version version) {
                     ledgerVersion = version.getVersion();
                     if (CollectionUtils.isNotEmpty(result.getLedgers())) {
@@ -87,7 +91,7 @@ public class DefaultLedgerManager implements LedgerManager {
                                     result.setLedgers(new LinkedList<>());
                                 }
                                 result.getLedgers().add(ledgerInfo);
-                                ledgerStreamStorage.asyncUpdateLedgerStream(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
+                                ledgerManagerStorage.asyncUpdateLedgerManager(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
                                     @Override public void onCompleted(Void result, Version version) {
                                         ledgerVersion = version.getVersion();
                                         ledgers.put(ledgerId, ledgerInfo);

@@ -1,16 +1,18 @@
 package com.song.fastmq.broker.storage.impl;
 
-import com.song.fastmq.broker.storage.AsyncCallback;
 import com.song.fastmq.broker.storage.BkLedgerStorage;
 import com.song.fastmq.broker.storage.LedgerManager;
+import com.song.fastmq.broker.storage.LedgerManagerStorage;
 import com.song.fastmq.broker.storage.LedgerStorageException;
-import com.song.fastmq.broker.storage.LedgerStreamStorage;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
+import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -23,12 +25,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Default implementation of {@link BkLedgerStorage}
- *
  * Created by song on 2017/11/4.
  */
-public class DefaultBkLedgerStorage implements BkLedgerStorage {
+public class BkLedgerStorageImpl implements BkLedgerStorage {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultBkLedgerStorage.class);
+    private static final Logger logger = LoggerFactory.getLogger(BkLedgerStorageImpl.class);
+
+    private volatile Version currentVersion;
 
     private final BookKeeperConfig bookKeeperConfig;
 
@@ -36,12 +39,12 @@ public class DefaultBkLedgerStorage implements BkLedgerStorage {
 
     private final BookKeeper bookKeeper;
 
-    private final LedgerStreamStorage ledgerStreamStorage;
+    private final LedgerManagerStorage ledgerManagerStorage;
 
     private final ConcurrentMap<String, CompletableFuture<LedgerManager>> ledgers = new ConcurrentHashMap<>();
 
-    public DefaultBkLedgerStorage(ClientConfiguration clientConfiguration,
-        BookKeeperConfig config) throws Exception {
+    public BkLedgerStorageImpl(ClientConfiguration clientConfiguration, BookKeeperConfig config)
+        throws Exception {
         bookKeeperConfig = config;
         checkNotNull(clientConfiguration);
         String servers = clientConfiguration.getZkServers();
@@ -59,18 +62,21 @@ public class DefaultBkLedgerStorage implements BkLedgerStorage {
 
         if (!countDownLatch.await(clientConfiguration.getZkTimeout(), TimeUnit.MILLISECONDS)
             || zooKeeper.getState() != ZooKeeper.States.CONNECTED) {
-            throw new LedgerStorageException("Error connecting to zookeeper server ,connectString = " + servers + ".");
+            throw new LedgerStorageException(
+                "Error connecting to zookeeper server ,connectString = " + servers + ".");
         }
 
         this.bookKeeper = new BookKeeper(clientConfiguration, zooKeeper);
-        ledgerStreamStorage = new DefaultLedgerStreamStorage(zooKeeper);
+        ledgerManagerStorage = new LedgerManagerStorageImpl(zooKeeper);
     }
 
-    @Override public LedgerManager open(String name) throws LedgerStorageException, InterruptedException {
+    @Override public LedgerManager open(String name)
+        throws LedgerStorageException, InterruptedException {
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
         asyncOpen(name, new AsyncCallback<LedgerManager, LedgerStorageException>() {
             @Override public void onCompleted(LedgerManager ledgerManager, Version version) {
+                currentVersion = version;
                 result.ledgerManager = ledgerManager;
                 latch.countDown();
             }
@@ -87,34 +93,41 @@ public class DefaultBkLedgerStorage implements BkLedgerStorage {
         return result.ledgerManager;
     }
 
-    @Override public void asyncOpen(String name, AsyncCallback<LedgerManager, LedgerStorageException> asyncCallback) {
-        CompletableFuture<LedgerManager> completableFuture = ledgers.get(name);
-        if (completableFuture != null && completableFuture.isDone()) {
-            try {
-                LedgerManager ledgerManager = completableFuture.get();
-            } catch (Exception e) {
-                logger.error("Get ledger" + name + " failed.", e);
-            }
-        }
-        ledgers.computeIfAbsent(name, (mlName) -> {
-            CompletableFuture<LedgerManager> future = new CompletableFuture<>();
-            DefaultLedgerManager ledgerManager = new DefaultLedgerManager(mlName, bookKeeperConfig, bookKeeper, ledgerStreamStorage);
-            ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
-                @Override public void onCompleted(Void result, Version version) {
-                    future.complete(ledgerManager);
-                }
+    @Override public void asyncOpen(String name,
+        AsyncCallback<LedgerManager, LedgerStorageException> asyncCallback) {
+        CommonPool.executeBlocking(() -> {
+            ledgers.computeIfAbsent(name, (mlName) -> {
+                CompletableFuture<LedgerManager> future = new CompletableFuture<>();
+                LedgerManagerImpl ledgerManager = new LedgerManagerImpl(mlName, bookKeeperConfig,
+                    bookKeeper, zooKeeper, ledgerManagerStorage);
+                ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
+                    @Override public void onCompleted(Void result, Version version) {
+                        currentVersion = version;
+                        future.complete(ledgerManager);
+                    }
 
-                @Override public void onThrowable(LedgerStorageException throwable) {
-                    ledgers.remove(name);
-                    future.completeExceptionally(throwable);
-                }
-            });
-            return future;
-        }).thenAccept(manager -> asyncCallback.onCompleted(manager, null))
-            .exceptionally(throwable -> {
+                    @Override public void onThrowable(LedgerStorageException throwable) {
+                        ledgers.remove(name);
+                        future.completeExceptionally(throwable);
+                    }
+                });
+                return future;
+            }).thenAccept(manager -> asyncCallback.onCompleted(manager, null)).exceptionally(throwable -> {
                 asyncCallback.onThrowable(new LedgerStorageException(throwable));
                 return null;
             });
+            CompletableFuture<LedgerManager> completableFuture = ledgers.get(name);
+            if (completableFuture != null && completableFuture.isDone()) {
+                try {
+                    LedgerManager ledgerManager = completableFuture.get();
+                    asyncCallback.onCompleted(ledgerManager, currentVersion);
+                } catch (InterruptedException e) {
+                    asyncCallback.onThrowable(new LedgerStorageException(e));
+                } catch (ExecutionException e) {
+                    asyncCallback.onThrowable(new LedgerStorageException(e.getCause()));
+                }
+            }
+        });
     }
 
     class Result {

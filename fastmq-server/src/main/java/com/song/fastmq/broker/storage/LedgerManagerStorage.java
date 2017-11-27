@@ -1,9 +1,11 @@
 package com.song.fastmq.broker.storage;
 
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
+
 /**
  * Created by song on 2017/11/5.
  */
-public interface LedgerStreamStorage {
+public interface LedgerManagerStorage {
 
     /**
      * Get ledgerStream by name
@@ -13,18 +15,18 @@ public interface LedgerStreamStorage {
      * @throws InterruptedException
      * @throws LedgerStorageException
      */
-    LedgerInfoManager getLedgerStream(String ledgerName) throws InterruptedException, LedgerStorageException;
+    LedgerInfoManager getLedgerManager(String ledgerName) throws InterruptedException, LedgerStorageException;
 
     /**
      * Get ledger asynchronously
      *
      * @param name
      * @param asyncCallback
-     * @see #getLedgerStream(String)
+     * @see #getLedgerManager(String)
      */
-    void asyncGetLedgerStream(String name, AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback);
+    void asyncGetLedgerManager(String name, AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback);
 
-    void asyncUpdateLedgerStream(String name, LedgerInfoManager ledgerInfoManager, Version version,
+    void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback);
 
     /**
