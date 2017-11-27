@@ -99,7 +99,7 @@ public class LedgerCursorImpl implements LedgerCursor {
         if (result.exception != null) {
             throw result.exception;
         }
-        // TODO: 2017/11/27 Store offset in bookeeper instead of zookeeper
+        // TODO: 2017/11/27 Store offset in BookKeeper instead of zookeeper
         readPosition = JsonUtils.fromJson(new String(result.data), Position.class);
         this.scheduledPersistPositionPool.scheduleAtFixedRate(this::persistReadPosition, 10, 5, TimeUnit.SECONDS);
     }
