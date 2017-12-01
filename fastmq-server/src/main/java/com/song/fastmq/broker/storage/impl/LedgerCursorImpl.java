@@ -41,32 +41,26 @@ public class LedgerCursorImpl implements LedgerCursor {
      */
     private final String name;
 
+    private final String ledgerCursorFullPath;
+
     private final LedgerManagerImpl ledgerManager;
 
-    // TODO: 2017/11/29 若首先启动，则需要读取最早的LedgerInfo
     private Position readPosition;
 
     private Version currentVersion;
 
     private final ZooKeeper zookeeper;
 
-    // TODO: 2017/11/29 test模式超时时间
-    private long getDataFromZKTimeoutMill = 3000000;
+    private long getDataFromZKTimeoutMill = 3000;
 
     private ScheduledExecutorService scheduledPersistPositionPool = null;
 
     public LedgerCursorImpl(String name, LedgerManagerImpl manager, ZooKeeper zookeeper) {
         this.name = name;
-        this.ledgerManager = manager;
         this.zookeeper = zookeeper;
+        this.ledgerManager = manager;
+        this.ledgerCursorFullPath = LEDGER_CURSOR_PREFIX + this.ledgerManager.getName() + "/" + name;
         this.scheduledPersistPositionPool = Executors.newScheduledThreadPool(1, new SimpleThreadFactory("Persist-read-position-pool"));
-//        try {
-//            ZkUtils.createFullPathOptimistic(zookeeper,LEDGER_CURSOR_PREFIX +this.ledgerManager.getName(),new byte[0],ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-//        } catch (KeeperException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
     public void init() throws Exception {
@@ -76,21 +70,20 @@ public class LedgerCursorImpl implements LedgerCursor {
         }
         CountDownLatch latch = new CountDownLatch(1);
         Result result = new Result();
-        this.zookeeper.getData(LEDGER_CURSOR_PREFIX + this.ledgerManager.getName() + "/" + name, false, (rc, path, ctx, data, stat) -> CommonPool.executeBlocking(() -> {
+        this.zookeeper.getData(this.ledgerCursorFullPath, false, (rc, path, ctx, data, stat) -> CommonPool.executeBlocking(() -> {
             if (rc == KeeperException.Code.OK.intValue()) {
                 result.data = data;
                 currentVersion = new ZkVersion(stat.getVersion());
                 latch.countDown();
             } else if (rc == KeeperException.Code.NONODE.intValue()) {
                 try {
-                    // TODO: 2017/11/29 读取不到
                     LedgerInfoManager ledgerManager = this.ledgerManager.getLedgerManagerStorage().getLedgerManager(this.ledgerManager.getName());
                     List<LedgerInfo> ledgers = ledgerManager.getLedgers();
                     ledgers.sort((o1, o2) -> (int) (o1.getLedgerId() - o2.getLedgerId()));
                     LedgerInfo ledgerInfo = ledgers.get(0);
                     long ledgerId = ledgerInfo.getLedgerId();
                     byte[] bytes = JsonUtils.toJson(new Position(ledgerId, -1)).getBytes();
-                    ZkUtils.asyncCreateFullPathOptimistic(zookeeper, LEDGER_CURSOR_PREFIX + this.ledgerManager.getName() + "/" + name, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
+                    ZkUtils.asyncCreateFullPathOptimistic(zookeeper, this.ledgerCursorFullPath, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
                         (rc1, path1, ctx1, name1) -> {
                             if (rc1 == KeeperException.Code.OK.intValue()) {
                                 result.data = bytes;
@@ -128,7 +121,7 @@ public class LedgerCursorImpl implements LedgerCursor {
     private void persistReadPosition() {
         try {
             logger.info("Current read position:{}.", JsonUtils.toJsonQuietly(readPosition));
-            Stat stat = zookeeper.setData(LEDGER_CURSOR_PREFIX + this.ledgerManager.getName() + "/" + name, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
+            Stat stat = zookeeper.setData(this.ledgerCursorFullPath, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
             this.currentVersion = new ZkVersion(stat.getVersion());
         } catch (KeeperException | InterruptedException | JsonUtils.JsonException e) {
             logger.error("Persist read position failed_" + e.getMessage(), e);
@@ -142,21 +135,17 @@ public class LedgerCursorImpl implements LedgerCursor {
     @Override
     public List<LedgerEntryWrapper> readEntries(int numberToRead) throws InterruptedException, LedgerStorageException {
         List<LedgerEntryWrapper> wrappers = this.ledgerManager.readEntries(numberToRead, readPosition);
-        synchronized (this) {
-            long entryId = readPosition.getEntryId() + numberToRead;
-            readPosition = new Position(readPosition.getLedgerId(), entryId);
-            logger.info("Current entryId {}." + entryId);
-        }
+        long entryId = readPosition.getEntryId() + numberToRead;
+        readPosition = new Position(readPosition.getLedgerId(), entryId);
+        logger.info("Current entryId {}." + entryId);
         return wrappers;
     }
 
     @Override public void asyncReadEntries(int numberToRead, AsyncCallbacks.ReadEntryCallback callback) {
         this.ledgerManager.asyncReadEntries(numberToRead, readPosition, callback);
-        synchronized (this) {
-            long entryId = readPosition.getEntryId() + numberToRead;
-            readPosition = new Position(readPosition.getLedgerId(), entryId);
-            logger.info("Current entryId {}." + entryId);
-        }
+        long entryId = readPosition.getEntryId() + numberToRead;
+        readPosition = new Position(readPosition.getLedgerId(), entryId);
+        logger.info("Current entryId {}." + entryId);
     }
 
     @Override public void close() {
