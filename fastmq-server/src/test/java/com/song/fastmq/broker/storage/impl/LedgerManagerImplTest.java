@@ -170,7 +170,7 @@ public class LedgerManagerImplTest {
         LedgerCursor ledgerCursor = result.ledgerCursor;
         CountDownLatch readLatch = new CountDownLatch(1);
         logger.info("Try to read entries");
-        ledgerCursor.asyncReadEntries(10, new AsyncCallbacks.ReadEntryCallback() {
+        ledgerCursor.asyncReadEntries(33, new AsyncCallbacks.ReadEntryCallback() {
             @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
                 System.out.println("没读取到！");
                 entries.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
@@ -184,7 +184,7 @@ public class LedgerManagerImplTest {
             }
         });
         readLatch.await();
-        Thread.sleep(10000);
+        ledgerCursor.close();
     }
 
     @After

@@ -122,7 +122,7 @@ public class LedgerCursorImpl implements LedgerCursor {
             logger.info("Start to persist read position of consumer[{}].", name);
             persistReadPosition();
             logger.info("Finish to persist read position of consumer[{}].", name);
-        }, 0, 3, TimeUnit.SECONDS);
+        }, 10, 10, TimeUnit.SECONDS);
     }
 
     private void persistReadPosition() {
