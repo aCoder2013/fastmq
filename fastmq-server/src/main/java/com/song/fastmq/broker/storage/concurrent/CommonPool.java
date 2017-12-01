@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommonPool {
 
-    private static final ThreadPoolExecutor COMMON_POOL = new ThreadPoolExecutor(Utils.AVAILABLE_PROCESSORS * 2, Utils.AVAILABLE_PROCESSORS * 2,
-        0L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new SimpleThreadFactory("common-pool"));
+    private static final ThreadPoolExecutor COMMON_POOL = new ThreadPoolExecutor(Utils.AVAILABLE_PROCESSORS , Utils.AVAILABLE_PROCESSORS * 4,
+        120L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new SimpleThreadFactory("common-pool"));
 
     public static void executeBlocking(Runnable runnable) {
         COMMON_POOL.execute(new SafeRunnable() {

@@ -1,5 +1,6 @@
 package com.song.fastmq.broker.storage.impl;
 
+import com.song.fastmq.broker.storage.LedgerCursor;
 import com.song.fastmq.broker.storage.LedgerEntryWrapper;
 import com.song.fastmq.broker.storage.LedgerInfo;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +29,6 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,8 @@ public class LedgerManagerImpl implements LedgerManager {
     private final LedgerManagerStorage ledgerManagerStorage;
 
     private final NavigableMap<Long/*Ledger id*/, LedgerInfo> ledgers = new ConcurrentSkipListMap<>();
+
+    private final ConcurrentMap<String, LedgerCursor> cursorCache = new ConcurrentHashMap<>();
 
     private final Map<Long/*Ledger id*/, CompletableFuture<LedgerHandle>> ledgerCache = new ConcurrentHashMap<>();
 
@@ -157,7 +160,33 @@ public class LedgerManagerImpl implements LedgerManager {
         }, null);
     }
 
-    @Override public List<LedgerEntryWrapper> readEntries(int numberToRead,
+    @Override public void asyncOpenCursor(String name, AsyncCallbacks.OpenCursorCallback callback) {
+        try {
+            checkLedgerManagerIsOpen();
+        } catch (LedgerStorageException e) {
+            callback.onThrowable(e);
+            return;
+        }
+        LedgerCursor ledgerCursor = cursorCache.get(name);
+        if (ledgerCursor != null) {
+            callback.onComplete(ledgerCursor);
+            return;
+        }
+        logger.debug("Create new cursor :{}. ", name);
+        cursorCache.computeIfAbsent(name, s -> {
+            LedgerCursorImpl ledgerCursorImpl = new LedgerCursorImpl(name, this, zooKeeper);
+            try {
+                ledgerCursorImpl.init();
+            } catch (Exception e) {
+                callback.onThrowable(e);
+                return null;
+            }
+            callback.onComplete(ledgerCursorImpl);
+            return ledgerCursorImpl;
+        });
+    }
+
+    List<LedgerEntryWrapper> readEntries(int numberToRead,
         Position position) throws InterruptedException, LedgerStorageException {
         CompletableFuture<List<LedgerEntryWrapper>> future = new CompletableFuture<>();
         asyncReadEntries(numberToRead, position, new AsyncCallbacks.ReadEntryCallback() {
@@ -180,20 +209,20 @@ public class LedgerManagerImpl implements LedgerManager {
         }
     }
 
-    @Override
-    public void asyncReadEntries(int numberToRead, Position position,
+    void asyncReadEntries(int numberToRead, Position position,
         AsyncCallbacks.ReadEntryCallback callback) {
         // TODO: 2017/11/19 custom thread pool
         CommonPool.executeBlocking(() -> {
             CompletableFuture<LedgerHandle> completableFuture = ledgerCache.computeIfAbsent(position.getLedgerId(), ledgerId -> {
                 CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-                this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
-                    if (rc == BookieException.Code.OK) {
-                        future.complete(lh);
-                    } else {
-                        future.completeExceptionally(BookieException.create(rc));
-                    }
-                }, null);
+                logger.info("Try to open ledger :" + ledgerId);
+                try {
+                    LedgerHandle ledgerHandle = this.bookKeeper.openLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword());
+                    future.complete(ledgerHandle);
+                    logger.info("Open ledger[{}] done", ledgerId);
+                } catch (BKException | InterruptedException e) {
+                    future.completeExceptionally(e);
+                }
                 return future;
             });
             try {
@@ -205,7 +234,11 @@ public class LedgerManagerImpl implements LedgerManager {
                     lastAddConfirmed = ledgerHandle.getLastAddConfirmed();
                 }
                 long lastEntryId = Math.min(position.getEntryId() + numberToRead - 1, lastAddConfirmed);
-                ledgerHandle.asyncReadEntries(position.getEntryId(), lastEntryId, (rc, lh, seq, ctx) -> {
+                long startEntryId = position.getEntryId();
+                if (position.getEntryId() < 0) {
+                    startEntryId = 0;
+                }
+                ledgerHandle.asyncReadEntries(startEntryId, lastEntryId, (rc, lh, seq, ctx) -> {
                     if (rc == BookieException.Code.OK) {
                         List<LedgerEntryWrapper> ledgerEntries = new LinkedList<>();
                         while (seq.hasMoreElements()) {
@@ -214,10 +247,11 @@ public class LedgerManagerImpl implements LedgerManager {
                         }
                         callback.readEntryComplete(ledgerEntries);
                     } else {
-                        callback.readEntryFailed(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                        callback.readEntryFailed(new LedgerStorageException(BKException.create(rc)));
                     }
                 }, null);
             } catch (Exception e) {
+                logger.error(e.getMessage(), e);
                 callback.readEntryFailed(new LedgerStorageException(e));
             }
         });
@@ -229,7 +263,9 @@ public class LedgerManagerImpl implements LedgerManager {
             return;
         }
         try {
-            this.currentLedgerHandle.close();
+            if (this.currentLedgerHandle != null) {
+                this.currentLedgerHandle.close();
+            }
             state.set(State.CLOSED);
         } catch (BKException e) {
             throw new LedgerStorageException(e);
@@ -244,6 +280,10 @@ public class LedgerManagerImpl implements LedgerManager {
 
     public LedgerHandle getCurrentLedgerHandle() {
         return currentLedgerHandle;
+    }
+
+    public LedgerManagerStorage getLedgerManagerStorage() {
+        return ledgerManagerStorage;
     }
 
     enum State {

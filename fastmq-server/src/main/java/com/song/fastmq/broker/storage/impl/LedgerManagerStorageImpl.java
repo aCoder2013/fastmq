@@ -1,15 +1,14 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.BadVersionException;
-import com.song.fastmq.broker.storage.concurrent.CommonPool;
-import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerManagerStorage;
+import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
+import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.utils.JsonUtils;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.CreateMode;
@@ -64,12 +63,12 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
     @Override public void asyncGetLedgerManager(String name,
         AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback) {
-        CommonPool.executeBlocking(() -> zooKeeper.getData(LEDGER_NAME_PREFIX + name, false, (rc, path, ctx, data, stat) -> {
+        zooKeeper.getData(LEDGER_NAME_PREFIX + name, false, (rc, path, ctx, data, stat) -> CommonPool.executeBlocking(() -> {
             if (rc == KeeperException.Code.OK.intValue()) {
                 try {
-                    LedgerInfoManager ledgerInfoManager = JsonUtils.get().readValue(new String(data), LedgerInfoManager.class);
+                    LedgerInfoManager ledgerInfoManager = JsonUtils.fromJson(new String(data), LedgerInfoManager.class);
                     asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(stat.getVersion()));
-                } catch (IOException e) {
+                } catch (Exception e) {
                     asyncCallback.onThrowable(new LedgerStorageException(e));
                 }
             } else if (rc == KeeperException.Code.NONODE.intValue()) {
@@ -83,18 +82,20 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                     asyncCallback.onThrowable(new LedgerStorageException(e));
                     return;
                 }
-                ZkUtils.asyncCreateFullPathOptimistic(zooKeeper, LEDGER_NAME_PREFIX + name, bytes,
-                    ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, (rc1, path1, ctx1, name1) -> {
-                        if (rc1 == KeeperException.Code.OK.intValue()) {
-                            asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(0));
-                        } else {
-                            asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
-                        }
-                    }, null);
+                CommonPool.executeBlocking(() -> {
+                    ZkUtils.asyncCreateFullPathOptimistic(zooKeeper, LEDGER_NAME_PREFIX + name, bytes,
+                        ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, (rc1, path1, ctx1, name1) -> {
+                            if (rc1 == KeeperException.Code.OK.intValue()) {
+                                asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(0));
+                            } else {
+                                asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                            }
+                        }, null);
+                });
             } else {
                 asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
             }
-        }, null));
+        }), null);
     }
 
     @Override public void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
@@ -107,7 +108,7 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                 asyncCallback.onThrowable(new LedgerStorageException(e));
                 return;
             }
-            zooKeeper.setData(LEDGER_NAME_PREFIX + name, bytes, version.getVersion(), (rc, path, ctx, stat) -> {
+            zooKeeper.setData(LEDGER_NAME_PREFIX + name, bytes, -1, (rc, path, ctx, stat) -> {
                 if (rc == KeeperException.Code.OK.intValue()) {
                     asyncCallback.onCompleted(null, new ZkVersion(stat.getVersion()));
                 } else if (rc == KeeperException.Code.BADVERSION.intValue()) {

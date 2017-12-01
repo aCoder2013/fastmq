@@ -48,8 +48,8 @@ public class BookKeeperTest {
     @Test
     public void readEntry() throws Exception {
         BookKeeper keeper = getKeeper();
-        LedgerHandle ledgerHandle = keeper.openLedger(16L, BookKeeper.DigestType.MAC, "123456".getBytes(Charsets.UTF_8));
-        ledgerHandle.addEntry("Hello World".getBytes());
+        LedgerHandle ledgerHandle = keeper.openLedger(55L, BookKeeper.DigestType.MAC, "".getBytes(Charsets.UTF_8));
+//        ledgerHandle.addEntry("Hello World".getBytes());
         Enumeration<LedgerEntry> enumeration = ledgerHandle.readEntries(1, 99);
         while (enumeration.hasMoreElements()) {
             LedgerEntry ledgerEntry = enumeration.nextElement();

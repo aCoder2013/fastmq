@@ -59,7 +59,6 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
                 logger.error("Failed to connect zookeeper,connectString = {}", servers);
             }
         });
-
         if (!countDownLatch.await(clientConfiguration.getZkTimeout(), TimeUnit.MILLISECONDS)
             || zooKeeper.getState() != ZooKeeper.States.CONNECTED) {
             throw new LedgerStorageException(

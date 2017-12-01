@@ -1,16 +1,17 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
-import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.LedgerInfo;
-import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerManagerStorage;
+import com.song.fastmq.broker.storage.LedgerStorageException;
 import com.song.fastmq.broker.storage.Version;
+import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.common.utils.JsonUtils;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -29,6 +30,7 @@ public class DefaultLedgerInfoManagerStorageTest {
 
     @Before
     public void setUp() throws Exception {
+        Configurator.initialize("CocaRMQBenchmark", Thread.currentThread().getContextClassLoader(), "log4j2.xml");
         CountDownLatch latch = new CountDownLatch(1);
         zookeeper = new ZooKeeper("127.0.0.1:2181", 10000, event -> {
             if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
