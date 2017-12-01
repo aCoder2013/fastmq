@@ -4,6 +4,8 @@ import com.song.fastmq.broker.storage.concurrent.AsyncCallbacks;
 import java.util.List;
 
 /**
+ * Use {@link LedgerCursor} to read entries of consumer and persist offset
+ *
  * @author song
  */
 public interface LedgerCursor {
