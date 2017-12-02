@@ -29,6 +29,8 @@ public interface LedgerManagerStorage {
     void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback);
 
+    void removeLedger(String name) throws InterruptedException,LedgerStorageException;
+
     /**
      * Delete ledger with the given name asynchronously
      *

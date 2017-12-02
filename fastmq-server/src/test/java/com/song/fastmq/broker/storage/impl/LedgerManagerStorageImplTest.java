@@ -11,7 +11,6 @@ import com.song.fastmq.common.utils.JsonUtils;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -22,7 +21,7 @@ import org.junit.Test;
 /**
  * Created by song on 2017/11/5.
  */
-public class DefaultLedgerInfoManagerStorageTest {
+public class LedgerManagerStorageImplTest {
 
     private ZooKeeper zookeeper;
 
@@ -30,7 +29,6 @@ public class DefaultLedgerInfoManagerStorageTest {
 
     @Before
     public void setUp() throws Exception {
-        Configurator.initialize("CocaRMQBenchmark", Thread.currentThread().getContextClassLoader(), "log4j2.xml");
         CountDownLatch latch = new CountDownLatch(1);
         zookeeper = new ZooKeeper("127.0.0.1:2181", 10000, event -> {
             if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
@@ -101,6 +99,11 @@ public class DefaultLedgerInfoManagerStorageTest {
         });
         latch.await();
         Assert.assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void removeLedger() throws Exception {
+        ledgerManagerStorage.removeLedger("HelloWorldTest1");
     }
 
     @After

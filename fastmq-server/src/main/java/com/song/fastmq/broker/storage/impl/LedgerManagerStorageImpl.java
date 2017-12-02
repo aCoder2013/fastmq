@@ -9,7 +9,9 @@ import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.utils.JsonUtils;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -118,6 +120,24 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                 }
             }, null);
         });
+    }
+
+    @Override public void removeLedger(String name) throws InterruptedException, LedgerStorageException {
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+        asyncRemoveLedger(name, new AsyncCallback<Void, LedgerStorageException>() {
+            @Override public void onCompleted(Void result, Version version) {
+                completableFuture.complete(result);
+            }
+
+            @Override public void onThrowable(LedgerStorageException throwable) {
+                completableFuture.completeExceptionally(throwable);
+            }
+        });
+        try {
+            completableFuture.get();
+        } catch (ExecutionException e) {
+            throw new LedgerStorageException(e.getCause());
+        }
     }
 
     @Override public void asyncRemoveLedger(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
