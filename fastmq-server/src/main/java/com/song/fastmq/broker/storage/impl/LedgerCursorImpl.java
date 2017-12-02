@@ -11,6 +11,7 @@ import com.song.fastmq.broker.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.concurrent.SimpleThreadFactory;
 import com.song.fastmq.common.utils.JsonUtils;
+import com.song.fastmq.common.utils.Result;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -134,11 +135,24 @@ public class LedgerCursorImpl implements LedgerCursor {
 
     @Override
     public List<LedgerEntryWrapper> readEntries(int numberToRead) throws InterruptedException, LedgerStorageException {
-        List<LedgerEntryWrapper> wrappers = this.ledgerManager.readEntries(numberToRead, readPosition);
-        long entryId = readPosition.getEntryId() + numberToRead;
-        readPosition = new Position(readPosition.getLedgerId(), entryId);
-        logger.info("Current entryId {}." + entryId);
-        return wrappers;
+        Result<List<LedgerEntryWrapper>> result = new Result<>();
+        asyncReadEntries(numberToRead, new AsyncCallbacks.ReadEntryCallback() {
+            @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
+                result.setData(entries);
+            }
+
+            @Override public void readEntryFailed(Throwable throwable) {
+                result.setThrowable(throwable);
+            }
+        });
+        try {
+            return result.getData();
+        } catch (Throwable throwable) {
+            if (throwable instanceof InterruptedException) {
+                throw (InterruptedException) throwable;
+            }
+            throw new LedgerStorageException(throwable);
+        }
     }
 
     @Override public void asyncReadEntries(int numberToRead, AsyncCallbacks.ReadEntryCallback callback) {
@@ -149,11 +163,6 @@ public class LedgerCursorImpl implements LedgerCursor {
     }
 
     @Override public void close() {
-        persistReadPosition();
-        this.scheduledPersistPositionPool.shutdown();
-    }
-
-    @Override public void asyncClose(AsyncCallbacks.CloseLedgerCursorCallback callback) {
         persistReadPosition();
         this.scheduledPersistPositionPool.shutdown();
     }

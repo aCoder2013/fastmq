@@ -23,6 +23,4 @@ public interface LedgerCursor {
     void asyncReadEntries(int numberToRead, AsyncCallbacks.ReadEntryCallback callback);
 
     void close();
-
-    void asyncClose(AsyncCallbacks.CloseLedgerCursorCallback callback);
 }
