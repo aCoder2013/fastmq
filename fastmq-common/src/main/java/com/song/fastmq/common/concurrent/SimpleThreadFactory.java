@@ -18,7 +18,7 @@ public class SimpleThreadFactory implements ThreadFactory {
         ThreadFactoryBuilder builder = new ThreadFactoryBuilder();
         builder
             .setNameFormat(name)
-            .setUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
+            .setUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception of thread_" + t.toString(), e));
         this.threadFactory = builder.build();
     }
 

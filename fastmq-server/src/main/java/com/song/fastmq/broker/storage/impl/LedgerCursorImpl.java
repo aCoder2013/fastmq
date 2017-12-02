@@ -112,20 +112,16 @@ public class LedgerCursorImpl implements LedgerCursor {
         }
         // TODO: 2017/11/27 Store offset in BookKeeper instead of zookeeper
         readPosition = JsonUtils.fromJson(new String(result.data), Position.class);
-        this.scheduledPersistPositionPool.scheduleAtFixedRate(() -> {
-            logger.info("Start to persist read position of consumer[{}].", name);
-            persistReadPosition();
-            logger.info("Finish to persist read position of consumer[{}].", name);
-        }, 10, 10, TimeUnit.SECONDS);
+        this.scheduledPersistPositionPool.scheduleAtFixedRate(this::persistReadPosition, 10, 10, TimeUnit.SECONDS);
     }
 
     private void persistReadPosition() {
         try {
-            logger.info("Current read position:{}.", JsonUtils.toJsonQuietly(readPosition));
             Stat stat = zookeeper.setData(this.ledgerCursorFullPath, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
             this.currentVersion = new ZkVersion(stat.getVersion());
+            logger.info("Persist read position of consumer[{}] with ledgerId {} and entryId {}.", this.ledgerManager.getName(), readPosition.getLedgerId(), readPosition.getEntryId());
         } catch (KeeperException | InterruptedException | JsonUtils.JsonException e) {
-            logger.error("Persist read position failed_" + e.getMessage(), e);
+            logger.error("Failed to persist read position_" + e.getMessage(), e);
         }
     }
 
