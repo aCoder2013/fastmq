@@ -1,7 +1,6 @@
 package com.song.fastmq.broker.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.song.fastmq.broker.storage.BadVersionException;
 import com.song.fastmq.broker.storage.LedgerInfoManager;
 import com.song.fastmq.broker.storage.LedgerManagerStorage;
 import com.song.fastmq.broker.storage.LedgerStorageException;
@@ -9,14 +8,13 @@ import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.utils.JsonUtils;
+import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.curator.x.async.AsyncCuratorFramework;
+import org.apache.curator.x.async.api.CreateOption;
+import org.apache.curator.x.async.api.DeleteOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +29,10 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
     private static final String LEDGER_NAME_PREFIX = LEDGER_NAME_PREFIX_NAME + "/";
 
-    private final ZooKeeper zooKeeper;
+    private final AsyncCuratorFramework asyncCuratorFramework;
 
-    public LedgerManagerStorageImpl(ZooKeeper zooKeeper) throws Exception {
-        this.zooKeeper = zooKeeper;
-        if (zooKeeper.exists(LEDGER_NAME_PREFIX_NAME, false) == null) {
-            ZkUtils.createFullPathOptimistic(zooKeeper, LEDGER_NAME_PREFIX_NAME, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
+    public LedgerManagerStorageImpl(AsyncCuratorFramework asyncCuratorFramework) throws Exception {
+        this.asyncCuratorFramework = asyncCuratorFramework;
     }
 
     @Override
@@ -65,39 +60,49 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
     @Override public void asyncGetLedgerManager(String name,
         AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback) {
-        zooKeeper.getData(LEDGER_NAME_PREFIX + name, false, (rc, path, ctx, data, stat) -> CommonPool.executeBlocking(() -> {
-            if (rc == KeeperException.Code.OK.intValue()) {
-                try {
-                    LedgerInfoManager ledgerInfoManager = JsonUtils.fromJson(new String(data), LedgerInfoManager.class);
-                    asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(stat.getVersion()));
-                } catch (Exception e) {
-                    asyncCallback.onThrowable(new LedgerStorageException(e));
-                }
-            } else if (rc == KeeperException.Code.NONODE.intValue()) {
-                logger.info("Create ledger [{}]", name);
-                LedgerInfoManager ledgerInfoManager = new LedgerInfoManager();
-                ledgerInfoManager.setName(name);
-                byte[] bytes;
-                try {
-                    bytes = JsonUtils.get().writeValueAsBytes(ledgerInfoManager);
-                } catch (JsonProcessingException e) {
-                    asyncCallback.onThrowable(new LedgerStorageException(e));
-                    return;
-                }
+        String ledgerManagerPath = LEDGER_NAME_PREFIX + name;
+        this.asyncCuratorFramework.checkExists().forPath(ledgerManagerPath).whenComplete((stat, throwable) -> {
+            if (throwable != null) {
+                asyncCallback.onThrowable(new LedgerStorageException(throwable));
+                return;
+            }
+            if (stat == null) {
                 CommonPool.executeBlocking(() -> {
-                    ZkUtils.asyncCreateFullPathOptimistic(zooKeeper, LEDGER_NAME_PREFIX + name, bytes,
-                        ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT, (rc1, path1, ctx1, name1) -> {
-                            if (rc1 == KeeperException.Code.OK.intValue()) {
-                                asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(0));
-                            } else {
-                                asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
-                            }
-                        }, null);
+                    logger.info("Create ledger [{}]", name);
+                    LedgerInfoManager ledgerInfoManager = new LedgerInfoManager();
+                    ledgerInfoManager.setName(name);
+                    byte[] bytes;
+                    try {
+                        bytes = JsonUtils.get().writeValueAsBytes(ledgerInfoManager);
+                    } catch (JsonProcessingException e) {
+                        asyncCallback.onThrowable(new LedgerStorageException(e));
+                        return;
+                    }
+                    this.asyncCuratorFramework.create().withOptions(EnumSet.of(CreateOption.createParentsIfNeeded)).forPath(ledgerManagerPath, bytes).whenComplete((s, throwable1) -> {
+                        if (throwable1 != null) {
+                            asyncCallback.onThrowable(new LedgerStorageException(throwable1));
+                        } else {
+                            asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(0));
+                        }
+                    });
                 });
             } else {
-                asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                this.asyncCuratorFramework.getData().forPath(ledgerManagerPath).whenComplete((bytes, throwable1) -> {
+                    if (throwable1 != null) {
+                        asyncCallback.onThrowable(new LedgerStorageException(throwable1));
+                    } else {
+                        LedgerInfoManager ledgerInfoManager = null;
+                        try {
+                            ledgerInfoManager = JsonUtils.fromJson(new String(bytes), LedgerInfoManager.class);
+                        } catch (JsonUtils.JsonException e) {
+                            asyncCallback.onThrowable(new LedgerStorageException(e));
+                            return;
+                        }
+                        asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(stat.getVersion()));
+                    }
+                });
             }
-        }), null);
+        });
     }
 
     @Override public void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
@@ -110,15 +115,13 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                 asyncCallback.onThrowable(new LedgerStorageException(e));
                 return;
             }
-            zooKeeper.setData(LEDGER_NAME_PREFIX + name, bytes, -1, (rc, path, ctx, stat) -> {
-                if (rc == KeeperException.Code.OK.intValue()) {
-                    asyncCallback.onCompleted(null, new ZkVersion(stat.getVersion()));
-                } else if (rc == KeeperException.Code.BADVERSION.intValue()) {
-                    asyncCallback.onThrowable(new BadVersionException(KeeperException.create(KeeperException.Code.get(rc))));
+            this.asyncCuratorFramework.setData().forPath(LEDGER_NAME_PREFIX + name, bytes).whenComplete((stat, throwable) -> {
+                if (throwable != null) {
+                    asyncCallback.onThrowable(new LedgerStorageException(throwable));
                 } else {
-                    asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                    asyncCallback.onCompleted(null, new ZkVersion(stat.getVersion()));
                 }
-            }, null);
+            });
         });
     }
 
@@ -142,13 +145,13 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
     @Override public void asyncRemoveLedger(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         logger.info("Remove ledger [{}].", name);
-        zooKeeper.delete(LEDGER_NAME_PREFIX + name, -1, (rc, path, ctx) -> {
-            if (rc == KeeperException.Code.OK.intValue()) {
-                asyncCallback.onCompleted(null, null);
+        this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed)).forPath(LEDGER_NAME_PREFIX + name).whenComplete((aVoid, throwable) -> {
+            if (throwable != null) {
+                asyncCallback.onThrowable(new LedgerStorageException(throwable));
             } else {
-                asyncCallback.onThrowable(new LedgerStorageException(KeeperException.create(KeeperException.Code.get(rc))));
+                asyncCallback.onCompleted(null, new ZkVersion(0));
             }
-        }, null);
+        });
     }
 
     class LedgerResult {

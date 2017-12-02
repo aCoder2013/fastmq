@@ -29,7 +29,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class LedgerManagerImpl implements LedgerManager {
 
     private final BookKeeper bookKeeper;
 
-    private final ZooKeeper zooKeeper;
+    private final AsyncCuratorFramework asyncCuratorFramework;
 
     private final LedgerManagerStorage ledgerManagerStorage;
 
@@ -65,12 +65,11 @@ public class LedgerManagerImpl implements LedgerManager {
     private final AtomicReference<State> state = new AtomicReference<>();
 
     public LedgerManagerImpl(String name, BookKeeperConfig config,
-        BookKeeper bookKeeper,
-        ZooKeeper keeper, LedgerManagerStorage storage) {
+        BookKeeper bookKeeper, AsyncCuratorFramework asyncCuratorFramework, LedgerManagerStorage storage) {
         this.name = name;
         bookKeeperConfig = config;
         this.bookKeeper = bookKeeper;
-        zooKeeper = keeper;
+        this.asyncCuratorFramework = asyncCuratorFramework;
         this.ledgerManagerStorage = storage;
         this.state.set(State.NONE);
     }
@@ -174,10 +173,10 @@ public class LedgerManagerImpl implements LedgerManager {
         }
         logger.debug("Create new cursor :{}. ", name);
         cursorCache.computeIfAbsent(name, s -> {
-            LedgerCursorImpl ledgerCursorImpl = new LedgerCursorImpl(name, this, zooKeeper);
+            LedgerCursorImpl ledgerCursorImpl = new LedgerCursorImpl(name, this, asyncCuratorFramework);
             try {
                 ledgerCursorImpl.init();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 callback.onThrowable(e);
                 return null;
             }

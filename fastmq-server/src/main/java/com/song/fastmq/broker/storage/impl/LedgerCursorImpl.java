@@ -12,17 +12,14 @@ import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.concurrent.SimpleThreadFactory;
 import com.song.fastmq.common.utils.JsonUtils;
 import com.song.fastmq.common.utils.Result;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
+import org.apache.curator.x.async.AsyncCuratorFramework;
+import org.apache.curator.x.async.api.CreateOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,65 +47,74 @@ public class LedgerCursorImpl implements LedgerCursor {
 
     private Version currentVersion;
 
-    private final ZooKeeper zookeeper;
+    private final AsyncCuratorFramework asyncCuratorFramework;
 
     private long getDataFromZKTimeoutMill = 3000;
 
     private ScheduledExecutorService scheduledPersistPositionPool = null;
 
-    public LedgerCursorImpl(String name, LedgerManagerImpl manager, ZooKeeper zookeeper) {
+    public LedgerCursorImpl(String name, LedgerManagerImpl manager, AsyncCuratorFramework asyncCuratorFramework) {
         this.name = name;
-        this.zookeeper = zookeeper;
+        this.asyncCuratorFramework = asyncCuratorFramework;
         this.ledgerManager = manager;
         this.ledgerCursorFullPath = LEDGER_CURSOR_PREFIX + this.ledgerManager.getName() + "/" + name;
         this.scheduledPersistPositionPool = Executors.newScheduledThreadPool(1, new SimpleThreadFactory("Persist-read-position-pool"));
     }
 
-    public void init() throws Exception {
+    public void init() throws Throwable {
         class Result {
             byte[] data;
-            Exception exception;
+            Throwable throwable;
         }
         CountDownLatch latch = new CountDownLatch(1);
         Result result = new Result();
-        this.zookeeper.getData(this.ledgerCursorFullPath, false, (rc, path, ctx, data, stat) -> CommonPool.executeBlocking(() -> {
-            if (rc == KeeperException.Code.OK.intValue()) {
-                result.data = data;
-                currentVersion = new ZkVersion(stat.getVersion());
-                latch.countDown();
-            } else if (rc == KeeperException.Code.NONODE.intValue()) {
-                try {
-                    LedgerInfoManager ledgerManager = this.ledgerManager.getLedgerManagerStorage().getLedgerManager(this.ledgerManager.getName());
+        asyncCuratorFramework.checkExists().forPath(this.ledgerCursorFullPath).whenComplete((stat, throwable) -> {
+            if (stat == null) {
+                CommonPool.executeBlocking(() -> {
+                    LedgerInfoManager ledgerManager;
+                    try {
+                        ledgerManager = this.ledgerManager.getLedgerManagerStorage().getLedgerManager(this.ledgerManager.getName());
+                    } catch (InterruptedException | LedgerStorageException e) {
+                        result.throwable = e;
+                        latch.countDown();
+                        return;
+                    }
                     List<LedgerInfo> ledgers = ledgerManager.getLedgers();
                     ledgers.sort((o1, o2) -> (int) (o1.getLedgerId() - o2.getLedgerId()));
                     LedgerInfo ledgerInfo = ledgers.get(0);
                     long ledgerId = ledgerInfo.getLedgerId();
-                    byte[] bytes = JsonUtils.toJson(new Position(ledgerId, -1)).getBytes();
-                    ZkUtils.asyncCreateFullPathOptimistic(zookeeper, this.ledgerCursorFullPath, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
-                        (rc1, path1, ctx1, name1) -> {
-                            if (rc1 == KeeperException.Code.OK.intValue()) {
-                                result.data = bytes;
-                                currentVersion = new ZkVersion(0);
+                    try {
+                        byte[] bytes = JsonUtils.toJson(new Position(ledgerId, 0)).getBytes();
+                        asyncCuratorFramework.create().withOptions(EnumSet.of(CreateOption.createParentsIfNeeded)).forPath(this.ledgerCursorFullPath, bytes).whenComplete((s, throwable1) -> {
+                            if (throwable1 != null) {
+                                result.throwable = throwable1;
                             } else {
-                                result.exception = KeeperException.create(KeeperException.Code.get(rc));
+                                result.data = bytes;
                             }
                             latch.countDown();
-                        }, null);
-                } catch (Exception e) {
-                    result.exception = e;
-                    latch.countDown();
-                }
+                        });
+                    } catch (JsonUtils.JsonException e) {
+                        result.throwable = e;
+                        latch.countDown();
+                    }
+                });
             } else {
-                result.exception = KeeperException.create(KeeperException.Code.get(rc));
-                latch.countDown();
+                CommonPool.executeBlocking(() -> asyncCuratorFramework.getData().forPath(this.ledgerCursorFullPath).whenComplete((bytes, t) -> {
+                    if (throwable != null) {
+                        result.throwable = t;
+                    } else {
+                        result.data = bytes;
+                    }
+                    latch.countDown();
+                }));
             }
-        }), null);
+        });
 
         if (!latch.await(getDataFromZKTimeoutMill, TimeUnit.MILLISECONDS)) {
             throw new LedgerStorageException("Get cursor from zk timeout after" + getDataFromZKTimeoutMill + "mill seconds.");
         }
-        if (result.exception != null) {
-            throw result.exception;
+        if (result.throwable != null) {
+            throw result.throwable;
         }
         // TODO: 2017/11/27 Store offset in BookKeeper instead of zookeeper
         readPosition = JsonUtils.fromJson(new String(result.data), Position.class);
@@ -117,10 +123,10 @@ public class LedgerCursorImpl implements LedgerCursor {
 
     private void persistReadPosition() {
         try {
-            Stat stat = zookeeper.setData(this.ledgerCursorFullPath, JsonUtils.toJson(readPosition).getBytes(), currentVersion.getVersion());
-            this.currentVersion = new ZkVersion(stat.getVersion());
+            asyncCuratorFramework.setData().forPath(this.ledgerCursorFullPath, JsonUtils.toJson(readPosition).getBytes());
             logger.info("Persist read position of consumer[{}] with ledgerId {} and entryId {}.", this.ledgerManager.getName(), readPosition.getLedgerId(), readPosition.getEntryId());
-        } catch (KeeperException | InterruptedException | JsonUtils.JsonException e) {
+        } catch (JsonUtils.JsonException e) {
+            //Shouldn't happen, but you know...
             logger.error("Failed to persist read position_" + e.getMessage(), e);
         }
     }

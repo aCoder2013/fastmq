@@ -15,9 +15,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,17 +40,11 @@ public class LedgerManagerImplTest {
     public void setUp() throws Exception {
         Configurator.initialize("FastMQ", Thread.currentThread().getContextClassLoader(), "log4j2.xml");
         CountDownLatch latch = new CountDownLatch(1);
-        ZooKeeper zookeeper = new ZooKeeper("127.0.0.1:2181", 10000, event -> {
-            if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
-                System.out.println("Zookeeper connected.");
-            } else {
-                throw new RuntimeException("Error connecting to zookeeper");
-            }
-            latch.countDown();
-        });
-        latch.await();
         CountDownLatch initLatch = new CountDownLatch(1);
-        ledgerManager = new LedgerManagerImpl("HelloWorldTest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), zookeeper, new LedgerManagerStorageImpl(zookeeper));
+        CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
+        curatorFramework.start();
+        AsyncCuratorFramework asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
+        ledgerManager = new LedgerManagerImpl("HelloWorldTest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), asyncCuratorFramework, new LedgerManagerStorageImpl(asyncCuratorFramework));
         ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void result, Version version) {
                 initLatch.countDown();
@@ -172,13 +168,11 @@ public class LedgerManagerImplTest {
         logger.info("Try to read entries");
         ledgerCursor.asyncReadEntries(33, new AsyncCallbacks.ReadEntryCallback() {
             @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
-                System.out.println("没读取到！");
                 entries.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
                 readLatch.countDown();
             }
 
             @Override public void readEntryFailed(Throwable throwable) {
-                System.out.println("读取失败!");
                 throwable.printStackTrace();
                 readLatch.countDown();
             }

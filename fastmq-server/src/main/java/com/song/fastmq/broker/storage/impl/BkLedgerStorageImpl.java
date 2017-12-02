@@ -16,6 +16,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -38,6 +43,8 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
     private final ZooKeeper zooKeeper;
 
     private final BookKeeper bookKeeper;
+
+    private final AsyncCuratorFramework asyncCuratorFramework;
 
     private final LedgerManagerStorage ledgerManagerStorage;
 
@@ -66,7 +73,11 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         }
 
         this.bookKeeper = new BookKeeper(clientConfiguration, zooKeeper);
-        ledgerManagerStorage = new LedgerManagerStorageImpl(zooKeeper);
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+        CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient(servers, retryPolicy);
+        curatorFramework.start();
+        asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
+        ledgerManagerStorage = new LedgerManagerStorageImpl(asyncCuratorFramework);
     }
 
     @Override public LedgerManager open(String name)
@@ -98,7 +109,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
             ledgers.computeIfAbsent(name, (mlName) -> {
                 CompletableFuture<LedgerManager> future = new CompletableFuture<>();
                 LedgerManagerImpl ledgerManager = new LedgerManagerImpl(mlName, bookKeeperConfig,
-                    bookKeeper, zooKeeper, ledgerManagerStorage);
+                    bookKeeper, this.asyncCuratorFramework, ledgerManagerStorage);
                 ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
                     @Override public void onCompleted(Void result, Version version) {
                         currentVersion = version;

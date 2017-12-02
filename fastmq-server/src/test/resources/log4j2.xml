@@ -15,6 +15,9 @@
         <Logger name="org.apache.bookkeeper" level="INFO">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Logger name="org.apache.curator" level="INFO">
+            <AppenderRef ref="Console"/>
+        </Logger>
     </Loggers>
 
 </Configuration>

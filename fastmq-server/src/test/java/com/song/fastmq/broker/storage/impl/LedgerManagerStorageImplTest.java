@@ -11,6 +11,10 @@ import com.song.fastmq.common.utils.JsonUtils;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -39,7 +43,10 @@ public class LedgerManagerStorageImplTest {
             latch.countDown();
         });
         latch.await();
-        ledgerManagerStorage = new LedgerManagerStorageImpl(zookeeper);
+        CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
+        curatorFramework.start();
+        AsyncCuratorFramework asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
+        ledgerManagerStorage = new LedgerManagerStorageImpl(asyncCuratorFramework);
     }
 
     @Test
