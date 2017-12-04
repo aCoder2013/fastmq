@@ -244,6 +244,7 @@ public class LedgerManagerImpl implements LedgerManager {
                             org.apache.bookkeeper.client.LedgerEntry entry = seq.nextElement();
                             ledgerEntries.add(new LedgerEntryWrapperImpl(entry.getEntry(), new Position(entry.getLedgerId(), entry.getEntryId())));
                         }
+                        // TODO: 2017/12/4 Move to next ledger if not able to read enough entries.
                         callback.readEntryComplete(ledgerEntries);
                     } else {
                         callback.readEntryFailed(new LedgerStorageException(BKException.create(rc)));
