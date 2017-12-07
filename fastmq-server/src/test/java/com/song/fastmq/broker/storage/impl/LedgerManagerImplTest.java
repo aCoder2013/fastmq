@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by song on 下午10:02.
@@ -100,11 +99,6 @@ public class LedgerManagerImplTest {
     }
 
     @Test
-    public void asyncAddEntry() throws Exception {
-
-    }
-
-    @Test
     public void read() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Position> positionAtomicReference = new AtomicReference<>();
@@ -131,18 +125,6 @@ public class LedgerManagerImplTest {
         } catch (InterruptedException | LedgerStorageException e) {
             e.printStackTrace();
         }
-    }
-
-    @Test
-    public void readEntryInsertedBefore() throws Exception {
-        String json = "{\"ledgerId\":5,\"entryId\":0}\n";
-        Position position = JsonUtils.fromJson(json, Position.class);
-        List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(1, position);
-        assertTrue(wrappers != null && wrappers.size() > 0);
-        wrappers.forEach(wrapper -> {
-            assertEquals("Hello World", new String(wrapper.getData()));
-            System.out.println(JsonUtils.toJsonQuietly(wrapper));
-        });
     }
 
     @Test
@@ -175,9 +157,9 @@ public class LedgerManagerImplTest {
         LedgerCursor ledgerCursor = result.ledgerCursor;
         CountDownLatch readLatch = new CountDownLatch(1);
         logger.info("Try to read entries");
-        ledgerCursor.asyncReadEntries(33, new AsyncCallbacks.ReadEntryCallback() {
+        ledgerCursor.asyncReadEntries(count, new AsyncCallbacks.ReadEntryCallback() {
             @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
-                entries.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
+                assertEquals(count, entries.size());
                 readLatch.countDown();
             }
 
