@@ -85,9 +85,9 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
         asyncOpen(name, new AsyncCallback<LedgerManager, LedgerStorageException>() {
-            @Override public void onCompleted(LedgerManager ledgerManager, Version version) {
+            @Override public void onCompleted(LedgerManager data, Version version) {
                 currentVersion = version;
-                result.ledgerManager = ledgerManager;
+                result.ledgerManager = data;
                 latch.countDown();
             }
 
@@ -111,7 +111,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
                 LedgerManagerImpl ledgerManager = new LedgerManagerImpl(mlName, bookKeeperConfig,
                     bookKeeper, this.asyncCuratorFramework, ledgerManagerStorage);
                 ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
-                    @Override public void onCompleted(Void result, Version version) {
+                    @Override public void onCompleted(Void data, Version version) {
                         currentVersion = version;
                         future.complete(ledgerManager);
                     }

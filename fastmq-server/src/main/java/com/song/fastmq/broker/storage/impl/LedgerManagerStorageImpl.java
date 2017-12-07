@@ -41,8 +41,8 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
         CountDownLatch latch = new CountDownLatch(1);
         asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
 
-            @Override public void onCompleted(LedgerInfoManager result, Version version) {
-                ledgerResult.ledgerInfoManager = result;
+            @Override public void onCompleted(LedgerInfoManager data, Version version) {
+                ledgerResult.ledgerInfoManager = data;
                 latch.countDown();
             }
 
@@ -128,8 +128,8 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
     @Override public void removeLedger(String name) throws InterruptedException, LedgerStorageException {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         asyncRemoveLedger(name, new AsyncCallback<Void, LedgerStorageException>() {
-            @Override public void onCompleted(Void result, Version version) {
-                completableFuture.complete(result);
+            @Override public void onCompleted(Void data, Version version) {
+                completableFuture.complete(data);
             }
 
             @Override public void onThrowable(LedgerStorageException throwable) {

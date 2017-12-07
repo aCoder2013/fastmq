@@ -1,6 +1,5 @@
 package com.song.fastmq.broker.storage.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.song.fastmq.broker.storage.LedgerCursor;
 import com.song.fastmq.broker.storage.LedgerEntryWrapper;
 import com.song.fastmq.broker.storage.LedgerStorageException;
@@ -21,11 +20,13 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.x.async.AsyncCuratorFramework;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by song on 下午10:02.
@@ -39,14 +40,13 @@ public class LedgerManagerImplTest {
     @Before
     public void setUp() throws Exception {
         Configurator.initialize("FastMQ", Thread.currentThread().getContextClassLoader(), "log4j2.xml");
-        CountDownLatch latch = new CountDownLatch(1);
         CountDownLatch initLatch = new CountDownLatch(1);
         CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
         curatorFramework.start();
         AsyncCuratorFramework asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
         ledgerManager = new LedgerManagerImpl("HelloWorldTest", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), asyncCuratorFramework, new LedgerManagerStorageImpl(asyncCuratorFramework));
         ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
-            @Override public void onCompleted(Void result, Version version) {
+            @Override public void onCompleted(Void data, Version version) {
                 initLatch.countDown();
             }
 
@@ -60,34 +60,43 @@ public class LedgerManagerImplTest {
 
     @Test
     public void getName() throws Exception {
-        Assert.assertEquals("JustATest", ledgerManager.getName());
+        assertEquals("JustATest", ledgerManager.getName());
     }
 
     @Test(timeout = 3000)
-    public void addEntry() throws Exception {
+    public void addEntry() throws Throwable {
+        class Result {
+            Position first;
+            Position last;
+            Throwable throwable;
+        }
+        Result result = new Result();
         int count = 100;
         AtomicInteger atomicInteger = new AtomicInteger();
         final CountDownLatch downLatch = new CountDownLatch(100);
         for (int i = 0; i < count; i++) {
             ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Position, LedgerStorageException>() {
-                @Override public void onCompleted(Position result, Version version) {
-                    try {
-                        System.out.println(JsonUtils.get().writeValueAsString(result));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
+                @Override public void onCompleted(Position data, Version version) {
+                    if (result.first == null) {
+                        result.first = data;
                     }
+                    result.last = data;
                     downLatch.countDown();
                     atomicInteger.incrementAndGet();
                 }
 
                 @Override public void onThrowable(LedgerStorageException throwable) {
-                    throwable.printStackTrace();
+                    downLatch.countDown();
+                    result.throwable = throwable;
                 }
             });
         }
         downLatch.await();
-        // TODO: 2017/11/19 make sure entry is actually stored into bookie
-        Assert.assertEquals(100, atomicInteger.get());
+        if (result.throwable != null) {
+            throw result.throwable;
+        }
+        assertEquals(100, atomicInteger.get());
+        assertEquals(100, result.last.getEntryId() - result.first.getEntryId() + 1);
     }
 
     @Test
@@ -100,9 +109,9 @@ public class LedgerManagerImplTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Position> positionAtomicReference = new AtomicReference<>();
         ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Position, LedgerStorageException>() {
-            @Override public void onCompleted(Position result, Version version) {
-                positionAtomicReference.set(result);
-                System.out.println(JsonUtils.toJsonQuietly(result));
+            @Override public void onCompleted(Position data, Version version) {
+                positionAtomicReference.set(data);
+                System.out.println(JsonUtils.toJsonQuietly(data));
                 latch.countDown();
             }
 
@@ -117,7 +126,7 @@ public class LedgerManagerImplTest {
             System.out.println(wrappers.size());
             wrappers.forEach(wrapper -> {
                 System.out.println(new String(wrapper.getData()));
-                Assert.assertEquals("Hello World", new String(wrapper.getData()));
+                assertEquals("Hello World", new String(wrapper.getData()));
             });
         } catch (InterruptedException | LedgerStorageException e) {
             e.printStackTrace();
@@ -129,9 +138,9 @@ public class LedgerManagerImplTest {
         String json = "{\"ledgerId\":5,\"entryId\":0}\n";
         Position position = JsonUtils.fromJson(json, Position.class);
         List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(1, position);
-        Assert.assertTrue(wrappers != null && wrappers.size() > 0);
+        assertTrue(wrappers != null && wrappers.size() > 0);
         wrappers.forEach(wrapper -> {
-            Assert.assertEquals("Hello World", new String(wrapper.getData()));
+            assertEquals("Hello World", new String(wrapper.getData()));
             System.out.println(JsonUtils.toJsonQuietly(wrapper));
         });
     }

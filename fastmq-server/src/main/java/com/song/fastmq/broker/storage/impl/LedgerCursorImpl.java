@@ -12,6 +12,7 @@ import com.song.fastmq.broker.storage.concurrent.CommonPool;
 import com.song.fastmq.common.concurrent.SimpleThreadFactory;
 import com.song.fastmq.common.utils.JsonUtils;
 import com.song.fastmq.common.utils.Result;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -158,10 +159,24 @@ public class LedgerCursorImpl implements LedgerCursor {
     }
 
     @Override public void asyncReadEntries(int numberToRead, AsyncCallbacks.ReadEntryCallback callback) {
-        this.ledgerManager.asyncReadEntries(numberToRead, readPosition, callback);
-        long entryId = readPosition.getEntryId() + numberToRead;
-        readPosition = new Position(readPosition.getLedgerId(), entryId);
-        logger.info("Current entryId {}." + entryId);
+        this.ledgerManager.asyncReadEntries(numberToRead, readPosition, new AsyncCallbacks.ReadEntryCallback() {
+            @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
+                callback.readEntryComplete(entries);
+            }
+
+            @Override public void readEntryFailed(Throwable throwable) {
+                if (throwable instanceof InvalidLedgerException) {
+                    logger.info("Invalid ledgerId ,maybe this ledger was deleted,move to next one {}.", readPosition.getLedgerId() + 1);
+                    // TODO: 2017/12/7 read next valid ledgerId from zk
+                    readPosition = new Position(readPosition.getLedgerId() + 1, 0);
+                    callback.readEntryComplete(Collections.emptyList());
+                    return;
+                }
+                callback.readEntryFailed(throwable);
+            }
+        });
+        readPosition = new Position(readPosition.getLedgerId(), readPosition.getEntryId() + numberToRead);
+        logger.info("[{}] current position {}.", this.name, readPosition.toString());
     }
 
     @Override public void close() {

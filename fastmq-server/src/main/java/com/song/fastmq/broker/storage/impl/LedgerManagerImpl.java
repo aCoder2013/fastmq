@@ -77,10 +77,10 @@ public class LedgerManagerImpl implements LedgerManager {
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         if (state.compareAndSet(State.NONE, State.INITIALIZING)) {
             CommonPool.executeBlocking(() -> ledgerManagerStorage.asyncGetLedgerManager(name, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
-                @Override public void onCompleted(LedgerInfoManager result, Version version) {
+                @Override public void onCompleted(LedgerInfoManager data, Version version) {
                     ledgerVersion = version.getVersion();
-                    if (CollectionUtils.isNotEmpty(result.getLedgers())) {
-                        result.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
+                    if (CollectionUtils.isNotEmpty(data.getLedgers())) {
+                        data.getLedgers().forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
                     }
                     bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(), bookKeeperConfig.getWriteQuorumSize(),
                         bookKeeperConfig.getDigestType(), bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
@@ -89,12 +89,12 @@ public class LedgerManagerImpl implements LedgerManager {
                                 LedgerInfo ledgerInfo = new LedgerInfo();
                                 ledgerInfo.setLedgerId(ledgerId);
                                 ledgerInfo.setTimestamp(System.currentTimeMillis());
-                                if (result.getLedgers() == null) {
-                                    result.setLedgers(new LinkedList<>());
+                                if (data.getLedgers() == null) {
+                                    data.setLedgers(new LinkedList<>());
                                 }
-                                result.getLedgers().add(ledgerInfo);
-                                ledgerManagerStorage.asyncUpdateLedgerManager(name, result, version, new AsyncCallback<Void, LedgerStorageException>() {
-                                    @Override public void onCompleted(Void result, Version version) {
+                                data.getLedgers().add(ledgerInfo);
+                                ledgerManagerStorage.asyncUpdateLedgerManager(name, data, version, new AsyncCallback<Void, LedgerStorageException>() {
+                                    @Override public void onCompleted(Void data, Version version) {
                                         ledgerVersion = version.getVersion();
                                         ledgers.put(ledgerId, ledgerInfo);
                                         currentLedgerHandle = lh;
@@ -212,20 +212,12 @@ public class LedgerManagerImpl implements LedgerManager {
         AsyncCallbacks.ReadEntryCallback callback) {
         // TODO: 2017/11/19 custom thread pool
         CommonPool.executeBlocking(() -> {
-            CompletableFuture<LedgerHandle> completableFuture = ledgerCache.computeIfAbsent(position.getLedgerId(), ledgerId -> {
-                CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-                logger.info("Try to open ledger :" + ledgerId);
-                try {
-                    LedgerHandle ledgerHandle = this.bookKeeper.openLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword());
-                    future.complete(ledgerHandle);
-                    logger.info("Open ledger[{}] done", ledgerId);
-                } catch (BKException | InterruptedException e) {
-                    future.completeExceptionally(e);
-                }
-                return future;
-            });
-            try {
-                LedgerHandle ledgerHandle = completableFuture.get();
+            LedgerInfo ledgerInfo = this.ledgers.get(position.getLedgerId());
+            if (ledgerInfo == null) {
+                callback.readEntryFailed(new InvalidLedgerException("Ledger id is invalid ,maybe it was deleted."));
+                return;
+            }
+            getLedgerHandle(position.getLedgerId()).thenAccept(ledgerHandle -> {
                 long lastAddConfirmed;
                 if (ledgerHandle.getId() == currentLedgerHandle.getId()) {
                     lastAddConfirmed = lastPosition.get();
@@ -250,10 +242,39 @@ public class LedgerManagerImpl implements LedgerManager {
                         callback.readEntryFailed(new LedgerStorageException(BKException.create(rc)));
                     }
                 }, null);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                callback.readEntryFailed(new LedgerStorageException(e));
+            }).exceptionally(throwable -> {
+                callback.readEntryFailed(new LedgerStorageException(throwable));
+                return null;
+            });
+        });
+    }
+
+    CompletableFuture<LedgerHandle> getLedgerHandle(long ledgerId) {
+        CompletableFuture<LedgerHandle> completableFuture = this.ledgerCache.get(ledgerId);
+        if (completableFuture != null) {
+            return completableFuture;
+        }
+        return this.ledgerCache.computeIfAbsent(ledgerId, id -> {
+            CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+            logger.info("Try to open ledger :" + ledgerId);
+            try {
+                LedgerHandle ledgerHandle = this.bookKeeper.openLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword());
+                this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {
+                    if (rc != BKException.Code.OK) {
+                        // Remove from cache to let another thread reopen it
+                        ledgerCache.remove(ledgerId, future);
+                        future.completeExceptionally(new LedgerStorageException(BKException.getMessage(rc)));
+                    } else {
+                        logger.debug("[{}] Successfully opened ledger {} for reading", name, lh.getId());
+                        future.complete(lh);
+                    }
+                }, null);
+                future.complete(ledgerHandle);
+                logger.info("Open ledger[{}] done", ledgerId);
+            } catch (BKException | InterruptedException e) {
+                future.completeExceptionally(e);
             }
+            return future;
         });
     }
 

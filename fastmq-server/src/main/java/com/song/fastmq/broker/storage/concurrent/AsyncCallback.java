@@ -7,7 +7,7 @@ import com.song.fastmq.broker.storage.Version;
  */
 public interface AsyncCallback<T, E> {
 
-    void onCompleted(T result, Version version);
+    void onCompleted(T data, Version version);
 
     void onThrowable(E throwable);
 }

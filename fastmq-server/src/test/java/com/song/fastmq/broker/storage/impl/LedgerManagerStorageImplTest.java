@@ -64,11 +64,11 @@ public class LedgerManagerStorageImplTest {
         String ledgerName = "HelloWorldTest1";
         ledgerManagerStorage.asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
 
-            @Override public void onCompleted(LedgerInfoManager result, Version version) {
-                result.setLedgers(Collections.singletonList(new LedgerInfo()));
-                ledgerManagerStorage.asyncUpdateLedgerManager(ledgerName, result, version, new AsyncCallback<Void, LedgerStorageException>() {
+            @Override public void onCompleted(LedgerInfoManager data, Version version) {
+                data.setLedgers(Collections.singletonList(new LedgerInfo()));
+                ledgerManagerStorage.asyncUpdateLedgerManager(ledgerName, data, version, new AsyncCallback<Void, LedgerStorageException>() {
 
-                    @Override public void onCompleted(Void result, Version version) {
+                    @Override public void onCompleted(Void data, Version version) {
                         counter.incrementAndGet();
                         latch.countDown();
                     }
@@ -94,7 +94,7 @@ public class LedgerManagerStorageImplTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         ledgerManagerStorage.asyncRemoveLedger("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
-            @Override public void onCompleted(Void result, Version version) {
+            @Override public void onCompleted(Void data, Version version) {
                 counter.incrementAndGet();
                 latch.countDown();
             }

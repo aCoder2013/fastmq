@@ -24,4 +24,11 @@ public class Position {
     public long getEntryId() {
         return entryId;
     }
+
+    @Override public String toString() {
+        return "Position{" +
+            "ledgerId=" + ledgerId +
+            ", entryId=" + entryId +
+            '}';
+    }
 }
