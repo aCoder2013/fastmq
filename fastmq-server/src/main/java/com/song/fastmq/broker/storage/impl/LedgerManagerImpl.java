@@ -48,6 +48,8 @@ public class LedgerManagerImpl implements LedgerManager {
 
     private volatile LedgerHandle currentLedgerHandle;
 
+    private volatile CompletableFuture<LedgerHandle> currentLedgerHandleFuture;
+
     private final BookKeeperConfig bookKeeperConfig;
 
     private final BookKeeper bookKeeper;
@@ -98,8 +100,10 @@ public class LedgerManagerImpl implements LedgerManager {
                                         ledgerVersion = version.getVersion();
                                         ledgers.put(ledgerId, ledgerInfo);
                                         currentLedgerHandle = lh;
-                                        state.set(State.LEDGER_OPENED);
+                                        currentLedgerHandleFuture = new CompletableFuture<>();
+                                        currentLedgerHandleFuture.complete(currentLedgerHandle);
                                         asyncCallback.onCompleted(null, version);
+                                        state.set(State.LEDGER_OPENED);
                                         logger.info("Finish to initialize LedgerManager");
                                     }
 
@@ -250,13 +254,16 @@ public class LedgerManagerImpl implements LedgerManager {
     }
 
     CompletableFuture<LedgerHandle> getLedgerHandle(long ledgerId) {
+        if (this.currentLedgerHandle.getId() == ledgerId) {
+            return this.currentLedgerHandleFuture;
+        }
         CompletableFuture<LedgerHandle> completableFuture = this.ledgerCache.get(ledgerId);
         if (completableFuture != null) {
             return completableFuture;
         }
         return this.ledgerCache.computeIfAbsent(ledgerId, id -> {
             CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-            logger.info("Try to open ledger :" + ledgerId);
+            logger.info("Try to open ledger:{}", ledgerId);
             try {
                 LedgerHandle ledgerHandle = this.bookKeeper.openLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword());
                 this.bookKeeper.asyncOpenLedger(ledgerId, this.bookKeeperConfig.getDigestType(), this.bookKeeperConfig.getPassword(), (rc, lh, ctx) -> {

@@ -8,7 +8,6 @@ import com.song.fastmq.broker.storage.Version;
 import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
 import com.song.fastmq.broker.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.broker.storage.config.BookKeeperConfig;
-import com.song.fastmq.common.utils.JsonUtils;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by song on 下午10:02.
@@ -105,7 +106,6 @@ public class LedgerManagerImplTest {
         ledgerManager.asyncAddEntry("Hello World".getBytes(), new AsyncCallback<Position, LedgerStorageException>() {
             @Override public void onCompleted(Position data, Version version) {
                 positionAtomicReference.set(data);
-                System.out.println(JsonUtils.toJsonQuietly(data));
                 latch.countDown();
             }
 
@@ -117,11 +117,9 @@ public class LedgerManagerImplTest {
         latch.await();
         try {
             List<LedgerEntryWrapper> wrappers = ledgerManager.readEntries(1, positionAtomicReference.get());
-            System.out.println(wrappers.size());
-            wrappers.forEach(wrapper -> {
-                System.out.println(new String(wrapper.getData()));
-                assertEquals("Hello World", new String(wrapper.getData()));
-            });
+            assertNotNull(wrappers);
+            assertTrue(wrappers.size() == 1);
+            wrappers.forEach(wrapper -> assertEquals("Hello World", new String(wrapper.getData())));
         } catch (InterruptedException | LedgerStorageException e) {
             e.printStackTrace();
         }
@@ -159,7 +157,7 @@ public class LedgerManagerImplTest {
         logger.info("Try to read entries");
         ledgerCursor.asyncReadEntries(count, new AsyncCallbacks.ReadEntryCallback() {
             @Override public void readEntryComplete(List<LedgerEntryWrapper> entries) {
-                assertEquals(count, entries.size());
+                entries.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
                 readLatch.countDown();
             }
 
