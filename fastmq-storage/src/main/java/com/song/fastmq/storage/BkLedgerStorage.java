@@ -1,6 +1,6 @@
-package com.song.fastmq.broker.storage;
+package com.song.fastmq.storage;
 
-import com.song.fastmq.broker.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.concurrent.AsyncCallback;
 
 /**
  * A factory to manage ledgers.

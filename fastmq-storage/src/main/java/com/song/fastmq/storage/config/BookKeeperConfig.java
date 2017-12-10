@@ -1,4 +1,4 @@
-package com.song.fastmq.broker.storage.config;
+package com.song.fastmq.storage.config;
 
 import com.google.common.base.Charsets;
 import org.apache.bookkeeper.client.BookKeeper;

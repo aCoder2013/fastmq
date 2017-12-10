@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <version>${fastmq.version}</version>
     <modules>
-        <module>fastmq-server</module>
+        <module>fastmq-storage</module>
         <module>fastmq-common</module>
     </modules>
 

@@ -1,7 +1,7 @@
-package com.song.fastmq.broker.storage.concurrent;
+package com.song.fastmq.storage.concurrent;
 
-import com.song.fastmq.broker.storage.LedgerCursor;
-import com.song.fastmq.broker.storage.LedgerEntryWrapper;
+import com.song.fastmq.storage.LedgerCursor;
+import com.song.fastmq.storage.LedgerRecord;
 import java.util.List;
 
 /**
@@ -16,7 +16,7 @@ public class AsyncCallbacks {
     }
 
     public interface ReadEntryCallback {
-        void readEntryComplete(List<LedgerEntryWrapper> entries);
+        void readEntryComplete(List<LedgerRecord> entries);
 
         void readEntryFailed(Throwable throwable);
     }

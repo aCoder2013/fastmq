@@ -1,4 +1,4 @@
-package com.song.fastmq.broker.storage;
+package com.song.fastmq.storage;
 
 import java.util.List;
 
