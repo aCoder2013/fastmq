@@ -1,10 +1,10 @@
 package com.song.fastmq.storage.storage.support;
 
-import com.song.fastmq.storage.storage.LedgerEntry;
+import com.song.fastmq.storage.storage.LogRecord;
 import com.song.fastmq.storage.storage.Position;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.ReadEntryCallback;
-import com.song.fastmq.storage.storage.impl.LedgerCursorImpl;
+import com.song.fastmq.storage.storage.impl.LogSegmentManagerImpl;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,15 +13,15 @@ import java.util.List;
  */
 public class ReadEntryCommand implements AsyncCallbacks.ReadEntryCallback {
 
-    private LedgerCursorImpl ledgerCursor;
+    private LogSegmentManagerImpl ledgerCursor;
 
     private volatile int maxNumberToRead;
 
-    private List<LedgerEntry> entries = new ArrayList<>();
+    private List<LogRecord> entries = new ArrayList<>();
 
     private AsyncCallbacks.ReadEntryCallback callback;
 
-    public ReadEntryCommand(LedgerCursorImpl ledgerCursor, int maxNumberToRead,
+    public ReadEntryCommand(LogSegmentManagerImpl ledgerCursor, int maxNumberToRead,
         ReadEntryCallback callback) {
         this.ledgerCursor = ledgerCursor;
         this.maxNumberToRead = maxNumberToRead;
@@ -37,10 +37,10 @@ public class ReadEntryCommand implements AsyncCallbacks.ReadEntryCallback {
     }
 
     @Override
-    public void readEntryComplete(List<LedgerEntry> entries) {
+    public void readEntryComplete(List<LogRecord> entries) {
         if (entries.size() > 0) {
-            LedgerEntry ledgerEntry = entries.get(entries.size() - 1);
-            Position position = ledgerEntry.getPosition();
+            LogRecord logRecord = entries.get(entries.size() - 1);
+            Position position = logRecord.getPosition();
             this.ledgerCursor
                 .updateReadPosition(
                     new Position(position.getLedgerId(), position.getEntryId() + 1));
@@ -66,7 +66,7 @@ public class ReadEntryCommand implements AsyncCallbacks.ReadEntryCallback {
         this.maxNumberToRead = maxNumberToRead;
     }
 
-    public synchronized void addEntries(List<LedgerEntry> ledgerEntries) {
+    public synchronized void addEntries(List<LogRecord> ledgerEntries) {
         this.entries.addAll(ledgerEntries);
     }
 

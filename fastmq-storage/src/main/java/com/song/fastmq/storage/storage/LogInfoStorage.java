@@ -1,11 +1,13 @@
 package com.song.fastmq.storage.storage;
 
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
 /**
  * Created by song on 2017/11/5.
  */
-public interface LedgerManagerStorage {
+public interface LogInfoStorage {
 
     /**
      * Get ledgerStream by name
@@ -15,21 +17,21 @@ public interface LedgerManagerStorage {
      * @throws InterruptedException
      * @throws LedgerStorageException
      */
-    LedgerInfoManager getLedgerManager(String ledgerName) throws InterruptedException, LedgerStorageException;
+    LogInfo getLogInfo(String ledgerName) throws InterruptedException, LedgerStorageException;
 
     /**
      * Get ledger asynchronously
      *
      * @param name
      * @param asyncCallback
-     * @see #getLedgerManager(String)
+     * @see #getLogInfo(String)
      */
-    void asyncGetLedgerManager(String name, AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback);
+    void asyncGetLogInfo(String name, AsyncCallback<LogInfo, LedgerStorageException> asyncCallback);
 
-    void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
+    void asyncUpdateLogInfo(String name, LogInfo logInfo, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback);
 
-    void removeLedger(String name) throws InterruptedException, LedgerStorageException;
+    void removeLogInfo(String name) throws InterruptedException, LedgerStorageException;
 
     /**
      * Delete ledger with the given name asynchronously
@@ -37,5 +39,5 @@ public interface LedgerManagerStorage {
      * @param name
      * @param asyncCallback
      */
-    void asyncRemoveLedger(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback);
+    void asyncRemoveLogInfo(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback);
 }

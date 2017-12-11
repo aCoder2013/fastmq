@@ -2,9 +2,9 @@ package com.song.fastmq.storage.storage.impl;
 
 import static org.junit.Assert.assertEquals;
 
-import com.song.fastmq.storage.storage.LedgerCursor;
-import com.song.fastmq.storage.storage.LedgerEntry;
-import com.song.fastmq.storage.storage.LedgerStorageException;
+import com.song.fastmq.storage.storage.LogSegmentManager;
+import com.song.fastmq.storage.storage.LogRecord;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Position;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
@@ -28,11 +28,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by song on 下午10:02.
  */
-public class LedgerManagerImplTest {
+public class LogManagerImplTest {
 
-    private static Logger logger = LoggerFactory.getLogger(LedgerManagerImplTest.class);
+    private static Logger logger = LoggerFactory.getLogger(LogManagerImplTest.class);
 
-    private LedgerManagerImpl ledgerManager;
+    private LogManagerImpl ledgerManager;
 
     @Before
     public void setUp() throws Exception {
@@ -41,7 +41,7 @@ public class LedgerManagerImplTest {
         CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
         curatorFramework.start();
         AsyncCuratorFramework asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
-        ledgerManager = new LedgerManagerImpl("ledger-manager-read-test-name", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), asyncCuratorFramework, new LedgerManagerStorageImpl(asyncCuratorFramework));
+        ledgerManager = new LogManagerImpl("ledger-manager-read-test-name", new BookKeeperConfig(), new BookKeeper("127.0.0.1:2181"), asyncCuratorFramework, new LogInfoStorageImpl(asyncCuratorFramework));
         ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void data, Version version) {
                 initLatch.countDown();
@@ -100,14 +100,14 @@ public class LedgerManagerImplTest {
     public void openCursor() throws Throwable {
         int count = 100;
         class Result {
-            LedgerCursor ledgerCursor;
+            LogSegmentManager ledgerCursor;
             Throwable throwable;
         }
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
         ledgerManager.asyncOpenCursor("test-reader-1", new AsyncCallbacks.OpenCursorCallback() {
-            @Override public void onComplete(LedgerCursor ledgerCursor) {
-                result.ledgerCursor = ledgerCursor;
+            @Override public void onComplete(LogSegmentManager logSegmentManager) {
+                result.ledgerCursor = logSegmentManager;
                 latch.countDown();
             }
 
@@ -120,11 +120,11 @@ public class LedgerManagerImplTest {
         if (result.throwable != null) {
             throw result.throwable;
         }
-        LedgerCursor ledgerCursor = result.ledgerCursor;
+        LogSegmentManager logSegmentManager = result.ledgerCursor;
         CountDownLatch readLatch = new CountDownLatch(1);
         logger.info("Try to read entries");
-        ledgerCursor.asyncReadEntries(1000, new AsyncCallbacks.ReadEntryCallback() {
-            @Override public void readEntryComplete(List<LedgerEntry> entries) {
+        logSegmentManager.asyncReadEntries(1000, new AsyncCallbacks.ReadEntryCallback() {
+            @Override public void readEntryComplete(List<LogRecord> entries) {
                 entries.forEach(wrapper -> System.out.println(new String(wrapper.getData())));
                 readLatch.countDown();
             }
@@ -135,7 +135,7 @@ public class LedgerManagerImplTest {
             }
         });
         readLatch.await();
-        ledgerCursor.close();
+        logSegmentManager.close();
     }
 
     @After

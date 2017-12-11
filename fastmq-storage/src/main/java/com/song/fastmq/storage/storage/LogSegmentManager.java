@@ -1,14 +1,15 @@
 package com.song.fastmq.storage.storage;
 
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.List;
 
 /**
- * Use {@link LedgerCursor} to read entries of consumer and persist offset
+ * Use {@link LogSegmentManager} to read entries of consumer and persist offset
  *
  * @author song
  */
-public interface LedgerCursor {
+public interface LogSegmentManager {
 
     /**
      * Get the cursor's name which should be global unique.
@@ -17,7 +18,7 @@ public interface LedgerCursor {
      */
     String name();
 
-    List<LedgerEntry> readEntries(int maxNumberToRead)
+    List<LogRecord> readEntries(int maxNumberToRead)
         throws InterruptedException, LedgerStorageException;
 
     void asyncReadEntries(int maxNumberToRead, AsyncCallbacks.ReadEntryCallback callback);

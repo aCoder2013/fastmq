@@ -2,11 +2,12 @@ package com.song.fastmq.storage.storage;
 
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
 /**
  * Created by song on 2017/11/5.
  */
-public interface LedgerManager {
+public interface LogManager {
 
     String getName();
 

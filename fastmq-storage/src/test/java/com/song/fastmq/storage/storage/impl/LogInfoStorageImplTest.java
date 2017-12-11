@@ -2,10 +2,10 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
 import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.storage.LedgerInfo;
-import com.song.fastmq.storage.storage.LedgerInfoManager;
-import com.song.fastmq.storage.storage.LedgerManagerStorage;
-import com.song.fastmq.storage.storage.LedgerStorageException;
+import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.metadata.LogSegmentInfo;
+import com.song.fastmq.storage.storage.LogInfoStorage;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import java.util.Collections;
@@ -25,11 +25,11 @@ import org.junit.Test;
 /**
  * Created by song on 2017/11/5.
  */
-public class LedgerManagerStorageImplTest {
+public class LogInfoStorageImplTest {
 
     private ZooKeeper zookeeper;
 
-    private LedgerManagerStorage ledgerManagerStorage;
+    private LogInfoStorage logInfoStorage;
 
     @Before
     public void setUp() throws Exception {
@@ -46,14 +46,14 @@ public class LedgerManagerStorageImplTest {
         CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
         curatorFramework.start();
         AsyncCuratorFramework asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
-        ledgerManagerStorage = new LedgerManagerStorageImpl(asyncCuratorFramework);
+        logInfoStorage = new LogInfoStorageImpl(asyncCuratorFramework);
     }
 
     @Test
     public void getLedgerStream() throws Exception {
         String ledgerName = "HelloWorldTest1";
-        LedgerInfoManager ledgerInfoManager = ledgerManagerStorage.getLedgerManager(ledgerName);
-        String json = JsonUtils.get().writeValueAsString(ledgerInfoManager);
+        LogInfo logInfo = logInfoStorage.getLogInfo(ledgerName);
+        String json = JsonUtils.get().writeValueAsString(logInfo);
         JsonAssert.with(json).assertEquals("$.name", ledgerName);
     }
 
@@ -62,11 +62,11 @@ public class LedgerManagerStorageImplTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         String ledgerName = "HelloWorldTest1";
-        ledgerManagerStorage.asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+        logInfoStorage.asyncGetLogInfo(ledgerName, new AsyncCallback<LogInfo, LedgerStorageException>() {
 
-            @Override public void onCompleted(LedgerInfoManager data, Version version) {
-                data.setLedgers(Collections.singletonList(new LedgerInfo()));
-                ledgerManagerStorage.asyncUpdateLedgerManager(ledgerName, data, version, new AsyncCallback<Void, LedgerStorageException>() {
+            @Override public void onCompleted(LogInfo data, Version version) {
+                data.setLedgers(Collections.singletonList(new LogSegmentInfo()));
+                logInfoStorage.asyncUpdateLogInfo(ledgerName, data, version, new AsyncCallback<Void, LedgerStorageException>() {
 
                     @Override public void onCompleted(Void data, Version version) {
                         counter.incrementAndGet();
@@ -93,7 +93,7 @@ public class LedgerManagerStorageImplTest {
     public void asyncRemoveLedger() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
-        ledgerManagerStorage.asyncRemoveLedger("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
+        logInfoStorage.asyncRemoveLogInfo("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void data, Version version) {
                 counter.incrementAndGet();
                 latch.countDown();
@@ -110,7 +110,7 @@ public class LedgerManagerStorageImplTest {
 
     @Test
     public void removeLedger() throws Exception {
-        ledgerManagerStorage.removeLedger("HelloWorldTest1");
+        logInfoStorage.removeLogInfo("HelloWorldTest1");
     }
 
     @After

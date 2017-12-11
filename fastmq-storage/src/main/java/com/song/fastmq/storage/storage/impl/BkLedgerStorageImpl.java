@@ -1,13 +1,15 @@
 package com.song.fastmq.storage.storage.impl;
 
-import com.song.fastmq.storage.storage.BkLedgerStorage;
-import com.song.fastmq.storage.storage.LedgerManager;
-import com.song.fastmq.storage.storage.LedgerManagerStorage;
-import com.song.fastmq.storage.storage.LedgerStorageException;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.song.fastmq.storage.storage.LogInfoStorage;
+import com.song.fastmq.storage.storage.LogManager;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
+import com.song.fastmq.storage.storage.support.BkLedgerStorage;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -25,8 +27,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Default implementation of {@link BkLedgerStorage}
@@ -46,9 +46,9 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 
     private final AsyncCuratorFramework asyncCuratorFramework;
 
-    private final LedgerManagerStorage ledgerManagerStorage;
+    private final LogInfoStorage logInfoStorage;
 
-    private final ConcurrentMap<String, CompletableFuture<LedgerManager>> ledgers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CompletableFuture<LogManager>> ledgers = new ConcurrentHashMap<>();
 
     public BkLedgerStorageImpl(ClientConfiguration clientConfiguration, BookKeeperConfig config)
         throws Exception {
@@ -77,17 +77,17 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         CuratorFramework curatorFramework = CuratorFrameworkFactory.newClient(servers, retryPolicy);
         curatorFramework.start();
         asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
-        ledgerManagerStorage = new LedgerManagerStorageImpl(asyncCuratorFramework);
+        logInfoStorage = new LogInfoStorageImpl(asyncCuratorFramework);
     }
 
-    @Override public LedgerManager open(String name)
+    @Override public LogManager open(String name)
         throws LedgerStorageException, InterruptedException {
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncOpen(name, new AsyncCallback<LedgerManager, LedgerStorageException>() {
-            @Override public void onCompleted(LedgerManager data, Version version) {
+        asyncOpen(name, new AsyncCallback<LogManager, LedgerStorageException>() {
+            @Override public void onCompleted(LogManager data, Version version) {
                 currentVersion = version;
-                result.ledgerManager = data;
+                result.logManager = data;
                 latch.countDown();
             }
 
@@ -100,16 +100,16 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         if (result.exception != null) {
             throw result.exception;
         }
-        return result.ledgerManager;
+        return result.logManager;
     }
 
     @Override public void asyncOpen(String name,
-        AsyncCallback<LedgerManager, LedgerStorageException> asyncCallback) {
+        AsyncCallback<LogManager, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             ledgers.computeIfAbsent(name, (mlName) -> {
-                CompletableFuture<LedgerManager> future = new CompletableFuture<>();
-                LedgerManagerImpl ledgerManager = new LedgerManagerImpl(mlName, bookKeeperConfig,
-                    bookKeeper, this.asyncCuratorFramework, ledgerManagerStorage);
+                CompletableFuture<LogManager> future = new CompletableFuture<>();
+                LogManagerImpl ledgerManager = new LogManagerImpl(mlName, bookKeeperConfig,
+                    bookKeeper, this.asyncCuratorFramework, logInfoStorage);
                 ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
                     @Override public void onCompleted(Void data, Version version) {
                         currentVersion = version;
@@ -126,11 +126,11 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
                 asyncCallback.onThrowable(new LedgerStorageException(throwable));
                 return null;
             });
-            CompletableFuture<LedgerManager> completableFuture = ledgers.get(name);
+            CompletableFuture<LogManager> completableFuture = ledgers.get(name);
             if (completableFuture != null && completableFuture.isDone()) {
                 try {
-                    LedgerManager ledgerManager = completableFuture.get();
-                    asyncCallback.onCompleted(ledgerManager, currentVersion);
+                    LogManager logManager = completableFuture.get();
+                    asyncCallback.onCompleted(logManager, currentVersion);
                 } catch (InterruptedException e) {
                     asyncCallback.onThrowable(new LedgerStorageException(e));
                 } catch (ExecutionException e) {
@@ -141,7 +141,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
     }
 
     class Result {
-        LedgerManager ledgerManager;
+        LogManager logManager;
 
         LedgerStorageException exception;
     }

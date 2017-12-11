@@ -1,15 +1,23 @@
 package com.song.fastmq.storage.storage;
 
 /**
+ * Represent a record stored in BK
+ *
  * @author song
  */
-public class LedgerEntry {
+public class LogRecord {
 
+    /**
+     * Payload the log record
+     */
     private final byte[] data;
 
+    /**
+     * Offset of the log record
+     */
     private final Position position;
 
-    public LedgerEntry(byte[] data, Position position) {
+    public LogRecord(byte[] data, Position position) {
         this.data = data;
         this.position = position;
     }

@@ -1,18 +1,18 @@
-package com.song.fastmq.storage.storage;
+package com.song.fastmq.storage.storage.metadata;
 
 import java.util.List;
 
 /**
  * Created by song on 2017/11/5.
  */
-public class LedgerInfoManager {
+public class LogInfo {
 
     /**
      * Name of this ledger
      */
     private String name;
 
-    private List<LedgerInfo> ledgers;
+    private List<LogSegmentInfo> ledgers;
 
     public String getName() {
         return name;
@@ -22,11 +22,11 @@ public class LedgerInfoManager {
         this.name = name;
     }
 
-    public List<LedgerInfo> getLedgers() {
+    public List<LogSegmentInfo> getLedgers() {
         return ledgers;
     }
 
-    public void setLedgers(List<LedgerInfo> ledgers) {
+    public void setLedgers(List<LogSegmentInfo> ledgers) {
         this.ledgers = ledgers;
     }
 }

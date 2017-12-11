@@ -1,9 +1,9 @@
-package com.song.fastmq.storage.storage;
+package com.song.fastmq.storage.storage.metadata;
 
 /**
  * Created by song on 2017/11/5.
  */
-public class LedgerInfo {
+public class LogSegmentInfo {
 
     private long ledgerId;
 

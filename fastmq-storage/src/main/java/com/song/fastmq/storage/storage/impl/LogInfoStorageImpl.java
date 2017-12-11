@@ -2,9 +2,9 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.storage.LedgerInfoManager;
-import com.song.fastmq.storage.storage.LedgerManagerStorage;
-import com.song.fastmq.storage.storage.LedgerStorageException;
+import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.LogInfoStorage;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by song on 2017/11/5.
  */
-public class LedgerManagerStorageImpl implements LedgerManagerStorage {
+public class LogInfoStorageImpl implements LogInfoStorage {
 
-    private static final Logger logger = LoggerFactory.getLogger(LedgerManagerStorageImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogInfoStorageImpl.class);
 
     private static final String LEDGER_NAME_PREFIX_NAME = "/fastmq/bk-ledgers";
 
@@ -31,18 +31,18 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
 
     private final AsyncCuratorFramework asyncCuratorFramework;
 
-    public LedgerManagerStorageImpl(AsyncCuratorFramework asyncCuratorFramework) throws Exception {
+    public LogInfoStorageImpl(AsyncCuratorFramework asyncCuratorFramework) throws Exception {
         this.asyncCuratorFramework = asyncCuratorFramework;
     }
 
     @Override
-    public LedgerInfoManager getLedgerManager(String ledgerName) throws InterruptedException, LedgerStorageException {
+    public LogInfo getLogInfo(String ledgerName) throws InterruptedException, LedgerStorageException {
         final LedgerResult ledgerResult = new LedgerResult();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncGetLedgerManager(ledgerName, new AsyncCallback<LedgerInfoManager, LedgerStorageException>() {
+        asyncGetLogInfo(ledgerName, new AsyncCallback<LogInfo, LedgerStorageException>() {
 
-            @Override public void onCompleted(LedgerInfoManager data, Version version) {
-                ledgerResult.ledgerInfoManager = data;
+            @Override public void onCompleted(LogInfo data, Version version) {
+                ledgerResult.logInfo = data;
                 latch.countDown();
             }
 
@@ -55,11 +55,11 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
         if (ledgerResult.exception != null) {
             throw ledgerResult.exception;
         }
-        return ledgerResult.ledgerInfoManager;
+        return ledgerResult.logInfo;
     }
 
-    @Override public void asyncGetLedgerManager(String name,
-        AsyncCallback<LedgerInfoManager, LedgerStorageException> asyncCallback) {
+    @Override public void asyncGetLogInfo(String name,
+        AsyncCallback<LogInfo, LedgerStorageException> asyncCallback) {
         String ledgerManagerPath = LEDGER_NAME_PREFIX + name;
         this.asyncCuratorFramework.checkExists().forPath(ledgerManagerPath).whenComplete((stat, throwable) -> {
             if (throwable != null) {
@@ -69,11 +69,11 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
             if (stat == null) {
                 CommonPool.executeBlocking(() -> {
                     logger.info("Create ledger [{}]", name);
-                    LedgerInfoManager ledgerInfoManager = new LedgerInfoManager();
-                    ledgerInfoManager.setName(name);
+                    LogInfo logInfo = new LogInfo();
+                    logInfo.setName(name);
                     byte[] bytes;
                     try {
-                        bytes = JsonUtils.get().writeValueAsBytes(ledgerInfoManager);
+                        bytes = JsonUtils.get().writeValueAsBytes(logInfo);
                     } catch (JsonProcessingException e) {
                         asyncCallback.onThrowable(new LedgerStorageException(e));
                         return;
@@ -82,7 +82,7 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                         if (throwable1 != null) {
                             asyncCallback.onThrowable(new LedgerStorageException(throwable1));
                         } else {
-                            asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(0));
+                            asyncCallback.onCompleted(logInfo, new ZkVersion(0));
                         }
                     });
                 });
@@ -91,26 +91,26 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
                     if (throwable1 != null) {
                         asyncCallback.onThrowable(new LedgerStorageException(throwable1));
                     } else {
-                        LedgerInfoManager ledgerInfoManager = null;
+                        LogInfo logInfo = null;
                         try {
-                            ledgerInfoManager = JsonUtils.fromJson(new String(bytes), LedgerInfoManager.class);
+                            logInfo = JsonUtils.fromJson(new String(bytes), LogInfo.class);
                         } catch (JsonUtils.JsonException e) {
                             asyncCallback.onThrowable(new LedgerStorageException(e));
                             return;
                         }
-                        asyncCallback.onCompleted(ledgerInfoManager, new ZkVersion(stat.getVersion()));
+                        asyncCallback.onCompleted(logInfo, new ZkVersion(stat.getVersion()));
                     }
                 });
             }
         });
     }
 
-    @Override public void asyncUpdateLedgerManager(String name, LedgerInfoManager ledgerInfoManager, Version version,
+    @Override public void asyncUpdateLogInfo(String name, LogInfo logInfo, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             byte[] bytes;
             try {
-                bytes = JsonUtils.get().writeValueAsBytes(ledgerInfoManager);
+                bytes = JsonUtils.get().writeValueAsBytes(logInfo);
             } catch (JsonProcessingException e) {
                 asyncCallback.onThrowable(new LedgerStorageException(e));
                 return;
@@ -125,9 +125,9 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
         });
     }
 
-    @Override public void removeLedger(String name) throws InterruptedException, LedgerStorageException {
+    @Override public void removeLogInfo(String name) throws InterruptedException, LedgerStorageException {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
-        asyncRemoveLedger(name, new AsyncCallback<Void, LedgerStorageException>() {
+        asyncRemoveLogInfo(name, new AsyncCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void data, Version version) {
                 completableFuture.complete(data);
             }
@@ -143,7 +143,7 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
         }
     }
 
-    @Override public void asyncRemoveLedger(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
+    @Override public void asyncRemoveLogInfo(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         logger.info("Remove ledger [{}].", name);
         this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed)).forPath(LEDGER_NAME_PREFIX + name).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
@@ -155,7 +155,7 @@ public class LedgerManagerStorageImpl implements LedgerManagerStorage {
     }
 
     class LedgerResult {
-        LedgerInfoManager ledgerInfoManager;
+        LogInfo logInfo;
 
         LedgerStorageException exception;
     }

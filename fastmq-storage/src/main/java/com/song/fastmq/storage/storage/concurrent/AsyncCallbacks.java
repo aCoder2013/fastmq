@@ -1,7 +1,7 @@
 package com.song.fastmq.storage.storage.concurrent;
 
-import com.song.fastmq.storage.storage.LedgerCursor;
-import com.song.fastmq.storage.storage.LedgerEntry;
+import com.song.fastmq.storage.storage.LogSegmentManager;
+import com.song.fastmq.storage.storage.LogRecord;
 import java.util.List;
 
 /**
@@ -16,7 +16,7 @@ public class AsyncCallbacks {
     }
 
     public interface ReadEntryCallback {
-        void readEntryComplete(List<LedgerEntry> entries);
+        void readEntryComplete(List<LogRecord> entries);
 
         void readEntryFailed(Throwable throwable);
     }
@@ -28,7 +28,7 @@ public class AsyncCallbacks {
     }
 
     public interface OpenCursorCallback {
-        void onComplete(LedgerCursor ledgerCursor);
+        void onComplete(LogSegmentManager logSegmentManager);
 
         void onThrowable(Throwable throwable);
     }

@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.storage;
+package com.song.fastmq.storage.storage.support;
 
 /**
  * The class {@link LedgerStorageException} and its subclass are a form of

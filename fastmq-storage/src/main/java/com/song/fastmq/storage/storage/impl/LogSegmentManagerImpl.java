@@ -3,11 +3,11 @@ package com.song.fastmq.storage.storage.impl;
 import com.song.fastmq.storage.common.concurrent.SimpleThreadFactory;
 import com.song.fastmq.storage.common.utils.JsonUtils;
 import com.song.fastmq.storage.common.utils.Result;
-import com.song.fastmq.storage.storage.LedgerCursor;
-import com.song.fastmq.storage.storage.LedgerEntry;
-import com.song.fastmq.storage.storage.LedgerInfo;
-import com.song.fastmq.storage.storage.LedgerInfoManager;
-import com.song.fastmq.storage.storage.LedgerStorageException;
+import com.song.fastmq.storage.storage.LogSegmentManager;
+import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.LogRecord;
+import com.song.fastmq.storage.storage.metadata.LogSegmentInfo;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Position;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 /**
  * @author song
  */
-public class LedgerCursorImpl implements LedgerCursor {
+public class LogSegmentManagerImpl implements LogSegmentManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(LedgerCursorImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogSegmentManagerImpl.class);
 
     private static final String LEDGER_CURSOR_PREFIX_NAME = "/fastmq/ledger-cursors";
 
@@ -43,7 +43,7 @@ public class LedgerCursorImpl implements LedgerCursor {
 
     private final String ledgerCursorFullPath;
 
-    private final LedgerManagerImpl ledgerManager;
+    private final LogManagerImpl ledgerManager;
 
     private volatile Position readPosition;
 
@@ -55,7 +55,7 @@ public class LedgerCursorImpl implements LedgerCursor {
 
     private ScheduledExecutorService scheduledPersistPositionPool = null;
 
-    public LedgerCursorImpl(String name, LedgerManagerImpl manager,
+    public LogSegmentManagerImpl(String name, LogManagerImpl manager,
         AsyncCuratorFramework asyncCuratorFramework) {
         this.name = name;
         this.asyncCuratorFramework = asyncCuratorFramework;
@@ -78,19 +78,19 @@ public class LedgerCursorImpl implements LedgerCursor {
             .whenComplete((stat, throwable) -> {
                 if (stat == null) {
                     CommonPool.executeBlocking(() -> {
-                        LedgerInfoManager ledgerManager;
+                        LogInfo ledgerManager;
                         try {
-                            ledgerManager = this.ledgerManager.getLedgerManagerStorage()
-                                .getLedgerManager(this.ledgerManager.getName());
+                            ledgerManager = this.ledgerManager.getLogInfoStorage()
+                                .getLogInfo(this.ledgerManager.getName());
                         } catch (InterruptedException | LedgerStorageException e) {
                             result.throwable = e;
                             latch.countDown();
                             return;
                         }
-                        List<LedgerInfo> ledgers = ledgerManager.getLedgers();
+                        List<LogSegmentInfo> ledgers = ledgerManager.getLedgers();
                         ledgers.sort((o1, o2) -> (int) (o1.getLedgerId() - o2.getLedgerId()));
-                        LedgerInfo ledgerInfo = ledgers.get(0);
-                        long ledgerId = ledgerInfo.getLedgerId();
+                        LogSegmentInfo logSegmentInfo = ledgers.get(0);
+                        long ledgerId = logSegmentInfo.getLedgerId();
                         try {
                             byte[] bytes = JsonUtils.toJson(new Position(ledgerId, 0)).getBytes();
                             asyncCuratorFramework.create()
@@ -156,12 +156,12 @@ public class LedgerCursorImpl implements LedgerCursor {
     }
 
     @Override
-    public List<LedgerEntry> readEntries(int maxNumberToRead)
+    public List<LogRecord> readEntries(int maxNumberToRead)
         throws InterruptedException, LedgerStorageException {
-        Result<List<LedgerEntry>> result = new Result<>();
+        Result<List<LogRecord>> result = new Result<>();
         asyncReadEntries(maxNumberToRead, new AsyncCallbacks.ReadEntryCallback() {
             @Override
-            public void readEntryComplete(List<LedgerEntry> entries) {
+            public void readEntryComplete(List<LogRecord> entries) {
                 result.setData(entries);
             }
 
@@ -185,7 +185,7 @@ public class LedgerCursorImpl implements LedgerCursor {
         this.ledgerManager.asyncReadEntries(
             new ReadEntryCommand(this, maxNumberToRead, new AsyncCallbacks.ReadEntryCallback() {
                 @Override
-                public void readEntryComplete(List<LedgerEntry> entries) {
+                public void readEntryComplete(List<LogRecord> entries) {
                     logger.info("[{}] current position {}.", name, readPosition.toString());
                     callback.readEntryComplete(entries);
                 }

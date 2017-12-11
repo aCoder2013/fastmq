@@ -1,6 +1,8 @@
-package com.song.fastmq.storage.storage;
+package com.song.fastmq.storage.storage.support;
 
+import com.song.fastmq.storage.storage.LogManager;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
 /**
  * A factory to manage ledgers.
@@ -15,9 +17,9 @@ public interface BkLedgerStorage {
      * @param name name of the ledger,must be unique.
      * @return the ledger
      */
-    LedgerManager open(String name) throws LedgerStorageException, InterruptedException;
+    LogManager open(String name) throws LedgerStorageException, InterruptedException;
 
-    void asyncOpen(String name, AsyncCallback<LedgerManager, LedgerStorageException> asyncCallback);
+    void asyncOpen(String name, AsyncCallback<LogManager, LedgerStorageException> asyncCallback);
 
 }
 
