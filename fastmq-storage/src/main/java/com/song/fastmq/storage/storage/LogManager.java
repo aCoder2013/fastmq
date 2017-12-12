@@ -9,11 +9,11 @@ import com.song.fastmq.storage.storage.support.LedgerStorageException;
  */
 public interface LogManager {
 
-    String getName();
+    String getTopic();
 
-    Position addEntry(byte[] data) throws InterruptedException, LedgerStorageException;
+    Offset addEntry(byte[] data) throws InterruptedException, LedgerStorageException;
 
-    void asyncAddEntry(byte[] data, AsyncCallback<Position, LedgerStorageException> asyncCallback);
+    void asyncAddEntry(byte[] data, AsyncCallback<Offset, LedgerStorageException> asyncCallback);
 
     void asyncOpenCursor(String name, AsyncCallbacks.OpenCursorCallback callback);
 

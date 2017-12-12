@@ -1,18 +1,19 @@
 package com.song.fastmq.storage.storage.impl;
 
-import com.song.fastmq.storage.storage.LogSegmentManager;
-import com.song.fastmq.storage.storage.metadata.LogInfo;
-import com.song.fastmq.storage.storage.LogManager;
-import com.song.fastmq.storage.storage.LogRecord;
-import com.song.fastmq.storage.storage.metadata.LogSegmentInfo;
 import com.song.fastmq.storage.storage.LogInfoStorage;
-import com.song.fastmq.storage.storage.support.LedgerStorageException;
-import com.song.fastmq.storage.storage.Position;
+import com.song.fastmq.storage.storage.LogManager;
+import com.song.fastmq.storage.storage.LogReader;
+import com.song.fastmq.storage.storage.LogRecord;
+import com.song.fastmq.storage.storage.Offset;
+import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
+import com.song.fastmq.storage.storage.metadata.Log;
+import com.song.fastmq.storage.storage.metadata.LogSegment;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.support.ReadEntryCommand;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +44,7 @@ public class LogManagerImpl implements LogManager {
 
     private static final Logger logger = LoggerFactory.getLogger(LogManagerImpl.class);
 
-    private final String name;
+    private final String topic;
 
     private volatile int ledgerVersion;
 
@@ -61,34 +62,37 @@ public class LogManagerImpl implements LogManager {
 
     private final LogInfoStorage logInfoStorage;
 
-    private final NavigableMap<Long/*Ledger id*/, LogSegmentInfo> ledgers = new ConcurrentSkipListMap<>();
+    private final OffsetStorage offsetStorage;
 
-    private final ConcurrentMap<String, LogSegmentManager> cursorCache = new ConcurrentHashMap<>();
+    private final NavigableMap<Long/*Ledger id*/, LogSegment> ledgers = new ConcurrentSkipListMap<>();
+
+    private final ConcurrentMap<String, LogReader> cursorCache = new ConcurrentHashMap<>();
 
     private final Map<Long/*Ledger id*/, CompletableFuture<LedgerHandle>> ledgerCache = new ConcurrentHashMap<>();
 
     private final AtomicReference<State> state = new AtomicReference<>();
 
-    public LogManagerImpl(String name, BookKeeperConfig config,
+    public LogManagerImpl(String topic, BookKeeperConfig config,
         BookKeeper bookKeeper, AsyncCuratorFramework asyncCuratorFramework,
-        LogInfoStorage storage) {
-        this.name = name;
+        LogInfoStorage storage, OffsetStorage offsetStorage) {
+        this.topic = topic;
         bookKeeperConfig = config;
         this.bookKeeper = bookKeeper;
         this.asyncCuratorFramework = asyncCuratorFramework;
         this.logInfoStorage = storage;
+        this.offsetStorage = offsetStorage;
         this.state.set(State.NONE);
     }
 
     public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         if (state.compareAndSet(State.NONE, State.INITIALIZING)) {
-            CommonPool.executeBlocking(() -> logInfoStorage.asyncGetLogInfo(name,
-                new AsyncCallback<LogInfo, LedgerStorageException>() {
+            CommonPool.executeBlocking(() -> logInfoStorage.asyncGetLogInfo(topic,
+                new AsyncCallback<Log, LedgerStorageException>() {
                     @Override
-                    public void onCompleted(LogInfo data, Version version) {
+                    public void onCompleted(Log data, Version version) {
                         ledgerVersion = version.getVersion();
-                        if (CollectionUtils.isNotEmpty(data.getLedgers())) {
-                            data.getLedgers()
+                        if (CollectionUtils.isNotEmpty(data.getSegments())) {
+                            data.getSegments()
                                 .forEach(metadata -> ledgers.put(metadata.getLedgerId(), metadata));
                         }
                         bookKeeper.asyncCreateLedger(bookKeeperConfig.getEnsSize(),
@@ -97,21 +101,21 @@ public class LogManagerImpl implements LogManager {
                             (rc, lh, ctx) -> {
                                 if (rc == BookieException.Code.OK) {
                                     long ledgerId = lh.getId();
-                                    LogSegmentInfo logSegmentInfo = new LogSegmentInfo();
-                                    logSegmentInfo.setLedgerId(ledgerId);
-                                    logSegmentInfo.setTimestamp(System.currentTimeMillis());
-                                    if (data.getLedgers() == null) {
-                                        data.setLedgers(new LinkedList<>());
+                                    LogSegment logSegment = new LogSegment();
+                                    logSegment.setLedgerId(ledgerId);
+                                    logSegment.setTimestamp(System.currentTimeMillis());
+                                    if (data.getSegments() == null) {
+                                        data.setSegments(new LinkedList<>());
                                     }
-                                    data.getLedgers().add(logSegmentInfo);
+                                    data.getSegments().add(logSegment);
                                     logInfoStorage
-                                        .asyncUpdateLogInfo(name, data, version,
+                                        .asyncUpdateLogInfo(topic, data, version,
                                             new AsyncCallback<Void, LedgerStorageException>() {
                                                 @Override
                                                 public void onCompleted(Void data,
                                                     Version version) {
                                                     ledgerVersion = version.getVersion();
-                                                    ledgers.put(ledgerId, logSegmentInfo);
+                                                    ledgers.put(ledgerId, logSegment);
                                                     currentLedgerHandle = lh;
                                                     currentLedgerHandleFuture = new CompletableFuture<>();
                                                     currentLedgerHandleFuture
@@ -146,17 +150,17 @@ public class LogManagerImpl implements LogManager {
     }
 
     @Override
-    public String getName() {
-        return name;
+    public String getTopic() {
+        return topic;
     }
 
     @Override
-    public Position addEntry(byte[] data) throws InterruptedException, LedgerStorageException {
+    public Offset addEntry(byte[] data) throws InterruptedException, LedgerStorageException {
         try {
             checkLedgerManagerIsOpen();
             long entryId = this.currentLedgerHandle.addEntry(data);
             lastPosition.getAndIncrement();
-            return new Position(this.currentLedgerHandle.getId(), entryId);
+            return new Offset(this.currentLedgerHandle.getId(), entryId);
         } catch (Exception e) {
             throw new LedgerStorageException(e);
         }
@@ -164,7 +168,7 @@ public class LogManagerImpl implements LogManager {
 
     @Override
     public void asyncAddEntry(byte[] data,
-        AsyncCallback<Position, LedgerStorageException> asyncCallback) {
+        AsyncCallback<Offset, LedgerStorageException> asyncCallback) {
         try {
             checkLedgerManagerIsOpen();
         } catch (LedgerStorageException e) {
@@ -180,7 +184,7 @@ public class LogManagerImpl implements LogManager {
         this.currentLedgerHandle.asyncAddEntry(data, (rc, lh, entryId, ctx) -> {
             if (rc == BookieException.Code.OK) {
                 lastPosition.getAndIncrement();
-                asyncCallback.onCompleted(new Position(lh.getId(), entryId), new ZkVersion(0));
+                asyncCallback.onCompleted(new Offset(lh.getId(), entryId), new ZkVersion(0));
             } else {
                 asyncCallback.onThrowable(new LedgerStorageException(BookieException.create(rc)));
             }
@@ -195,14 +199,14 @@ public class LogManagerImpl implements LogManager {
             callback.onThrowable(e);
             return;
         }
-        LogSegmentManager logSegmentManager = cursorCache.get(name);
-        if (logSegmentManager != null) {
-            callback.onComplete(logSegmentManager);
+        LogReader logReader = cursorCache.get(name);
+        if (logReader != null) {
+            callback.onComplete(logReader);
             return;
         }
         logger.debug("Create new cursor :{}. ", name);
         cursorCache.computeIfAbsent(name, s -> {
-            LogSegmentManagerImpl ledgerCursorImpl = new LogSegmentManagerImpl(name, this,
+            LogReaderImpl ledgerCursorImpl = new LogReaderImpl(name, this, this.offsetStorage,
                 asyncCuratorFramework);
             try {
                 ledgerCursorImpl.init();
@@ -218,16 +222,16 @@ public class LogManagerImpl implements LogManager {
 
     void asyncReadEntries(ReadEntryCommand readEntryCommand) {
         // TODO: 2017/11/19 custom thread pool
-        Position position = readEntryCommand.getReadPosition();
+        Offset offset = readEntryCommand.getReadPosition();
         int maxNumberToRead = readEntryCommand.getMaxNumberToRead();
         CommonPool.executeBlocking(() -> {
-            LogSegmentInfo logSegmentInfo = this.ledgers.get(position.getLedgerId());
-            if (logSegmentInfo == null) {
+            LogSegment logSegment = this.ledgers.get(offset.getLedgerId());
+            if (logSegment == null) {
                 readEntryCommand.readEntryFailed(
                     new InvalidLedgerException("Ledger id is invalid ,maybe it was deleted."));
                 return;
             }
-            getLedgerHandle(position.getLedgerId()).thenAccept(ledgerHandle -> {
+            getLedgerHandle(offset.getLedgerId()).thenAccept(ledgerHandle -> {
                 long lastAddConfirmed;
                 if (ledgerHandle.getId() == currentLedgerHandle.getId()) {
                     lastAddConfirmed = lastPosition.get();
@@ -235,30 +239,30 @@ public class LogManagerImpl implements LogManager {
                     lastAddConfirmed = ledgerHandle.getLastAddConfirmed();
                 }
                 long lastEntryId = Math
-                    .min(position.getEntryId() + maxNumberToRead - 1, lastAddConfirmed);
-                long startEntryId = position.getEntryId();
-                if (position.getEntryId() < 0) {
+                    .min(offset.getEntryId() + maxNumberToRead - 1, lastAddConfirmed);
+                long startEntryId = offset.getEntryId();
+                if (offset.getEntryId() < 0) {
                     startEntryId = 0;
                 }
                 if (startEntryId > lastEntryId) {
                     //Check if we still have more entries to read from the next ledger
-                    long nextValidLedgerId = getNextValidLedgerId(position.getLedgerId());
+                    long nextValidLedgerId = getNextValidLedgerId(offset.getLedgerId());
                     logger.info("Current all entries has been read [{}],move to next one [{}].",
-                        position.getLedgerId(), nextValidLedgerId);
+                        offset.getLedgerId(), nextValidLedgerId);
                     if (nextValidLedgerId != -1) {
-                        readEntryCommand.updateReadPosition(new Position(nextValidLedgerId, 0));
+                        readEntryCommand.updateReadPosition(new Offset(nextValidLedgerId, 0));
                         CommonPool.executeBlocking(() -> {
                             readEntryCommand
                                 .setMaxNumberToRead(readEntryCommand.getMaxNumberToRead());
                             asyncReadEntries(readEntryCommand);
                         });
                     } else {
-                        logger.info("All entries of [{}] has been read by [{}] for now.", name,
+                        logger.info("All entries of [{}] has been read by [{}] for now.", topic,
                             readEntryCommand.name());
                         readEntryCommand.readEntryComplete(Collections.emptyList());
                     }
                     logger.info("All entries from Ledger handle [{}] has been read.",
-                        position.getLedgerId());
+                        offset.getLedgerId());
                     return;
                 }
                 ledgerHandle.asyncReadEntries(startEntryId, lastEntryId, (rc, lh, seq, ctx) -> {
@@ -267,18 +271,18 @@ public class LogManagerImpl implements LogManager {
                         while (seq.hasMoreElements()) {
                             org.apache.bookkeeper.client.LedgerEntry entry = seq.nextElement();
                             ledgerEntries.add(new LogRecord(entry.getEntry(),
-                                new Position(entry.getLedgerId(), entry.getEntryId())));
+                                new Offset(entry.getLedgerId(), entry.getEntryId())));
                         }
                         // TODO: 2017/12/4 Move to next ledger if not able to read enough entries.
                         if (ledgerEntries.size() < readEntryCommand.getMaxNumberToRead()) {
                             LogRecord logRecord = ledgerEntries.get(ledgerEntries.size() - 1);
                             readEntryCommand.updateReadPosition(
-                                new Position(logRecord.getPosition().getLedgerId() + 1,
-                                    logRecord.getPosition().getEntryId()));
+                                new Offset(logRecord.getOffset().getLedgerId() + 1,
+                                    logRecord.getOffset().getEntryId()));
                             readEntryCommand.setMaxNumberToRead(
                                 readEntryCommand.getMaxNumberToRead() - ledgerEntries.size());
                             logger.info("Trying to read more from next ledger,{}.",
-                                logRecord.getPosition().toString());
+                                logRecord.getOffset().toString());
                             readEntryCommand.addEntries(ledgerEntries);
                             CommonPool.executeBlocking(() -> asyncReadEntries(readEntryCommand));
                         } else {
@@ -319,7 +323,7 @@ public class LogManagerImpl implements LogManager {
                             future.completeExceptionally(
                                 new LedgerStorageException(BKException.getMessage(rc)));
                         } else {
-                            logger.debug("[{}] Successfully opened ledger {} for reading", name,
+                            logger.debug("[{}] Successfully opened ledger {} for reading", topic,
                                 lh.getId());
                             future.complete(lh);
                         }
@@ -356,7 +360,7 @@ public class LogManagerImpl implements LogManager {
 
     private void checkLedgerManagerIsOpen() throws LedgerStorageException {
         if (state.get() == State.CLOSED) {
-            throw new LedgerStorageException("LogManager " + name + " has already been closed");
+            throw new LedgerStorageException("LogManager " + topic + " has already been closed");
         }
     }
 

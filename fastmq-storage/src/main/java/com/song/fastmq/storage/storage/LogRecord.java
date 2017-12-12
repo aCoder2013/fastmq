@@ -15,11 +15,11 @@ public class LogRecord {
     /**
      * Offset of the log record
      */
-    private final Position position;
+    private final Offset offset;
 
-    public LogRecord(byte[] data, Position position) {
+    public LogRecord(byte[] data, Offset offset) {
         this.data = data;
-        this.position = position;
+        this.offset = offset;
     }
 
     /**
@@ -37,10 +37,10 @@ public class LogRecord {
     }
 
     /**
-     * @return the position at which the entry was stored
+     * @return the offset at which the entry was stored
      */
-    public Position getPosition() {
-        return this.position;
+    public Offset getOffset() {
+        return this.offset;
     }
 
 }

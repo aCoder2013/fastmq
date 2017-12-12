@@ -3,7 +3,7 @@ package com.song.fastmq.storage.storage.metadata;
 /**
  * Created by song on 2017/11/5.
  */
-public class LogSegmentInfo {
+public class LogSegment {
 
     private long ledgerId;
 

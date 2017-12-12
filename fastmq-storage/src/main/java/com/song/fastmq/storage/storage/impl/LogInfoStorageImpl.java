@@ -2,7 +2,7 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Version;
@@ -36,13 +36,13 @@ public class LogInfoStorageImpl implements LogInfoStorage {
     }
 
     @Override
-    public LogInfo getLogInfo(String ledgerName) throws InterruptedException, LedgerStorageException {
+    public Log getLogInfo(String topic) throws InterruptedException, LedgerStorageException {
         final LedgerResult ledgerResult = new LedgerResult();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncGetLogInfo(ledgerName, new AsyncCallback<LogInfo, LedgerStorageException>() {
+        asyncGetLogInfo(topic, new AsyncCallback<Log, LedgerStorageException>() {
 
-            @Override public void onCompleted(LogInfo data, Version version) {
-                ledgerResult.logInfo = data;
+            @Override public void onCompleted(Log data, Version version) {
+                ledgerResult.log = data;
                 latch.countDown();
             }
 
@@ -55,11 +55,11 @@ public class LogInfoStorageImpl implements LogInfoStorage {
         if (ledgerResult.exception != null) {
             throw ledgerResult.exception;
         }
-        return ledgerResult.logInfo;
+        return ledgerResult.log;
     }
 
     @Override public void asyncGetLogInfo(String name,
-        AsyncCallback<LogInfo, LedgerStorageException> asyncCallback) {
+        AsyncCallback<Log, LedgerStorageException> asyncCallback) {
         String ledgerManagerPath = LEDGER_NAME_PREFIX + name;
         this.asyncCuratorFramework.checkExists().forPath(ledgerManagerPath).whenComplete((stat, throwable) -> {
             if (throwable != null) {
@@ -69,11 +69,11 @@ public class LogInfoStorageImpl implements LogInfoStorage {
             if (stat == null) {
                 CommonPool.executeBlocking(() -> {
                     logger.info("Create ledger [{}]", name);
-                    LogInfo logInfo = new LogInfo();
-                    logInfo.setName(name);
+                    Log log = new Log();
+                    log.setName(name);
                     byte[] bytes;
                     try {
-                        bytes = JsonUtils.get().writeValueAsBytes(logInfo);
+                        bytes = JsonUtils.get().writeValueAsBytes(log);
                     } catch (JsonProcessingException e) {
                         asyncCallback.onThrowable(new LedgerStorageException(e));
                         return;
@@ -82,7 +82,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
                         if (throwable1 != null) {
                             asyncCallback.onThrowable(new LedgerStorageException(throwable1));
                         } else {
-                            asyncCallback.onCompleted(logInfo, new ZkVersion(0));
+                            asyncCallback.onCompleted(log, new ZkVersion(0));
                         }
                     });
                 });
@@ -91,26 +91,26 @@ public class LogInfoStorageImpl implements LogInfoStorage {
                     if (throwable1 != null) {
                         asyncCallback.onThrowable(new LedgerStorageException(throwable1));
                     } else {
-                        LogInfo logInfo = null;
+                        Log log = null;
                         try {
-                            logInfo = JsonUtils.fromJson(new String(bytes), LogInfo.class);
+                            log = JsonUtils.fromJson(new String(bytes), Log.class);
                         } catch (JsonUtils.JsonException e) {
                             asyncCallback.onThrowable(new LedgerStorageException(e));
                             return;
                         }
-                        asyncCallback.onCompleted(logInfo, new ZkVersion(stat.getVersion()));
+                        asyncCallback.onCompleted(log, new ZkVersion(stat.getVersion()));
                     }
                 });
             }
         });
     }
 
-    @Override public void asyncUpdateLogInfo(String name, LogInfo logInfo, Version version,
+    @Override public void asyncUpdateLogInfo(String name, Log log, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             byte[] bytes;
             try {
-                bytes = JsonUtils.get().writeValueAsBytes(logInfo);
+                bytes = JsonUtils.get().writeValueAsBytes(log);
             } catch (JsonProcessingException e) {
                 asyncCallback.onThrowable(new LedgerStorageException(e));
                 return;
@@ -155,7 +155,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
     }
 
     class LedgerResult {
-        LogInfo logInfo;
+        Log log;
 
         LedgerStorageException exception;
     }

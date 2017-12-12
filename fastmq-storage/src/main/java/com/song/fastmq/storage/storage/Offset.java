@@ -3,16 +3,16 @@ package com.song.fastmq.storage.storage;
 /**
  * @author song
  */
-public class Position {
+public class Offset {
 
     private long ledgerId;
 
     private long entryId;
 
-    public Position() {
+    public Offset() {
     }
 
-    public Position(long ledgerId, long entryId) {
+    public Offset(long ledgerId, long entryId) {
         this.ledgerId = ledgerId;
         this.entryId = entryId;
     }
@@ -34,7 +34,7 @@ public class Position {
     }
 
     @Override public String toString() {
-        return "Position{" +
+        return "Offset{" +
             "ledgerId=" + ledgerId +
             ", entryId=" + entryId +
             '}';

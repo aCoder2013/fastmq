@@ -5,14 +5,14 @@ import java.util.List;
 /**
  * Created by song on 2017/11/5.
  */
-public class LogInfo {
+public class Log {
 
     /**
-     * Name of this ledger
+     * Name of this log
      */
     private String name;
 
-    private List<LogSegmentInfo> ledgers;
+    private List<LogSegment> segments;
 
     public String getName() {
         return name;
@@ -22,11 +22,11 @@ public class LogInfo {
         this.name = name;
     }
 
-    public List<LogSegmentInfo> getLedgers() {
-        return ledgers;
+    public List<LogSegment> getSegments() {
+        return segments;
     }
 
-    public void setLedgers(List<LogSegmentInfo> ledgers) {
-        this.ledgers = ledgers;
+    public void setSegments(List<LogSegment> segments) {
+        this.segments = segments;
     }
 }

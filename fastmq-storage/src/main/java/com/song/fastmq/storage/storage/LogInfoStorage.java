@@ -1,7 +1,7 @@
 package com.song.fastmq.storage.storage;
 
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
-import com.song.fastmq.storage.storage.metadata.LogInfo;
+import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
 /**
@@ -12,12 +12,12 @@ public interface LogInfoStorage {
     /**
      * Get ledgerStream by name
      *
-     * @param ledgerName name of the ledger
+     * @param topic name of the topic
      * @return the ledger with given name
      * @throws InterruptedException
      * @throws LedgerStorageException
      */
-    LogInfo getLogInfo(String ledgerName) throws InterruptedException, LedgerStorageException;
+    Log getLogInfo(String topic) throws InterruptedException, LedgerStorageException;
 
     /**
      * Get ledger asynchronously
@@ -26,9 +26,9 @@ public interface LogInfoStorage {
      * @param asyncCallback
      * @see #getLogInfo(String)
      */
-    void asyncGetLogInfo(String name, AsyncCallback<LogInfo, LedgerStorageException> asyncCallback);
+    void asyncGetLogInfo(String name, AsyncCallback<Log, LedgerStorageException> asyncCallback);
 
-    void asyncUpdateLogInfo(String name, LogInfo logInfo, Version version,
+    void asyncUpdateLogInfo(String name, Log log, Version version,
         AsyncCallback<Void, LedgerStorageException> asyncCallback);
 
     void removeLogInfo(String name) throws InterruptedException, LedgerStorageException;

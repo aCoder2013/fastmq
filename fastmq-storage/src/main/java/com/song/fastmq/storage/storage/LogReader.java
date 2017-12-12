@@ -5,11 +5,11 @@ import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.List;
 
 /**
- * Use {@link LogSegmentManager} to read entries of consumer and persist offset
+ * Use {@link LogReader} to read entries of consumer and persist offset
  *
  * @author song
  */
-public interface LogSegmentManager {
+public interface LogReader {
 
     /**
      * Get the cursor's name which should be global unique.
@@ -23,7 +23,7 @@ public interface LogSegmentManager {
 
     void asyncReadEntries(int maxNumberToRead, AsyncCallbacks.ReadEntryCallback callback);
 
-    void updateReadPosition(Position position);
+    void updateReadPosition(Offset offset);
 
     void close();
 }

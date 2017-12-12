@@ -2,8 +2,8 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
 import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.storage.metadata.LogInfo;
-import com.song.fastmq.storage.storage.metadata.LogSegmentInfo;
+import com.song.fastmq.storage.storage.metadata.Log;
+import com.song.fastmq.storage.storage.metadata.LogSegment;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Version;
@@ -25,7 +25,7 @@ import org.junit.Test;
 /**
  * Created by song on 2017/11/5.
  */
-public class LogInfoStorageImplTest {
+public class LogStorageImplTest {
 
     private ZooKeeper zookeeper;
 
@@ -52,8 +52,8 @@ public class LogInfoStorageImplTest {
     @Test
     public void getLedgerStream() throws Exception {
         String ledgerName = "HelloWorldTest1";
-        LogInfo logInfo = logInfoStorage.getLogInfo(ledgerName);
-        String json = JsonUtils.get().writeValueAsString(logInfo);
+        Log log = logInfoStorage.getLogInfo(ledgerName);
+        String json = JsonUtils.get().writeValueAsString(log);
         JsonAssert.with(json).assertEquals("$.name", ledgerName);
     }
 
@@ -62,10 +62,10 @@ public class LogInfoStorageImplTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         String ledgerName = "HelloWorldTest1";
-        logInfoStorage.asyncGetLogInfo(ledgerName, new AsyncCallback<LogInfo, LedgerStorageException>() {
+        logInfoStorage.asyncGetLogInfo(ledgerName, new AsyncCallback<Log, LedgerStorageException>() {
 
-            @Override public void onCompleted(LogInfo data, Version version) {
-                data.setLedgers(Collections.singletonList(new LogSegmentInfo()));
+            @Override public void onCompleted(Log data, Version version) {
+                data.setSegments(Collections.singletonList(new LogSegment()));
                 logInfoStorage.asyncUpdateLogInfo(ledgerName, data, version, new AsyncCallback<Void, LedgerStorageException>() {
 
                     @Override public void onCompleted(Void data, Version version) {

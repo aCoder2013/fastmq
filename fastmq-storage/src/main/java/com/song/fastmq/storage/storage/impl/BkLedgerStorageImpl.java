@@ -2,13 +2,13 @@ package com.song.fastmq.storage.storage.impl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.song.fastmq.storage.storage.BkLedgerStorage;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.LogManager;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
-import com.song.fastmq.storage.storage.support.BkLedgerStorage;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,18 +80,21 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         logInfoStorage = new LogInfoStorageImpl(asyncCuratorFramework);
     }
 
-    @Override public LogManager open(String name)
+    @Override
+    public LogManager open(String name)
         throws LedgerStorageException, InterruptedException {
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
         asyncOpen(name, new AsyncCallback<LogManager, LedgerStorageException>() {
-            @Override public void onCompleted(LogManager data, Version version) {
+            @Override
+            public void onCompleted(LogManager data, Version version) {
                 currentVersion = version;
                 result.logManager = data;
                 latch.countDown();
             }
 
-            @Override public void onThrowable(LedgerStorageException throwable) {
+            @Override
+            public void onThrowable(LedgerStorageException throwable) {
                 result.exception = throwable;
                 latch.countDown();
             }
@@ -103,29 +106,34 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         return result.logManager;
     }
 
-    @Override public void asyncOpen(String name,
+    @Override
+    public void asyncOpen(String name,
         AsyncCallback<LogManager, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             ledgers.computeIfAbsent(name, (mlName) -> {
                 CompletableFuture<LogManager> future = new CompletableFuture<>();
                 LogManagerImpl ledgerManager = new LogManagerImpl(mlName, bookKeeperConfig,
-                    bookKeeper, this.asyncCuratorFramework, logInfoStorage);
+                    // TODO: 2017/12/12 fix null offsetStorage
+                    bookKeeper, this.asyncCuratorFramework, logInfoStorage, null);
                 ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
-                    @Override public void onCompleted(Void data, Version version) {
+                    @Override
+                    public void onCompleted(Void data, Version version) {
                         currentVersion = version;
                         future.complete(ledgerManager);
                     }
 
-                    @Override public void onThrowable(LedgerStorageException throwable) {
+                    @Override
+                    public void onThrowable(LedgerStorageException throwable) {
                         ledgers.remove(name);
                         future.completeExceptionally(throwable);
                     }
                 });
                 return future;
-            }).thenAccept(manager -> asyncCallback.onCompleted(manager, null)).exceptionally(throwable -> {
-                asyncCallback.onThrowable(new LedgerStorageException(throwable));
-                return null;
-            });
+            }).thenAccept(manager -> asyncCallback.onCompleted(manager, null))
+                .exceptionally(throwable -> {
+                    asyncCallback.onThrowable(new LedgerStorageException(throwable));
+                    return null;
+                });
             CompletableFuture<LogManager> completableFuture = ledgers.get(name);
             if (completableFuture != null && completableFuture.isDone()) {
                 try {
@@ -141,6 +149,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
     }
 
     class Result {
+
         LogManager logManager;
 
         LedgerStorageException exception;
