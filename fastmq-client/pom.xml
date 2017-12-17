@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>fastmq</artifactId>
+    <groupId>com.song.fastmq</groupId>
+    <version>${fastmq.version}</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>fastmq-client</artifactId>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.song.fastmq</groupId>
+      <artifactId>fastmq-net</artifactId>
+      <version>${fastmq.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.song.fastmq</groupId>
+      <artifactId>fastmq-common</artifactId>
+      <version>${fastmq.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+  </dependencies>
+
+</project>

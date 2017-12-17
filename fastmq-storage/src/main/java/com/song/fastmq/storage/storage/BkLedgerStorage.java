@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage;
 
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
 /**
@@ -11,14 +11,15 @@ import com.song.fastmq.storage.storage.support.LedgerStorageException;
 public interface BkLedgerStorage {
 
     /**
-     * Open a ledger of given name. If the ledger doesn't exist, a new one will be automatically created.
+     * Open a ledger of given name. If the ledger doesn't exist, a new one will be automatically
+     * created.
      *
      * @param name name of the ledger,must be unique.
      * @return the ledger
      */
     LogManager open(String name) throws LedgerStorageException, InterruptedException;
 
-    void asyncOpen(String name, AsyncCallback<LogManager, LedgerStorageException> asyncCallback);
+    void asyncOpen(String name, CommonCallback<LogManager, LedgerStorageException> asyncCallback);
 
 }
 

@@ -10,8 +10,8 @@ import com.song.fastmq.storage.storage.LogRecord;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.Version;
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.List;
@@ -59,7 +59,7 @@ public class LogManagerImplTest {
         ledgerManager = new LogManagerImpl("ledger-manager-read-test-name", new BookKeeperConfig(),
             new BookKeeper("127.0.0.1:2181"), asyncCuratorFramework,
             new LogInfoStorageImpl(asyncCuratorFramework), this.offsetStorage);
-        ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
+        ledgerManager.init(new CommonCallback<Void, LedgerStorageException>() {
             @Override
             public void onCompleted(Void data, Version version) {
                 initLatch.countDown();
@@ -76,7 +76,7 @@ public class LogManagerImplTest {
 
     @Test
     public void getName() throws Exception {
-        assertEquals("JustATest", ledgerManager.getTopic());
+        assertEquals("JustATest", ledgerManager.getName());
     }
 
     @Test(timeout = 3000)
@@ -93,7 +93,7 @@ public class LogManagerImplTest {
         final CountDownLatch downLatch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             ledgerManager.asyncAddEntry(("Hello World" + i).getBytes(),
-                new AsyncCallback<Offset, LedgerStorageException>() {
+                new CommonCallback<Offset, LedgerStorageException>() {
                     @Override
                     public void onCompleted(Offset data, Version version) {
                         if (result.first == null) {

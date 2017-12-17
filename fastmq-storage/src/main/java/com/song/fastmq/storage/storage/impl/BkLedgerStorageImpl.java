@@ -6,7 +6,7 @@ import com.song.fastmq.storage.storage.BkLedgerStorage;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.LogManager;
 import com.song.fastmq.storage.storage.Version;
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
@@ -85,7 +85,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
         throws LedgerStorageException, InterruptedException {
         Result result = new Result();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncOpen(name, new AsyncCallback<LogManager, LedgerStorageException>() {
+        asyncOpen(name, new CommonCallback<LogManager, LedgerStorageException>() {
             @Override
             public void onCompleted(LogManager data, Version version) {
                 currentVersion = version;
@@ -108,14 +108,14 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 
     @Override
     public void asyncOpen(String name,
-        AsyncCallback<LogManager, LedgerStorageException> asyncCallback) {
+        CommonCallback<LogManager, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             ledgers.computeIfAbsent(name, (mlName) -> {
                 CompletableFuture<LogManager> future = new CompletableFuture<>();
                 LogManagerImpl ledgerManager = new LogManagerImpl(mlName, bookKeeperConfig,
                     // TODO: 2017/12/12 fix null offsetStorage
                     bookKeeper, this.asyncCuratorFramework, logInfoStorage, null);
-                ledgerManager.init(new AsyncCallback<Void, LedgerStorageException>() {
+                ledgerManager.init(new CommonCallback<Void, LedgerStorageException>() {
                     @Override
                     public void onCompleted(Void data, Version version) {
                         currentVersion = version;

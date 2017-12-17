@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package com.song.fastmq.broker.net;
+option java_package = "com.song.fastmq.net.proto";
+option optimize_for = LITE_RUNTIME;
+
+/// Create a new Producer on a topic, assigning the given producer_id,
+/// all messages sent with this producer_id will be persisted on the topic
+message CommandProducer {
+  string topic = 1;
+  uint64 producer_id = 2;
+  uint64 request_id = 3;
+
+  /// If a producer name is specified, the name will be used,
+  /// otherwise the broker will generate a unique name
+  string producer_name = 4;
+}
+
+/// Response from CommandProducer
+message CommandProducerSuccess {
+  uint64 request_id = 1;
+  string producer_name = 2;
+}
+
+message Command {
+  enum Type {
+    CONNECT = 0;
+    CONNECTED = 1;
+    SUBSCRIBE = 2;
+
+    PRODUCER = 3;
+
+    SEND = 4;
+    SEND_RECEIPT = 5;
+    SEND_ERROR = 6;
+
+    MESSAGE = 7;
+    ACK = 8;
+    FLOW = 9;
+
+    UNSUBSCRIBE = 10;
+
+    SUCCESS = 11;
+    ERROR = 12;
+
+    CLOSE_PRODUCER = 13;
+    CLOSE_CONSUMER = 14;
+
+    PRODUCER_SUCCESS = 15;
+  }
+
+  Type type = 1;
+
+  CommandProducer producer = 2;
+
+  CommandProducerSuccess producerSuccess = 3;
+}

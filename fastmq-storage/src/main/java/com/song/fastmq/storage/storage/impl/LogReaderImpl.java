@@ -51,7 +51,7 @@ public class LogReaderImpl implements LogReader {
         this.asyncCuratorFramework = asyncCuratorFramework;
         this.ledgerManager = manager;
         this.offsetStorage = offsetStorage;
-        this.logReaderInfo = new LogReaderInfo(this.ledgerManager.getTopic(), this.name);
+        this.logReaderInfo = new LogReaderInfo(this.ledgerManager.getName(), this.name);
         this.scheduledPersistPositionPool = Executors.newScheduledThreadPool(1,
             new SimpleThreadFactory("Scheduled-persist-read-position-pool"));
     }
@@ -66,7 +66,7 @@ public class LogReaderImpl implements LogReader {
     private void persistReadPosition() {
         try {
             this.offsetStorage
-                .persistOffset(new LogReaderInfo(this.ledgerManager.getTopic(), this.name));
+                .persistOffset(new LogReaderInfo(this.ledgerManager.getName(), this.name));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

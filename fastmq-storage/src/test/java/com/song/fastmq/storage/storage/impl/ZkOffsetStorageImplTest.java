@@ -62,9 +62,7 @@ public class ZkOffsetStorageImplTest {
 
     @Test
     public void queryOffset() throws Exception {
-        LogReaderInfo logReaderInfo = new LogReaderInfo();
-        logReaderInfo.setTopic("test");
-        logReaderInfo.setConsumer("test-consumer");
+        LogReaderInfo logReaderInfo = new LogReaderInfo("test", "test-consumer");
         Offset offset = this.offsetStorage.queryOffset(logReaderInfo);
         assertEquals(ledgerId, offset.getLedgerId());
         assertEquals(0, offset.getEntryId());
@@ -72,9 +70,7 @@ public class ZkOffsetStorageImplTest {
 
     @After
     public void tearDown() throws Exception {
-        LogReaderInfo logReaderInfo = new LogReaderInfo();
-        logReaderInfo.setTopic("test");
-        logReaderInfo.setConsumer("test-consumer");
+        LogReaderInfo logReaderInfo = new LogReaderInfo("test", "test-consumer");
         this.offsetStorage.removeOffset(logReaderInfo);
     }
 }

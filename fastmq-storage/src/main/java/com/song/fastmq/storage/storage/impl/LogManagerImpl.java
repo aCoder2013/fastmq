@@ -7,8 +7,8 @@ import com.song.fastmq.storage.storage.LogRecord;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.Version;
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
 import com.song.fastmq.storage.storage.config.BookKeeperConfig;
 import com.song.fastmq.storage.storage.metadata.Log;
@@ -84,10 +84,10 @@ public class LogManagerImpl implements LogManager {
         this.state.set(State.NONE);
     }
 
-    public void init(AsyncCallback<Void, LedgerStorageException> asyncCallback) {
+    public void init(CommonCallback<Void, LedgerStorageException> asyncCallback) {
         if (state.compareAndSet(State.NONE, State.INITIALIZING)) {
             CommonPool.executeBlocking(() -> logInfoStorage.asyncGetLogInfo(topic,
-                new AsyncCallback<Log, LedgerStorageException>() {
+                new CommonCallback<Log, LedgerStorageException>() {
                     @Override
                     public void onCompleted(Log data, Version version) {
                         ledgerVersion = version.getVersion();
@@ -110,7 +110,7 @@ public class LogManagerImpl implements LogManager {
                                     data.getSegments().add(logSegment);
                                     logInfoStorage
                                         .asyncUpdateLogInfo(topic, data, version,
-                                            new AsyncCallback<Void, LedgerStorageException>() {
+                                            new CommonCallback<Void, LedgerStorageException>() {
                                                 @Override
                                                 public void onCompleted(Void data,
                                                     Version version) {
@@ -150,7 +150,7 @@ public class LogManagerImpl implements LogManager {
     }
 
     @Override
-    public String getTopic() {
+    public String getName() {
         return topic;
     }
 
@@ -168,7 +168,7 @@ public class LogManagerImpl implements LogManager {
 
     @Override
     public void asyncAddEntry(byte[] data,
-        AsyncCallback<Offset, LedgerStorageException> asyncCallback) {
+        CommonCallback<Offset, LedgerStorageException> asyncCallback) {
         try {
             checkLedgerManagerIsOpen();
         } catch (LedgerStorageException e) {

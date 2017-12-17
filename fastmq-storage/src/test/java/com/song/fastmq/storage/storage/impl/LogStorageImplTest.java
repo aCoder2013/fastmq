@@ -2,12 +2,12 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.jayway.jsonassert.JsonAssert;
 import com.song.fastmq.storage.common.utils.JsonUtils;
+import com.song.fastmq.storage.storage.LogInfoStorage;
+import com.song.fastmq.storage.storage.Version;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.metadata.LogSegment;
-import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
-import com.song.fastmq.storage.storage.Version;
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,11 +62,11 @@ public class LogStorageImplTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
         String ledgerName = "HelloWorldTest1";
-        logInfoStorage.asyncGetLogInfo(ledgerName, new AsyncCallback<Log, LedgerStorageException>() {
+        logInfoStorage.asyncGetLogInfo(ledgerName, new CommonCallback<Log, LedgerStorageException>() {
 
             @Override public void onCompleted(Log data, Version version) {
                 data.setSegments(Collections.singletonList(new LogSegment()));
-                logInfoStorage.asyncUpdateLogInfo(ledgerName, data, version, new AsyncCallback<Void, LedgerStorageException>() {
+                logInfoStorage.asyncUpdateLogInfo(ledgerName, data, version, new CommonCallback<Void, LedgerStorageException>() {
 
                     @Override public void onCompleted(Void data, Version version) {
                         counter.incrementAndGet();
@@ -93,7 +93,7 @@ public class LogStorageImplTest {
     public void asyncRemoveLedger() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger counter = new AtomicInteger();
-        logInfoStorage.asyncRemoveLogInfo("HelloWorldTest1", new AsyncCallback<Void, LedgerStorageException>() {
+        logInfoStorage.asyncRemoveLogInfo("HelloWorldTest1", new CommonCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void data, Version version) {
                 counter.incrementAndGet();
                 latch.countDown();

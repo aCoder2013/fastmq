@@ -2,12 +2,12 @@ package com.song.fastmq.storage.storage.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.LogInfoStorage;
-import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.Version;
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
+import com.song.fastmq.storage.storage.metadata.Log;
+import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -36,10 +36,10 @@ public class LogInfoStorageImpl implements LogInfoStorage {
     }
 
     @Override
-    public Log getLogInfo(String topic) throws InterruptedException, LedgerStorageException {
+    public Log getLogInfo(String name) throws InterruptedException, LedgerStorageException {
         final LedgerResult ledgerResult = new LedgerResult();
         CountDownLatch latch = new CountDownLatch(1);
-        asyncGetLogInfo(topic, new AsyncCallback<Log, LedgerStorageException>() {
+        asyncGetLogInfo(name, new CommonCallback<Log, LedgerStorageException>() {
 
             @Override public void onCompleted(Log data, Version version) {
                 ledgerResult.log = data;
@@ -59,7 +59,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
     }
 
     @Override public void asyncGetLogInfo(String name,
-        AsyncCallback<Log, LedgerStorageException> asyncCallback) {
+        CommonCallback<Log, LedgerStorageException> asyncCallback) {
         String ledgerManagerPath = LEDGER_NAME_PREFIX + name;
         this.asyncCuratorFramework.checkExists().forPath(ledgerManagerPath).whenComplete((stat, throwable) -> {
             if (throwable != null) {
@@ -106,7 +106,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
     }
 
     @Override public void asyncUpdateLogInfo(String name, Log log, Version version,
-        AsyncCallback<Void, LedgerStorageException> asyncCallback) {
+        CommonCallback<Void, LedgerStorageException> asyncCallback) {
         CommonPool.executeBlocking(() -> {
             byte[] bytes;
             try {
@@ -127,7 +127,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
 
     @Override public void removeLogInfo(String name) throws InterruptedException, LedgerStorageException {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
-        asyncRemoveLogInfo(name, new AsyncCallback<Void, LedgerStorageException>() {
+        asyncRemoveLogInfo(name, new CommonCallback<Void, LedgerStorageException>() {
             @Override public void onCompleted(Void data, Version version) {
                 completableFuture.complete(data);
             }
@@ -143,7 +143,7 @@ public class LogInfoStorageImpl implements LogInfoStorage {
         }
     }
 
-    @Override public void asyncRemoveLogInfo(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback) {
+    @Override public void asyncRemoveLogInfo(String name, CommonCallback<Void, LedgerStorageException> asyncCallback) {
         logger.info("Remove ledger [{}].", name);
         this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed)).forPath(LEDGER_NAME_PREFIX + name).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
@@ -156,7 +156,6 @@ public class LogInfoStorageImpl implements LogInfoStorage {
 
     class LedgerResult {
         Log log;
-
         LedgerStorageException exception;
     }
 }

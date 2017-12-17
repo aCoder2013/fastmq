@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage;
 
-import com.song.fastmq.storage.storage.concurrent.AsyncCallback;
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 
@@ -12,32 +12,26 @@ public interface LogInfoStorage {
     /**
      * Get ledgerStream by name
      *
-     * @param topic name of the topic
+     * @param name name of the topic
      * @return the ledger with given name
-     * @throws InterruptedException
-     * @throws LedgerStorageException
      */
-    Log getLogInfo(String topic) throws InterruptedException, LedgerStorageException;
+    Log getLogInfo(String name) throws InterruptedException, LedgerStorageException;
 
     /**
      * Get ledger asynchronously
      *
-     * @param name
-     * @param asyncCallback
      * @see #getLogInfo(String)
      */
-    void asyncGetLogInfo(String name, AsyncCallback<Log, LedgerStorageException> asyncCallback);
+    void asyncGetLogInfo(String name, CommonCallback<Log, LedgerStorageException> asyncCallback);
 
     void asyncUpdateLogInfo(String name, Log log, Version version,
-        AsyncCallback<Void, LedgerStorageException> asyncCallback);
+        CommonCallback<Void, LedgerStorageException> asyncCallback);
 
     void removeLogInfo(String name) throws InterruptedException, LedgerStorageException;
 
     /**
      * Delete ledger with the given name asynchronously
-     *
-     * @param name
-     * @param asyncCallback
      */
-    void asyncRemoveLogInfo(String name, AsyncCallback<Void, LedgerStorageException> asyncCallback);
+    void asyncRemoveLogInfo(String name,
+        CommonCallback<Void, LedgerStorageException> asyncCallback);
 }

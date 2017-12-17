@@ -5,32 +5,32 @@ package com.song.fastmq.storage.storage;
  */
 public class LogReaderInfo {
 
-    private String topic;
+    private String logName;
 
-    private String consumer;
+    private String logReaderName;
 
     public LogReaderInfo() {
     }
 
-    public LogReaderInfo(String topic, String consumer) {
-        this.topic = topic;
-        this.consumer = consumer;
+    public LogReaderInfo(String logName, String logReaderName) {
+        this.logName = logName;
+        this.logReaderName = logReaderName;
     }
 
-    public String getTopic() {
-        return topic;
+    public String getLogName() {
+        return logName;
     }
 
-    public void setTopic(String topic) {
-        this.topic = topic;
+    public void setLogName(String logName) {
+        this.logName = logName;
     }
 
-    public String getConsumer() {
-        return consumer;
+    public String getLogReaderName() {
+        return logReaderName;
     }
 
-    public void setConsumer(String consumer) {
-        this.consumer = consumer;
+    public void setLogReaderName(String logReaderName) {
+        this.logReaderName = logReaderName;
     }
 
     @Override
@@ -44,16 +44,16 @@ public class LogReaderInfo {
 
         LogReaderInfo that = (LogReaderInfo) o;
 
-        if (!topic.equals(that.topic)) {
+        if (!logName.equals(that.logName)) {
             return false;
         }
-        return consumer.equals(that.consumer);
+        return logReaderName.equals(that.logReaderName);
     }
 
     @Override
     public int hashCode() {
-        int result = topic.hashCode();
-        result = 31 * result + consumer.hashCode();
+        int result = logName.hashCode();
+        result = 31 * result + logReaderName.hashCode();
         return result;
     }
 }

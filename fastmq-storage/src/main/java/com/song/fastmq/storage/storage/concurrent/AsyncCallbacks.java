@@ -3,6 +3,7 @@ package com.song.fastmq.storage.storage.concurrent;
 import com.song.fastmq.storage.storage.LogRecord;
 import com.song.fastmq.storage.storage.LogReader;
 import com.song.fastmq.storage.storage.Offset;
+import com.song.fastmq.storage.storage.Version;
 import java.util.List;
 
 /**
@@ -43,5 +44,15 @@ public class AsyncCallbacks {
         void onComplete(Offset offset);
 
         void onThrowable(Throwable throwable);
+    }
+
+    /**
+     * Created by song on 2017/11/5.
+     */
+    public  interface CommonCallback<T, E> {
+
+        void onCompleted(T data, Version version);
+
+        void onThrowable(E throwable);
     }
 }

@@ -124,7 +124,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                         } else {
                             logger.info(
                                 "Successfully persist offset for consumer[{}] of topic [{}] : {}",
-                                logReaderInfo.getConsumer(), logReaderInfo.getTopic(),
+                                logReaderInfo.getLogReaderName(), logReaderInfo.getLogName(),
                                 offset.toString());
                         }
                         latch.countDown();
@@ -134,8 +134,8 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
             }
             latch.await();
         } else {
-            logger.warn("Topic[{}]-consumer[{}] offset doesn't exist.", logReaderInfo.getTopic(),
-                logReaderInfo.getConsumer());
+            logger.warn("Topic[{}]-consumer[{}] offset doesn't exist.", logReaderInfo.getLogName(),
+                logReaderInfo.getLogReaderName());
         }
     }
 
@@ -171,7 +171,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                     offsetThreadPool.submit(() -> {
                         Log log;
                         try {
-                            log = logInfoStorage.getLogInfo(logReaderInfo.getTopic());
+                            log = logInfoStorage.getLogInfo(logReaderInfo.getLogName());
                         } catch (InterruptedException | LedgerStorageException e) {
                             future.completeExceptionally(e);
                             return;
@@ -224,8 +224,8 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     }
 
     private String getReaderPath(LogReaderInfo logReaderInfo) {
-        return ZK_OFFSET_STORAGE_PREFIX_PATH + logReaderInfo.getTopic() + ZkUtils.SEPERATOR
+        return ZK_OFFSET_STORAGE_PREFIX_PATH + logReaderInfo.getLogName() + ZkUtils.SEPERATOR
             + logReaderInfo
-            .getConsumer();
+            .getLogReaderName();
     }
 }
