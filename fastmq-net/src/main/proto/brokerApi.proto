@@ -4,6 +4,12 @@ package com.song.fastmq.broker.net;
 option java_package = "com.song.fastmq.net.proto";
 option optimize_for = LITE_RUNTIME;
 
+message Message {
+  map<string, string> headers = 1;
+  map<string, string> properties = 2;
+  bytes body = 3;
+}
+
 /// Create a new Producer on a topic, assigning the given producer_id,
 /// all messages sent with this producer_id will be persisted on the topic
 message CommandProducer {

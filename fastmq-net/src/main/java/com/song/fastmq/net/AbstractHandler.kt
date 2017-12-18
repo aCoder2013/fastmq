@@ -1,7 +1,5 @@
 package com.song.fastmq.net
 
-import com.song.fastmq.net.proto.BrokerApi
-import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import org.slf4j.LoggerFactory
 import java.net.SocketAddress
@@ -25,10 +23,6 @@ open class AbstractHandler : AbstractMessageDecoder() {
     @Throws(Exception::class)
     override fun channelInactive(ctx: ChannelHandlerContext) {
         super.channelInactive(ctx)
-    }
-
-    override fun handleProducerSuccess(commandProducerSuccess: BrokerApi.CommandProducerSuccess, payload: ByteBuf) {
-        logger.info("Producer success {}.", commandProducerSuccess)
     }
 
     companion object {

@@ -15,7 +15,7 @@ class Producer(val topic: Topic, val cnx: ServerCnxClient, val producerName: Str
 
     private var closeFuture: CompletableFuture<Void>? = null
 
-    fun publishMessage(producerId: Long, sequenceId: Long, payload: ByteBuf) {
+    fun publishMessage(payload: ByteBuf) {
         topic.publishMessage(payload, object : Topic.PublishCallback {
 
             override fun onCompleted(ledgerId: Long, entryId: Long) {

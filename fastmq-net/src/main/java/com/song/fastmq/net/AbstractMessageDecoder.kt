@@ -23,9 +23,7 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
         var command: Command? = null
         var builder: Command.Builder? = null
         try {
-//            val cmdSize = buffer.readInt()
             val writerIndex = buffer.writerIndex()
-//            buffer.writerIndex(buffer.readerIndex() + cmdSize)
             builder = Command.newBuilder()
             command = builder!!.mergeFrom(CodedInputStream.newInstance(buffer.nioBuffer())).build()
             buffer.writerIndex(writerIndex)

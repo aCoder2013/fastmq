@@ -12,13 +12,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommonPool {
 
-    private static final ThreadPoolExecutor COMMON_POOL = new ThreadPoolExecutor(Utils.AVAILABLE_PROCESSORS, Utils.AVAILABLE_PROCESSORS * 4,
-        120L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new SimpleThreadFactory("common-pool"));
+    private static final ThreadPoolExecutor COMMON_POOL = new ThreadPoolExecutor(
+        Utils.INSTANCE.getAVAILABLE_PROCESSORS(), Utils.INSTANCE.getAVAILABLE_PROCESSORS() * 4,
+        120L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+        new SimpleThreadFactory("common-pool"));
 
     public static void executeBlocking(Runnable runnable) {
         COMMON_POOL.execute(new SafeRunnable() {
 
-            @Override public void safeRun() {
+            @Override
+            public void safeRun() {
                 runnable.run();
             }
         });
