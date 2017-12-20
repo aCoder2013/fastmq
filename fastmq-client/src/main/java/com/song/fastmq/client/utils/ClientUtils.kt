@@ -2,14 +2,23 @@ package com.song.fastmq.client.utils
 
 import com.google.protobuf.ByteString
 import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.storage.common.utils.Utils
 import io.openmessaging.BytesMessage
+import io.openmessaging.KeyValue
+import io.openmessaging.OMS
 import java.util.function.Consumer
 
 /**
  * @author song
  */
-object MsgUtils {
+object ClientUtils {
 
+    fun buildInstanceName(): String {
+        val localAddress = Utils.getLocalAddress()
+        localAddress.let {
+            return it + "@" + Utils.getPid()
+        }
+    }
 
     /**
      * Convert OMS message into protocol-buffers message
@@ -22,9 +31,18 @@ object MsgUtils {
         message.properties().keySet().forEach(Consumer {
             builder.putProperties(it, message.headers().getString(it))
         })
-
         builder.body = ByteString.copyFrom(message.body)
         return builder.build()
+    }
+
+    fun buildKeyValue(vararg keyValues: KeyValue): KeyValue {
+        val keyValue = OMS.newKeyValue()
+        for (properties in keyValues) {
+            for (key in properties.keySet()) {
+                keyValue.put(key, properties.getString(key))
+            }
+        }
+        return keyValue
     }
 
 }

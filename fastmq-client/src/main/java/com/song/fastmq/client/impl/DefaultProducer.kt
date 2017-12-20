@@ -1,13 +1,26 @@
 package com.song.fastmq.client.impl
 
 import com.song.fastmq.client.BytesMessageImpl
+import com.song.fastmq.client.ErrorCode
+import com.song.fastmq.client.utils.ClientUtils
+import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.storage.common.utils.Utils
+import io.netty.buffer.Unpooled
 import io.openmessaging.*
+import io.openmessaging.exception.OMSException
 import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 
 /**
  * @author song
  */
 class DefaultProducer(private val properties: KeyValue) : Producer {
+
+    private var name: String? = null
+
+    private var topic: String? = null
+
+    private val bootstrapServers = ArrayList<String>()
 
     private var state = AtomicReference<State>(State.NONE)
 
@@ -15,12 +28,35 @@ class DefaultProducer(private val properties: KeyValue) : Producer {
 
     private val cnxPool: RemotingConnectionPool = RemotingConnectionPool()
 
+    @Throws(Exception::class)
     override fun startup() {
-        state.compareAndSet(State.NONE, State.CONNECTED)
+        if (state.compareAndSet(State.NONE, State.CONNECTING)) {
+            name = this.properties.getString(PropertyKeys.PRODUCER_ID)
+            topic = this.properties.getString(PropertyKeys.SRC_TOPIC)
+            if (name.isNullOrBlank()) {
+                name = ClientUtils.buildInstanceName()
+            }
+            val accessPoints = this.properties.getString(PropertyKeys.ACCESS_POINTS)
+            accessPoints.split(SEPARATOR).forEach(Consumer {
+                bootstrapServers.add(it)
+            })
+            val connectionFuture = cnxPool.getConnection(Utils.string2SocketAddress(bootstrapServers.get(0)))
+            this.clientCnx = connectionFuture.get()
+            this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
+        }
     }
 
+    @Throws(OMSException::class)
     override fun sendOneway(message: Message) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val producer = BrokerApi.CommandProducer.newBuilder().setProducerId(1L).setProducerName("Hello").setTopic(topic).setRequestId(1L)
+                .build()
+        val command = BrokerApi.Command.newBuilder().setProducer(producer).setType(BrokerApi.Command.Type.PRODUCER).build()
+        val toByteArray = command.toByteArray()
+        val byteBuf = Unpooled.buffer(4 + toByteArray.size)
+        val size = toByteArray.size
+        byteBuf.writeInt(size)
+        byteBuf.writeBytes(toByteArray)
+        clientCnx?.ctx?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
     }
 
     override fun sendOneway(message: Message, properties: KeyValue) {
@@ -66,5 +102,9 @@ class DefaultProducer(private val properties: KeyValue) : Producer {
         NONE,
         CONNECTING,
         CONNECTED
+    }
+
+    companion object {
+        private val SEPARATOR = ";"
     }
 }
