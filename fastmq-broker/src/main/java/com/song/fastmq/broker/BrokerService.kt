@@ -79,7 +79,7 @@ class BrokerService(val port: Int = 7164) : Closeable {
 
         bootstrap.childHandler(BrokerChannelInitializer())
         bootstrap.bind(port).sync()
-        logger.info("Started FastMQ Broker service on port {}.", port)
+        logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
     }
 
     override fun close() {
