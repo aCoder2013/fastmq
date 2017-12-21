@@ -4,6 +4,11 @@ import com.google.common.base.Preconditions.checkArgument
 import com.song.fastmq.broker.core.persistent.PersistentTopic
 import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.storage.storage.BkLedgerStorage
+import com.song.fastmq.storage.storage.LogManager
+import com.song.fastmq.storage.storage.Version
+import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks
+import com.song.fastmq.storage.storage.support.LedgerStorageException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
@@ -15,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * @author song
  */
-class ServerCnxClient : AbstractHandler() {
+class ServerCnxClient(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
 
     private var state = State.NONE
 
@@ -75,7 +80,18 @@ class ServerCnxClient : AbstractHandler() {
             }
         }
         logger.info("[{}][{}] Try to create producer with id [{}]", remoteAddress, topicName, producerId)
-        val producer = Producer(PersistentTopic(), this, producerName, producerId)
+        val future = CompletableFuture<Producer>()
+        bkLedgerStorage.asyncOpen(topicName, object : AsyncCallbacks.CommonCallback<LogManager, LedgerStorageException> {
+            override fun onCompleted(data: LogManager, version: Version) {
+                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnxClient, producerName, producerId)
+                future.complete(producer)
+            }
+
+            override fun onThrowable(throwable: LedgerStorageException) {
+                future.completeExceptionally(throwable)
+            }
+        })
+        this.producers.putIfAbsent(producerId, future)
         val producerSuccess = BrokerApi.CommandProducerSuccess.newBuilder()
                 .setProducerName(UUID.randomUUID().toString().replace("-", ""))
                 .setRequestId(0L).build()

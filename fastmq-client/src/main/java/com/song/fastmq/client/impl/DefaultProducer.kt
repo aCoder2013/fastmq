@@ -42,21 +42,22 @@ class DefaultProducer(private val properties: KeyValue) : Producer {
             })
             val connectionFuture = cnxPool.getConnection(Utils.string2SocketAddress(bootstrapServers.get(0)))
             this.clientCnx = connectionFuture.get()
+            val producer = BrokerApi.CommandProducer.newBuilder().setProducerId(1L).setProducerName("Hello").setTopic(topic).setRequestId(1L)
+                    .build()
+            val command = BrokerApi.Command.newBuilder().setProducer(producer).setType(BrokerApi.Command.Type.PRODUCER).build()
+            val toByteArray = command.toByteArray()
+            val byteBuf = Unpooled.buffer(4 + toByteArray.size)
+            val size = toByteArray.size
+            byteBuf.writeInt(size)
+            byteBuf.writeBytes(toByteArray)
+            clientCnx?.ctx?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
             this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
         }
     }
 
     @Throws(OMSException::class)
     override fun sendOneway(message: Message) {
-        val producer = BrokerApi.CommandProducer.newBuilder().setProducerId(1L).setProducerName("Hello").setTopic(topic).setRequestId(1L)
-                .build()
-        val command = BrokerApi.Command.newBuilder().setProducer(producer).setType(BrokerApi.Command.Type.PRODUCER).build()
-        val toByteArray = command.toByteArray()
-        val byteBuf = Unpooled.buffer(4 + toByteArray.size)
-        val size = toByteArray.size
-        byteBuf.writeInt(size)
-        byteBuf.writeBytes(toByteArray)
-        clientCnx?.ctx?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
+
     }
 
     override fun sendOneway(message: Message, properties: KeyValue) {

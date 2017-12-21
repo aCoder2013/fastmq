@@ -1,13 +1,14 @@
 package com.song.fastmq.broker.core.persistent
 
 import com.song.fastmq.broker.core.Topic
+import com.song.fastmq.storage.storage.LogManager
 import io.netty.buffer.ByteBuf
 import java.util.concurrent.CompletableFuture
 
 /**
  * @author song
  */
-class PersistentTopic : Topic {
+class PersistentTopic(topic: String, logManager: LogManager) : Topic {
 
     override fun getName(): String {
         return ""

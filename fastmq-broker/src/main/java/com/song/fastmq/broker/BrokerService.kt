@@ -77,7 +77,7 @@ class BrokerService(val port: Int = 7164) : Closeable {
             bootstrap.channel(NioServerSocketChannel::class.java)
         }
 
-        bootstrap.childHandler(BrokerChannelInitializer())
+        bootstrap.childHandler(BrokerChannelInitializer(bkLedgerStorage))
         bootstrap.bind(port).sync()
         logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
     }
