@@ -12,6 +12,9 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
+import io.netty.handler.codec.LengthFieldPrepender
+import io.netty.handler.logging.LogLevel
+import io.netty.handler.logging.LoggingHandler
 import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
@@ -51,7 +54,9 @@ class RemotingConnectionPool : Closeable {
 
             @Throws(Exception::class)
             public override fun initChannel(ch: SocketChannel) {
-                ch.pipeline().addLast("frameDecoder", LengthFieldBasedFrameDecoder(MaxMessageSize, 0, 4, 0, 4))
+                ch.pipeline().addLast(LoggingHandler(LogLevel.INFO))
+                ch.pipeline().addLast(LengthFieldPrepender(4))
+                ch.pipeline().addLast(LengthFieldBasedFrameDecoder(MaxMessageSize, 0, 4, 0, 4))
                 ch.pipeline().addLast("handler", ClientCnxHandler())
             }
         })

@@ -13,6 +13,7 @@ import io.openmessaging.fastmq.exception.ErrorCode
 import io.openmessaging.fastmq.exception.FastMqClientException
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
@@ -32,6 +33,8 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     private var state = AtomicReference<State>(State.NONE)
 
     private var cnxClient: Channel? = null
+
+    private val requestIdGenerator = AtomicLong()
 
     init {
         if (this.properties.containsKey(FastMQConfigKeys.PRODUCER_NAME)) {
@@ -74,13 +77,19 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     }
 
     private fun registerProducer() {
-        val producer = BrokerApi.CommandProducer.newBuilder().setProducerId(1L).setProducerName(name).setTopic(topic).setRequestId(1L)
+        val producer = BrokerApi.CommandProducer
+                .newBuilder()
+                .setProducerId(this.producerId)
+                .setProducerName(name)
+                .setTopic(topic)
+                .setRequestId(requestIdGenerator.incrementAndGet())
                 .build()
         val command = BrokerApi.Command.newBuilder().setProducer(producer).setType(BrokerApi.Command.Type.PRODUCER).build()
         val toByteArray = command.toByteArray()
-        val byteBuf = Unpooled.buffer(4 + toByteArray.size)
-        val size = toByteArray.size
-        byteBuf.writeInt(size)
+//        val byteBuf = Unpooled.buffer(4 + toByteArray.size)
+        val byteBuf = Unpooled.buffer(toByteArray.size)
+//        val size = toByteArray.size
+//        byteBuf.writeInt(size)
         byteBuf.writeBytes(toByteArray)
         cnxClient?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
     }

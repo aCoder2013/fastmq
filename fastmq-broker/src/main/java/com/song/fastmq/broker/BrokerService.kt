@@ -8,6 +8,7 @@ import com.song.fastmq.storage.storage.impl.BkLedgerStorageImpl
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.AdaptiveRecvByteBufAllocator
+import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
 import io.netty.channel.epoll.EpollChannelOption
@@ -15,7 +16,10 @@ import io.netty.channel.epoll.EpollEventLoopGroup
 import io.netty.channel.epoll.EpollMode
 import io.netty.channel.epoll.EpollServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.logging.LogLevel
+import io.netty.handler.logging.LoggingHandler
 import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.commons.lang.SystemUtils
@@ -64,12 +68,12 @@ class BrokerService(val port: Int = 7164) : Closeable {
     @Throws(Exception::class)
     fun start() {
         val bootstrap = ServerBootstrap()
-        bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
         bootstrap.group(acceptorGroup, workerGroup)
-        bootstrap.childOption(ChannelOption.TCP_NODELAY, true)
-        bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
-
+                .option(ChannelOption.SO_BACKLOG, 1024)
+                .option(ChannelOption.SO_REUSEADDR, true)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childOption(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
         if (workerGroup is EpollEventLoopGroup) {
             bootstrap.channel(EpollServerSocketChannel::class.java)
             bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
@@ -77,7 +81,14 @@ class BrokerService(val port: Int = 7164) : Closeable {
             bootstrap.channel(NioServerSocketChannel::class.java)
         }
 
-        bootstrap.childHandler(BrokerChannelInitializer(bkLedgerStorage))
+        bootstrap.childHandler(object : ChannelInitializer<SocketChannel>() {
+
+            override fun initChannel(ch: SocketChannel) {
+                ch.pipeline()
+                        .addLast(LoggingHandler(LogLevel.INFO))
+                        .addLast(BrokerChannelInitializer(bkLedgerStorage))
+            }
+        })
         bootstrap.bind(port).sync()
         logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
     }
