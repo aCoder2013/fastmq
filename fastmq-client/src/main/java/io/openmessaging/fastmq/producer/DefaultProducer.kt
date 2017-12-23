@@ -2,18 +2,20 @@ package io.openmessaging.fastmq.producer
 
 import com.google.common.base.Preconditions.checkArgument
 import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.net.proto.Commands
+import com.song.fastmq.storage.common.domain.FastMQConfigKeys
 import com.song.fastmq.storage.common.utils.Utils
 import io.netty.buffer.Unpooled
 import io.netty.channel.Channel
 import io.openmessaging.*
 import io.openmessaging.exception.OMSException
-import io.openmessaging.fastmq.FastMQConfigKeys
 import io.openmessaging.fastmq.domain.BytesMessageImpl
 import io.openmessaging.fastmq.exception.ErrorCode
 import io.openmessaging.fastmq.exception.FastMqClientException
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
@@ -35,6 +37,9 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     private var cnxClient: Channel? = null
 
     private val requestIdGenerator = AtomicLong()
+
+    @Volatile
+    private var msgIdGenerator = 0L
 
     init {
         if (this.properties.containsKey(FastMQConfigKeys.PRODUCER_NAME)) {
@@ -86,17 +91,17 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
                 .build()
         val command = BrokerApi.Command.newBuilder().setProducer(producer).setType(BrokerApi.Command.Type.PRODUCER).build()
         val toByteArray = command.toByteArray()
-//        val byteBuf = Unpooled.buffer(4 + toByteArray.size)
         val byteBuf = Unpooled.buffer(toByteArray.size)
-//        val size = toByteArray.size
-//        byteBuf.writeInt(size)
         byteBuf.writeBytes(toByteArray)
         cnxClient?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
     }
 
     @Throws(OMSException::class)
     override fun sendOneway(message: Message) {
-
+        message.putHeaders(FastMQConfigKeys.PRODUCER_ID, producerId)
+        message.putHeaders(FastMQConfigKeys.SEQUENCE_ID, msgIdGeneratorUpdater.incrementAndGet(this))
+        val msg = ClientUtils.msgConvert(message as BytesMessage)
+        cnxClient?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSend(msg).toByteArray()))
     }
 
     override fun sendOneway(message: Message, properties: KeyValue) {
@@ -146,5 +151,8 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
 
     companion object {
         private val SEPARATOR = ";"
+
+        private val msgIdGeneratorUpdater = AtomicLongFieldUpdater.newUpdater(DefaultProducer::class.java, "msgIdGenerator")
+
     }
 }

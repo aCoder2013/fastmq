@@ -36,8 +36,8 @@ object ClientUtils {
     /**
      * Convert OMS message into protocol-buffers message
      */
-    fun msgConvert(message: BytesMessage): BrokerApi.Message {
-        val builder = BrokerApi.Message.newBuilder()
+    fun msgConvert(message: BytesMessage): BrokerApi.CommandSend {
+        val builder = BrokerApi.CommandSend.newBuilder()
         message.headers().keySet().forEach(Consumer {
             builder.putHeaders(it, message.headers().getString(it))
         })

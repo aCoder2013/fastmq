@@ -57,7 +57,7 @@ class RemotingConnectionPool : Closeable {
                 ch.pipeline().addLast(LoggingHandler(LogLevel.INFO))
                 ch.pipeline().addLast(LengthFieldPrepender(4))
                 ch.pipeline().addLast(LengthFieldBasedFrameDecoder(MaxMessageSize, 0, 4, 0, 4))
-                ch.pipeline().addLast("handler", ClientCnxHandler())
+                ch.pipeline().addLast("handler", ClientCnx())
             }
         })
     }

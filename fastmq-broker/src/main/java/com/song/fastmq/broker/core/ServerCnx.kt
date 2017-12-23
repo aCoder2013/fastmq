@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions.checkArgument
 import com.song.fastmq.broker.core.persistent.PersistentTopic
 import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.storage.common.domain.FastMQConfigKeys
 import com.song.fastmq.storage.storage.BkLedgerStorage
 import com.song.fastmq.storage.storage.LogManager
 import com.song.fastmq.storage.storage.Version
@@ -16,11 +17,14 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.function.Consumer
 
 /**
  * @author song
  */
-class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
+class ServerCnx(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
 
     private var state = State.NONE
 
@@ -44,6 +48,16 @@ class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler()
 
     override fun channelInactive(ctx: ChannelHandlerContext) {
         super.channelInactive(ctx)
+        producers.values.forEach(Consumer {
+            try {
+                if (it.isDone && !it.isCompletedExceptionally) {
+                    val producer = it.getNow(null)
+                    producer.close()
+                }
+            } catch (e: Exception) {
+                logger.error("Close producer failed,maybe already closed", e)
+            }
+        })
     }
 
     override fun channelWritabilityChanged(ctx: ChannelHandlerContext?) {
@@ -69,7 +83,7 @@ class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler()
         val requestId = commandProducer.requestId
 
         val producerFuture = CompletableFuture<Producer>()
-        val existingProducerFuture = producers.putIfAbsent(producerId, producerFuture)
+        val existingProducerFuture = producers.get(producerId)
         if (existingProducerFuture != null) {
             if (existingProducerFuture.isDone && !existingProducerFuture.isCompletedExceptionally) {
                 val producer = existingProducerFuture.getNow(null)
@@ -83,12 +97,13 @@ class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler()
         val future = CompletableFuture<Producer>()
         bkLedgerStorage.asyncOpen(topicName, object : AsyncCallbacks.CommonCallback<LogManager, LedgerStorageException> {
             override fun onCompleted(data: LogManager, version: Version) {
-                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnxHandler, producerName, producerId)
+                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnx, producerName, producerId)
                 future.complete(producer)
             }
 
             override fun onThrowable(throwable: LedgerStorageException) {
                 future.completeExceptionally(throwable)
+                throwable.printStackTrace()
             }
         })
         this.producers.putIfAbsent(producerId, future)
@@ -96,16 +111,33 @@ class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler()
                 .setProducerName(UUID.randomUUID().toString().replace("-", ""))
                 .setRequestId(0L).build()
         val command = BrokerApi.Command.newBuilder().setProducerSuccess(producerSuccess).setType(BrokerApi.Command.Type.PRODUCER_SUCCESS).build()
-        val body = command.toByteArray()
-        val byteBuf = Unpooled.buffer(4 + body.size)
-        byteBuf.writeInt(body.size)
-        byteBuf.writeBytes(body)
-        ctx?.channel()?.writeAndFlush(byteBuf)
+        ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+    }
+
+    override fun handleSend(commandSend: BrokerApi.CommandSend) {
+        if (commandSend.headersMap[FastMQConfigKeys.PRODUCER_ID].isNullOrBlank()
+                || commandSend.headersMap[FastMQConfigKeys.SEQUENCE_ID].isNullOrBlank()) {
+            logger.warn("Ignore invalid message ,{}", commandSend.toString())
+            return
+        }
+        val producerId = commandSend.headersMap[FastMQConfigKeys.PRODUCER_ID]!!.toLong()
+        val sequenceId = commandSend.headersMap[FastMQConfigKeys.SEQUENCE_ID]!!.toLong()
+        val producerFuture = this.producers[producerId]
+        if (producerFuture == null || producerFuture.isCompletedExceptionally) {
+            logger.warn("[{}] Producer had already been closed: {},cause :{}", remoteAddress, producerId)
+            return
+        }
+        try {
+            val producer = producerFuture.get(3, TimeUnit.SECONDS)
+            producer.publishMessage(producerId, sequenceId, Unpooled.wrappedBuffer(commandSend.body.toByteArray()))
+        } catch(e: TimeoutException) {
+            logger.info("[{}] Create producer timeout after 3S,{}", remoteAddress, producerId)
+        }
     }
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(ServerCnxHandler::class.java)
+        private val logger = LoggerFactory.getLogger(ServerCnx::class.java)
 
     }
 }

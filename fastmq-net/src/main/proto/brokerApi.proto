@@ -4,60 +4,99 @@ package com.song.fastmq.broker.net;
 option java_package = "com.song.fastmq.net.proto";
 option optimize_for = LITE_RUNTIME;
 
-message Message {
-  map<string, string> headers = 1;
-  map<string, string> properties = 2;
-  bytes body = 3;
+
+message MessageIdData {
+    uint64 ledgerId = 1;
+    uint64 entryId = 2;
 }
 
 /// Create a new Producer on a topic, assigning the given producer_id,
 /// all messages sent with this producer_id will be persisted on the topic
 message CommandProducer {
-  string topic = 1;
-  uint64 producer_id = 2;
-  uint64 request_id = 3;
+    string topic = 1;
+    uint64 producer_id = 2;
+    uint64 request_id = 3;
 
-  /// If a producer name is specified, the name will be used,
-  /// otherwise the broker will generate a unique name
-  string producer_name = 4;
+    /// If a producer name is specified, the name will be used,
+    /// otherwise the broker will generate a unique name
+    string producer_name = 4;
 }
 
 /// Response from CommandProducer
 message CommandProducerSuccess {
-  uint64 request_id = 1;
-  string producer_name = 2;
+    uint64 request_id = 1;
+    string producer_name = 2;
+}
+
+message CommandSend {
+    map<string, string> headers = 1;
+    map<string, string> properties = 2;
+    bytes body = 3;
+}
+
+message CommandSendReceipt {
+    uint64 producer_id = 1;
+    uint64 sequence_id = 2;
+    MessageIdData message_id = 3;
+}
+
+message CommandSendError {
+    uint64 producer_id = 1;
+    uint64 sequence_id = 2;
+    ServerError error = 3;
+    string message = 4;
 }
 
 message Command {
-  enum Type {
-    CONNECT = 0;
-    CONNECTED = 1;
-    SUBSCRIBE = 2;
+    enum Type {
+        CONNECT = 0;
+        CONNECTED = 1;
+        SUBSCRIBE = 2;
 
-    PRODUCER = 3;
+        PRODUCER = 3;
 
-    SEND = 4;
-    SEND_RECEIPT = 5;
-    SEND_ERROR = 6;
+        SEND = 4;
+        SEND_RECEIPT = 5;
+        SEND_ERROR = 6;
 
-    MESSAGE = 7;
-    ACK = 8;
-    FLOW = 9;
+        MESSAGE = 7;
+        ACK = 8;
+        FLOW = 9;
 
-    UNSUBSCRIBE = 10;
+        UNSUBSCRIBE = 10;
 
-    SUCCESS = 11;
-    ERROR = 12;
+        SUCCESS = 11;
+        ERROR = 12;
 
-    CLOSE_PRODUCER = 13;
-    CLOSE_CONSUMER = 14;
+        CLOSE_PRODUCER = 13;
+        CLOSE_CONSUMER = 14;
 
-    PRODUCER_SUCCESS = 15;
-  }
+        PRODUCER_SUCCESS = 15;
+    }
 
-  Type type = 1;
+    Type type = 1;
 
-  CommandProducer producer = 2;
+    CommandProducer producer = 2;
 
-  CommandProducerSuccess producerSuccess = 3;
+    CommandProducerSuccess producerSuccess = 3;
+
+    CommandSend send = 4;
+
+    CommandSendReceipt send_receipt = 5;
+
+    CommandSendError send_error = 6;
+}
+
+enum ServerError {
+    UnknownError = 0;
+    MetadataError = 1; // Error with ZK/metadata
+    PersistenceError = 2; // Error writing reading from BK
+    AuthenticationError = 3; // Non valid authentication
+    AuthorizationError = 4; // Not authorized to use resource
+
+    ConsumerBusy = 5; // Unable to subscribe/unsubscribe because
+    // other consumers are connected
+    ServiceNotReady = 6; // Any error that requires client retry operation with a fresh lookup
+    ProducerBlockedQuotaExceededError = 7; // Unable to create producer because backlog quota exceeded
+    ProducerBlockedQuotaExceededException = 8; // Exception while creating producer because quota exceeded
 }

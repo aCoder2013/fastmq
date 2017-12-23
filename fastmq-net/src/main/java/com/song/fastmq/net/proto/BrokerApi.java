@@ -8,309 +8,281 @@ public final class BrokerApi {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistryLite registry) {
   }
-  public interface MessageOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.Message)
+  /**
+   * Protobuf enum {@code com.song.fastmq.broker.net.ServerError}
+   */
+  public enum ServerError
+      implements com.google.protobuf.Internal.EnumLite {
+    /**
+     * <code>UnknownError = 0;</code>
+     */
+    UnknownError(0),
+    /**
+     * <pre>
+     * Error with ZK/metadata
+     * </pre>
+     *
+     * <code>MetadataError = 1;</code>
+     */
+    MetadataError(1),
+    /**
+     * <pre>
+     * Error writing reading from BK
+     * </pre>
+     *
+     * <code>PersistenceError = 2;</code>
+     */
+    PersistenceError(2),
+    /**
+     * <pre>
+     * Non valid authentication
+     * </pre>
+     *
+     * <code>AuthenticationError = 3;</code>
+     */
+    AuthenticationError(3),
+    /**
+     * <pre>
+     * Not authorized to use resource
+     * </pre>
+     *
+     * <code>AuthorizationError = 4;</code>
+     */
+    AuthorizationError(4),
+    /**
+     * <pre>
+     * Unable to subscribe/unsubscribe because
+     * </pre>
+     *
+     * <code>ConsumerBusy = 5;</code>
+     */
+    ConsumerBusy(5),
+    /**
+     * <pre>
+     * other consumers are connected
+     * </pre>
+     *
+     * <code>ServiceNotReady = 6;</code>
+     */
+    ServiceNotReady(6),
+    /**
+     * <pre>
+     * Unable to create producer because backlog quota exceeded
+     * </pre>
+     *
+     * <code>ProducerBlockedQuotaExceededError = 7;</code>
+     */
+    ProducerBlockedQuotaExceededError(7),
+    /**
+     * <pre>
+     * Exception while creating producer because quota exceeded
+     * </pre>
+     *
+     * <code>ProducerBlockedQuotaExceededException = 8;</code>
+     */
+    ProducerBlockedQuotaExceededException(8),
+    UNRECOGNIZED(-1),
+    ;
+
+    /**
+     * <code>UnknownError = 0;</code>
+     */
+    public static final int UnknownError_VALUE = 0;
+    /**
+     * <pre>
+     * Error with ZK/metadata
+     * </pre>
+     *
+     * <code>MetadataError = 1;</code>
+     */
+    public static final int MetadataError_VALUE = 1;
+    /**
+     * <pre>
+     * Error writing reading from BK
+     * </pre>
+     *
+     * <code>PersistenceError = 2;</code>
+     */
+    public static final int PersistenceError_VALUE = 2;
+    /**
+     * <pre>
+     * Non valid authentication
+     * </pre>
+     *
+     * <code>AuthenticationError = 3;</code>
+     */
+    public static final int AuthenticationError_VALUE = 3;
+    /**
+     * <pre>
+     * Not authorized to use resource
+     * </pre>
+     *
+     * <code>AuthorizationError = 4;</code>
+     */
+    public static final int AuthorizationError_VALUE = 4;
+    /**
+     * <pre>
+     * Unable to subscribe/unsubscribe because
+     * </pre>
+     *
+     * <code>ConsumerBusy = 5;</code>
+     */
+    public static final int ConsumerBusy_VALUE = 5;
+    /**
+     * <pre>
+     * other consumers are connected
+     * </pre>
+     *
+     * <code>ServiceNotReady = 6;</code>
+     */
+    public static final int ServiceNotReady_VALUE = 6;
+    /**
+     * <pre>
+     * Unable to create producer because backlog quota exceeded
+     * </pre>
+     *
+     * <code>ProducerBlockedQuotaExceededError = 7;</code>
+     */
+    public static final int ProducerBlockedQuotaExceededError_VALUE = 7;
+    /**
+     * <pre>
+     * Exception while creating producer because quota exceeded
+     * </pre>
+     *
+     * <code>ProducerBlockedQuotaExceededException = 8;</code>
+     */
+    public static final int ProducerBlockedQuotaExceededException_VALUE = 8;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static ServerError valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static ServerError forNumber(int value) {
+      switch (value) {
+        case 0: return UnknownError;
+        case 1: return MetadataError;
+        case 2: return PersistenceError;
+        case 3: return AuthenticationError;
+        case 4: return AuthorizationError;
+        case 5: return ConsumerBusy;
+        case 6: return ServiceNotReady;
+        case 7: return ProducerBlockedQuotaExceededError;
+        case 8: return ProducerBlockedQuotaExceededException;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<ServerError>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        ServerError> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<ServerError>() {
+            public ServerError findValueByNumber(int number) {
+              return ServerError.forNumber(number);
+            }
+          };
+
+    private final int value;
+
+    private ServerError(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:com.song.fastmq.broker.net.ServerError)
+  }
+
+  public interface MessageIdDataOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.MessageIdData)
       com.google.protobuf.MessageLiteOrBuilder {
 
     /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
+     * <code>uint64 ledgerId = 1;</code>
      */
-    int getHeadersCount();
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-    boolean containsHeaders(
-        java.lang.String key);
-    /**
-     * Use {@link #getHeadersMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getHeaders();
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-    java.util.Map<java.lang.String, java.lang.String>
-    getHeadersMap();
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-
-    java.lang.String getHeadersOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-
-    java.lang.String getHeadersOrThrow(
-        java.lang.String key);
+    long getLedgerId();
 
     /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
+     * <code>uint64 entryId = 2;</code>
      */
-    int getPropertiesCount();
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-    boolean containsProperties(
-        java.lang.String key);
-    /**
-     * Use {@link #getPropertiesMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, java.lang.String>
-    getProperties();
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-    java.util.Map<java.lang.String, java.lang.String>
-    getPropertiesMap();
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    java.lang.String getPropertiesOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue);
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    java.lang.String getPropertiesOrThrow(
-        java.lang.String key);
-
-    /**
-     * <code>bytes body = 3;</code>
-     */
-    com.google.protobuf.ByteString getBody();
+    long getEntryId();
   }
   /**
-   * Protobuf type {@code com.song.fastmq.broker.net.Message}
+   * Protobuf type {@code com.song.fastmq.broker.net.MessageIdData}
    */
-  public  static final class Message extends
+  public  static final class MessageIdData extends
       com.google.protobuf.GeneratedMessageLite<
-          Message, Message.Builder> implements
-      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.Message)
-      MessageOrBuilder {
-    private Message() {
-      body_ = com.google.protobuf.ByteString.EMPTY;
+          MessageIdData, MessageIdData.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.MessageIdData)
+      MessageIdDataOrBuilder {
+    private MessageIdData() {
     }
-    private int bitField0_;
-    public static final int HEADERS_FIELD_NUMBER = 1;
-    private static final class HeadersDefaultEntryHolder {
-      static final com.google.protobuf.MapEntryLite<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntryLite
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapFieldLite<
-        java.lang.String, java.lang.String> headers_ =
-            com.google.protobuf.MapFieldLite.emptyMapField();
-    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
-    internalGetHeaders() {
-      return headers_;
-    }
-    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
-    internalGetMutableHeaders() {
-      if (!headers_.isMutable()) {
-        headers_ = headers_.mutableCopy();
-      }
-      return headers_;
-    }
-
-    public int getHeadersCount() {
-      return internalGetHeaders().size();
+    public static final int LEDGERID_FIELD_NUMBER = 1;
+    private long ledgerId_;
+    /**
+     * <code>uint64 ledgerId = 1;</code>
+     */
+    public long getLedgerId() {
+      return ledgerId_;
     }
     /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
+     * <code>uint64 ledgerId = 1;</code>
      */
-
-    public boolean containsHeaders(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetHeaders().containsKey(key);
-    }
-    /**
-     * Use {@link #getHeadersMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getHeaders() {
-      return getHeadersMap();
-    }
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-
-    public java.util.Map<java.lang.String, java.lang.String> getHeadersMap() {
-      return java.util.Collections.unmodifiableMap(
-          internalGetHeaders());
-    }
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-
-    public java.lang.String getHeadersOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetHeaders();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-
-    public java.lang.String getHeadersOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetHeaders();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
-    }
-    /**
-     * <code>map&lt;string, string&gt; headers = 1;</code>
-     */
-    private java.util.Map<java.lang.String, java.lang.String>
-    getMutableHeadersMap() {
-      return internalGetMutableHeaders();
-    }
-
-    public static final int PROPERTIES_FIELD_NUMBER = 2;
-    private static final class PropertiesDefaultEntryHolder {
-      static final com.google.protobuf.MapEntryLite<
-          java.lang.String, java.lang.String> defaultEntry =
-              com.google.protobuf.MapEntryLite
-              .<java.lang.String, java.lang.String>newDefaultInstance(
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "");
-    }
-    private com.google.protobuf.MapFieldLite<
-        java.lang.String, java.lang.String> properties_ =
-            com.google.protobuf.MapFieldLite.emptyMapField();
-    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
-    internalGetProperties() {
-      return properties_;
-    }
-    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
-    internalGetMutableProperties() {
-      if (!properties_.isMutable()) {
-        properties_ = properties_.mutableCopy();
-      }
-      return properties_;
-    }
-
-    public int getPropertiesCount() {
-      return internalGetProperties().size();
-    }
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    public boolean containsProperties(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      return internalGetProperties().containsKey(key);
-    }
-    /**
-     * Use {@link #getPropertiesMap()} instead.
-     */
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, java.lang.String> getProperties() {
-      return getPropertiesMap();
-    }
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    public java.util.Map<java.lang.String, java.lang.String> getPropertiesMap() {
-      return java.util.Collections.unmodifiableMap(
-          internalGetProperties());
-    }
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    public java.lang.String getPropertiesOrDefault(
-        java.lang.String key,
-        java.lang.String defaultValue) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetProperties();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-
-    public java.lang.String getPropertiesOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new java.lang.NullPointerException(); }
-      java.util.Map<java.lang.String, java.lang.String> map =
-          internalGetProperties();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
-    }
-    /**
-     * <code>map&lt;string, string&gt; properties = 2;</code>
-     */
-    private java.util.Map<java.lang.String, java.lang.String>
-    getMutablePropertiesMap() {
-      return internalGetMutableProperties();
-    }
-
-    public static final int BODY_FIELD_NUMBER = 3;
-    private com.google.protobuf.ByteString body_;
-    /**
-     * <code>bytes body = 3;</code>
-     */
-    public com.google.protobuf.ByteString getBody() {
-      return body_;
-    }
-    /**
-     * <code>bytes body = 3;</code>
-     */
-    private void setBody(com.google.protobuf.ByteString value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  
-      body_ = value;
-    }
-    /**
-     * <code>bytes body = 3;</code>
-     */
-    private void clearBody() {
+    private void setLedgerId(long value) {
       
-      body_ = getDefaultInstance().getBody();
+      ledgerId_ = value;
+    }
+    /**
+     * <code>uint64 ledgerId = 1;</code>
+     */
+    private void clearLedgerId() {
+      
+      ledgerId_ = 0L;
+    }
+
+    public static final int ENTRYID_FIELD_NUMBER = 2;
+    private long entryId_;
+    /**
+     * <code>uint64 entryId = 2;</code>
+     */
+    public long getEntryId() {
+      return entryId_;
+    }
+    /**
+     * <code>uint64 entryId = 2;</code>
+     */
+    private void setEntryId(long value) {
+      
+      entryId_ = value;
+    }
+    /**
+     * <code>uint64 entryId = 2;</code>
+     */
+    private void clearEntryId() {
+      
+      entryId_ = 0L;
     }
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetHeaders().entrySet()) {
-        HeadersDefaultEntryHolder.defaultEntry.serializeTo(
-            output, 1, entry.getKey(), entry.getValue());
+      if (ledgerId_ != 0L) {
+        output.writeUInt64(1, ledgerId_);
       }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetProperties().entrySet()) {
-        PropertiesDefaultEntryHolder.defaultEntry.serializeTo(
-            output, 2, entry.getKey(), entry.getValue());
-      }
-      if (!body_.isEmpty()) {
-        output.writeBytes(3, body_);
+      if (entryId_ != 0L) {
+        output.writeUInt64(2, entryId_);
       }
       unknownFields.writeTo(output);
     }
@@ -320,92 +292,86 @@ public final class BrokerApi {
       if (size != -1) return size;
 
       size = 0;
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetHeaders().entrySet()) {
-        size += HeadersDefaultEntryHolder.defaultEntry.computeMessageSize(
-          1, entry.getKey(), entry.getValue());
-      }
-      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
-           : internalGetProperties().entrySet()) {
-        size += PropertiesDefaultEntryHolder.defaultEntry.computeMessageSize(
-          2, entry.getKey(), entry.getValue());
-      }
-      if (!body_.isEmpty()) {
+      if (ledgerId_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, body_);
+          .computeUInt64Size(1, ledgerId_);
+      }
+      if (entryId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(2, entryId_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
 
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data, extensionRegistry);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data, extensionRegistry);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(byte[] data)
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, data, extensionRegistry);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(java.io.InputStream input)
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, input);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, input, extensionRegistry);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseDelimitedFrom(java.io.InputStream input)
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return parseDelimitedFrom(DEFAULT_INSTANCE, input);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseDelimitedFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageLite.parseFrom(
           DEFAULT_INSTANCE, input);
     }
-    public static com.song.fastmq.net.proto.BrokerApi.Message parseFrom(
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -416,232 +382,71 @@ public final class BrokerApi {
     public static Builder newBuilder() {
       return (Builder) DEFAULT_INSTANCE.createBuilder();
     }
-    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.Message prototype) {
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.MessageIdData prototype) {
       return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
     }
 
     /**
-     * Protobuf type {@code com.song.fastmq.broker.net.Message}
+     * Protobuf type {@code com.song.fastmq.broker.net.MessageIdData}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageLite.Builder<
-          com.song.fastmq.net.proto.BrokerApi.Message, Builder> implements
-        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.Message)
-        com.song.fastmq.net.proto.BrokerApi.MessageOrBuilder {
-      // Construct using com.song.fastmq.net.proto.BrokerApi.Message.newBuilder()
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.MessageIdData)
+        com.song.fastmq.net.proto.BrokerApi.MessageIdDataOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.MessageIdData.newBuilder()
       private Builder() {
         super(DEFAULT_INSTANCE);
       }
 
 
-
-      public int getHeadersCount() {
-        return instance.getHeadersMap().size();
+      /**
+       * <code>uint64 ledgerId = 1;</code>
+       */
+      public long getLedgerId() {
+        return instance.getLedgerId();
       }
       /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
+       * <code>uint64 ledgerId = 1;</code>
        */
-
-      public boolean containsHeaders(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return instance.getHeadersMap().containsKey(key);
-      }
-
-      public Builder clearHeaders() {
+      public Builder setLedgerId(long value) {
         copyOnWrite();
-        instance.getMutableHeadersMap().clear();
+        instance.setLedgerId(value);
         return this;
       }
       /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
+       * <code>uint64 ledgerId = 1;</code>
        */
-
-      public Builder removeHeaders(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
+      public Builder clearLedgerId() {
         copyOnWrite();
-        instance.getMutableHeadersMap().remove(key);
-        return this;
-      }
-      /**
-       * Use {@link #getHeadersMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getHeaders() {
-        return getHeadersMap();
-      }
-      /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
-       */
-      public java.util.Map<java.lang.String, java.lang.String> getHeadersMap() {
-        return java.util.Collections.unmodifiableMap(
-            instance.getHeadersMap());
-      }
-      /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
-       */
-
-      public java.lang.String getHeadersOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            instance.getHeadersMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
-       */
-
-      public java.lang.String getHeadersOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            instance.getHeadersMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
-        }
-        return map.get(key);
-      }
-      /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
-       */
-      public Builder putHeaders(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        copyOnWrite();
-        instance.getMutableHeadersMap().put(key, value);
-        return this;
-      }
-      /**
-       * <code>map&lt;string, string&gt; headers = 1;</code>
-       */
-      public Builder putAllHeaders(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        copyOnWrite();
-        instance.getMutableHeadersMap().putAll(values);
-        return this;
-      }
-
-
-      public int getPropertiesCount() {
-        return instance.getPropertiesMap().size();
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-
-      public boolean containsProperties(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        return instance.getPropertiesMap().containsKey(key);
-      }
-
-      public Builder clearProperties() {
-        copyOnWrite();
-        instance.getMutablePropertiesMap().clear();
-        return this;
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-
-      public Builder removeProperties(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        copyOnWrite();
-        instance.getMutablePropertiesMap().remove(key);
-        return this;
-      }
-      /**
-       * Use {@link #getPropertiesMap()} instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, java.lang.String> getProperties() {
-        return getPropertiesMap();
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-      public java.util.Map<java.lang.String, java.lang.String> getPropertiesMap() {
-        return java.util.Collections.unmodifiableMap(
-            instance.getPropertiesMap());
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-
-      public java.lang.String getPropertiesOrDefault(
-          java.lang.String key,
-          java.lang.String defaultValue) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            instance.getPropertiesMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-
-      public java.lang.String getPropertiesOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        java.util.Map<java.lang.String, java.lang.String> map =
-            instance.getPropertiesMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
-        }
-        return map.get(key);
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-      public Builder putProperties(
-          java.lang.String key,
-          java.lang.String value) {
-        if (key == null) { throw new java.lang.NullPointerException(); }
-        if (value == null) { throw new java.lang.NullPointerException(); }
-        copyOnWrite();
-        instance.getMutablePropertiesMap().put(key, value);
-        return this;
-      }
-      /**
-       * <code>map&lt;string, string&gt; properties = 2;</code>
-       */
-      public Builder putAllProperties(
-          java.util.Map<java.lang.String, java.lang.String> values) {
-        copyOnWrite();
-        instance.getMutablePropertiesMap().putAll(values);
+        instance.clearLedgerId();
         return this;
       }
 
       /**
-       * <code>bytes body = 3;</code>
+       * <code>uint64 entryId = 2;</code>
        */
-      public com.google.protobuf.ByteString getBody() {
-        return instance.getBody();
+      public long getEntryId() {
+        return instance.getEntryId();
       }
       /**
-       * <code>bytes body = 3;</code>
+       * <code>uint64 entryId = 2;</code>
        */
-      public Builder setBody(com.google.protobuf.ByteString value) {
+      public Builder setEntryId(long value) {
         copyOnWrite();
-        instance.setBody(value);
+        instance.setEntryId(value);
         return this;
       }
       /**
-       * <code>bytes body = 3;</code>
+       * <code>uint64 entryId = 2;</code>
        */
-      public Builder clearBody() {
+      public Builder clearEntryId() {
         copyOnWrite();
-        instance.clearBody();
+        instance.clearEntryId();
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.Message)
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.MessageIdData)
     }
     @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
     protected final java.lang.Object dynamicMethod(
@@ -649,14 +454,12 @@ public final class BrokerApi {
         java.lang.Object arg0, java.lang.Object arg1) {
       switch (method) {
         case NEW_MUTABLE_INSTANCE: {
-          return new com.song.fastmq.net.proto.BrokerApi.Message();
+          return new com.song.fastmq.net.proto.BrokerApi.MessageIdData();
         }
         case IS_INITIALIZED: {
           return DEFAULT_INSTANCE;
         }
         case MAKE_IMMUTABLE: {
-          headers_.makeImmutable();
-          properties_.makeImmutable();
           return null;
         }
         case NEW_BUILDER: {
@@ -664,16 +467,13 @@ public final class BrokerApi {
         }
         case VISIT: {
           Visitor visitor = (Visitor) arg0;
-          com.song.fastmq.net.proto.BrokerApi.Message other = (com.song.fastmq.net.proto.BrokerApi.Message) arg1;
-          headers_ = visitor.visitMap(
-              headers_, other.internalGetHeaders());
-          properties_ = visitor.visitMap(
-              properties_, other.internalGetProperties());
-          body_ = visitor.visitByteString(body_ != com.google.protobuf.ByteString.EMPTY, body_,
-              other.body_ != com.google.protobuf.ByteString.EMPTY, other.body_);
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData other = (com.song.fastmq.net.proto.BrokerApi.MessageIdData) arg1;
+          ledgerId_ = visitor.visitLong(ledgerId_ != 0L, ledgerId_,
+              other.ledgerId_ != 0L, other.ledgerId_);
+          entryId_ = visitor.visitLong(entryId_ != 0L, entryId_,
+              other.entryId_ != 0L, other.entryId_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
-            bitField0_ |= other.bitField0_;
           }
           return this;
         }
@@ -699,21 +499,14 @@ public final class BrokerApi {
                   }
                   break;
                 }
-                case 10: {
-                  if (!headers_.isMutable()) {
-                    headers_ = headers_.mutableCopy();
-                  }
-                  HeadersDefaultEntryHolder.defaultEntry.parseInto(headers_, input, extensionRegistry);  break;
-                }
-                case 18: {
-                  if (!properties_.isMutable()) {
-                    properties_ = properties_.mutableCopy();
-                  }
-                  PropertiesDefaultEntryHolder.defaultEntry.parseInto(properties_, input, extensionRegistry);  break;
-                }
-                case 26: {
+                case 8: {
 
-                  body_ = input.readBytes();
+                  ledgerId_ = input.readUInt64();
+                  break;
+                }
+                case 16: {
+
+                  entryId_ = input.readUInt64();
                   break;
                 }
               }
@@ -732,7 +525,7 @@ public final class BrokerApi {
           return DEFAULT_INSTANCE;
         }
         case GET_PARSER: {
-          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.Message.class) {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.MessageIdData.class) {
               if (PARSER == null) {
                 PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
               }
@@ -751,20 +544,20 @@ public final class BrokerApi {
     }
 
 
-    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.Message)
-    private static final com.song.fastmq.net.proto.BrokerApi.Message DEFAULT_INSTANCE;
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.MessageIdData)
+    private static final com.song.fastmq.net.proto.BrokerApi.MessageIdData DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new Message();
+      DEFAULT_INSTANCE = new MessageIdData();
       DEFAULT_INSTANCE.makeImmutable();
     }
 
-    public static com.song.fastmq.net.proto.BrokerApi.Message getDefaultInstance() {
+    public static com.song.fastmq.net.proto.BrokerApi.MessageIdData getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
-    private static volatile com.google.protobuf.Parser<Message> PARSER;
+    private static volatile com.google.protobuf.Parser<MessageIdData> PARSER;
 
-    public static com.google.protobuf.Parser<Message> parser() {
+    public static com.google.protobuf.Parser<MessageIdData> parser() {
       return DEFAULT_INSTANCE.getParserForType();
     }
   }
@@ -1830,6 +1623,1817 @@ public final class BrokerApi {
     }
   }
 
+  public interface CommandSendOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.CommandSend)
+      com.google.protobuf.MessageLiteOrBuilder {
+
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+    int getHeadersCount();
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+    boolean containsHeaders(
+        java.lang.String key);
+    /**
+     * Use {@link #getHeadersMap()} instead.
+     */
+    @java.lang.Deprecated
+    java.util.Map<java.lang.String, java.lang.String>
+    getHeaders();
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+    java.util.Map<java.lang.String, java.lang.String>
+    getHeadersMap();
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    java.lang.String getHeadersOrDefault(
+        java.lang.String key,
+        java.lang.String defaultValue);
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    java.lang.String getHeadersOrThrow(
+        java.lang.String key);
+
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+    int getPropertiesCount();
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+    boolean containsProperties(
+        java.lang.String key);
+    /**
+     * Use {@link #getPropertiesMap()} instead.
+     */
+    @java.lang.Deprecated
+    java.util.Map<java.lang.String, java.lang.String>
+    getProperties();
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+    java.util.Map<java.lang.String, java.lang.String>
+    getPropertiesMap();
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    java.lang.String getPropertiesOrDefault(
+        java.lang.String key,
+        java.lang.String defaultValue);
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    java.lang.String getPropertiesOrThrow(
+        java.lang.String key);
+
+    /**
+     * <code>bytes body = 3;</code>
+     */
+    com.google.protobuf.ByteString getBody();
+  }
+  /**
+   * Protobuf type {@code com.song.fastmq.broker.net.CommandSend}
+   */
+  public  static final class CommandSend extends
+      com.google.protobuf.GeneratedMessageLite<
+          CommandSend, CommandSend.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandSend)
+      CommandSendOrBuilder {
+    private CommandSend() {
+      body_ = com.google.protobuf.ByteString.EMPTY;
+    }
+    private int bitField0_;
+    public static final int HEADERS_FIELD_NUMBER = 1;
+    private static final class HeadersDefaultEntryHolder {
+      static final com.google.protobuf.MapEntryLite<
+          java.lang.String, java.lang.String> defaultEntry =
+              com.google.protobuf.MapEntryLite
+              .<java.lang.String, java.lang.String>newDefaultInstance(
+                  com.google.protobuf.WireFormat.FieldType.STRING,
+                  "",
+                  com.google.protobuf.WireFormat.FieldType.STRING,
+                  "");
+    }
+    private com.google.protobuf.MapFieldLite<
+        java.lang.String, java.lang.String> headers_ =
+            com.google.protobuf.MapFieldLite.emptyMapField();
+    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
+    internalGetHeaders() {
+      return headers_;
+    }
+    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
+    internalGetMutableHeaders() {
+      if (!headers_.isMutable()) {
+        headers_ = headers_.mutableCopy();
+      }
+      return headers_;
+    }
+
+    public int getHeadersCount() {
+      return internalGetHeaders().size();
+    }
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    public boolean containsHeaders(
+        java.lang.String key) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      return internalGetHeaders().containsKey(key);
+    }
+    /**
+     * Use {@link #getHeadersMap()} instead.
+     */
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String, java.lang.String> getHeaders() {
+      return getHeadersMap();
+    }
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    public java.util.Map<java.lang.String, java.lang.String> getHeadersMap() {
+      return java.util.Collections.unmodifiableMap(
+          internalGetHeaders());
+    }
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    public java.lang.String getHeadersOrDefault(
+        java.lang.String key,
+        java.lang.String defaultValue) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      java.util.Map<java.lang.String, java.lang.String> map =
+          internalGetHeaders();
+      return map.containsKey(key) ? map.get(key) : defaultValue;
+    }
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+
+    public java.lang.String getHeadersOrThrow(
+        java.lang.String key) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      java.util.Map<java.lang.String, java.lang.String> map =
+          internalGetHeaders();
+      if (!map.containsKey(key)) {
+        throw new java.lang.IllegalArgumentException();
+      }
+      return map.get(key);
+    }
+    /**
+     * <code>map&lt;string, string&gt; headers = 1;</code>
+     */
+    private java.util.Map<java.lang.String, java.lang.String>
+    getMutableHeadersMap() {
+      return internalGetMutableHeaders();
+    }
+
+    public static final int PROPERTIES_FIELD_NUMBER = 2;
+    private static final class PropertiesDefaultEntryHolder {
+      static final com.google.protobuf.MapEntryLite<
+          java.lang.String, java.lang.String> defaultEntry =
+              com.google.protobuf.MapEntryLite
+              .<java.lang.String, java.lang.String>newDefaultInstance(
+                  com.google.protobuf.WireFormat.FieldType.STRING,
+                  "",
+                  com.google.protobuf.WireFormat.FieldType.STRING,
+                  "");
+    }
+    private com.google.protobuf.MapFieldLite<
+        java.lang.String, java.lang.String> properties_ =
+            com.google.protobuf.MapFieldLite.emptyMapField();
+    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
+    internalGetProperties() {
+      return properties_;
+    }
+    private com.google.protobuf.MapFieldLite<java.lang.String, java.lang.String>
+    internalGetMutableProperties() {
+      if (!properties_.isMutable()) {
+        properties_ = properties_.mutableCopy();
+      }
+      return properties_;
+    }
+
+    public int getPropertiesCount() {
+      return internalGetProperties().size();
+    }
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    public boolean containsProperties(
+        java.lang.String key) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      return internalGetProperties().containsKey(key);
+    }
+    /**
+     * Use {@link #getPropertiesMap()} instead.
+     */
+    @java.lang.Deprecated
+    public java.util.Map<java.lang.String, java.lang.String> getProperties() {
+      return getPropertiesMap();
+    }
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    public java.util.Map<java.lang.String, java.lang.String> getPropertiesMap() {
+      return java.util.Collections.unmodifiableMap(
+          internalGetProperties());
+    }
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    public java.lang.String getPropertiesOrDefault(
+        java.lang.String key,
+        java.lang.String defaultValue) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      java.util.Map<java.lang.String, java.lang.String> map =
+          internalGetProperties();
+      return map.containsKey(key) ? map.get(key) : defaultValue;
+    }
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+
+    public java.lang.String getPropertiesOrThrow(
+        java.lang.String key) {
+      if (key == null) { throw new java.lang.NullPointerException(); }
+      java.util.Map<java.lang.String, java.lang.String> map =
+          internalGetProperties();
+      if (!map.containsKey(key)) {
+        throw new java.lang.IllegalArgumentException();
+      }
+      return map.get(key);
+    }
+    /**
+     * <code>map&lt;string, string&gt; properties = 2;</code>
+     */
+    private java.util.Map<java.lang.String, java.lang.String>
+    getMutablePropertiesMap() {
+      return internalGetMutableProperties();
+    }
+
+    public static final int BODY_FIELD_NUMBER = 3;
+    private com.google.protobuf.ByteString body_;
+    /**
+     * <code>bytes body = 3;</code>
+     */
+    public com.google.protobuf.ByteString getBody() {
+      return body_;
+    }
+    /**
+     * <code>bytes body = 3;</code>
+     */
+    private void setBody(com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      body_ = value;
+    }
+    /**
+     * <code>bytes body = 3;</code>
+     */
+    private void clearBody() {
+      
+      body_ = getDefaultInstance().getBody();
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
+           : internalGetHeaders().entrySet()) {
+        HeadersDefaultEntryHolder.defaultEntry.serializeTo(
+            output, 1, entry.getKey(), entry.getValue());
+      }
+      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
+           : internalGetProperties().entrySet()) {
+        PropertiesDefaultEntryHolder.defaultEntry.serializeTo(
+            output, 2, entry.getKey(), entry.getValue());
+      }
+      if (!body_.isEmpty()) {
+        output.writeBytes(3, body_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
+           : internalGetHeaders().entrySet()) {
+        size += HeadersDefaultEntryHolder.defaultEntry.computeMessageSize(
+          1, entry.getKey(), entry.getValue());
+      }
+      for (java.util.Map.Entry<java.lang.String, java.lang.String> entry
+           : internalGetProperties().entrySet()) {
+        size += PropertiesDefaultEntryHolder.defaultEntry.computeMessageSize(
+          2, entry.getKey(), entry.getValue());
+      }
+      if (!body_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, body_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
+    }
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.CommandSend prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
+
+    /**
+     * Protobuf type {@code com.song.fastmq.broker.net.CommandSend}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageLite.Builder<
+          com.song.fastmq.net.proto.BrokerApi.CommandSend, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.CommandSend)
+        com.song.fastmq.net.proto.BrokerApi.CommandSendOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.CommandSend.newBuilder()
+      private Builder() {
+        super(DEFAULT_INSTANCE);
+      }
+
+
+
+      public int getHeadersCount() {
+        return instance.getHeadersMap().size();
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+
+      public boolean containsHeaders(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        return instance.getHeadersMap().containsKey(key);
+      }
+
+      public Builder clearHeaders() {
+        copyOnWrite();
+        instance.getMutableHeadersMap().clear();
+        return this;
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+
+      public Builder removeHeaders(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        copyOnWrite();
+        instance.getMutableHeadersMap().remove(key);
+        return this;
+      }
+      /**
+       * Use {@link #getHeadersMap()} instead.
+       */
+      @java.lang.Deprecated
+      public java.util.Map<java.lang.String, java.lang.String> getHeaders() {
+        return getHeadersMap();
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+      public java.util.Map<java.lang.String, java.lang.String> getHeadersMap() {
+        return java.util.Collections.unmodifiableMap(
+            instance.getHeadersMap());
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+
+      public java.lang.String getHeadersOrDefault(
+          java.lang.String key,
+          java.lang.String defaultValue) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        java.util.Map<java.lang.String, java.lang.String> map =
+            instance.getHeadersMap();
+        return map.containsKey(key) ? map.get(key) : defaultValue;
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+
+      public java.lang.String getHeadersOrThrow(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        java.util.Map<java.lang.String, java.lang.String> map =
+            instance.getHeadersMap();
+        if (!map.containsKey(key)) {
+          throw new java.lang.IllegalArgumentException();
+        }
+        return map.get(key);
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+      public Builder putHeaders(
+          java.lang.String key,
+          java.lang.String value) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        if (value == null) { throw new java.lang.NullPointerException(); }
+        copyOnWrite();
+        instance.getMutableHeadersMap().put(key, value);
+        return this;
+      }
+      /**
+       * <code>map&lt;string, string&gt; headers = 1;</code>
+       */
+      public Builder putAllHeaders(
+          java.util.Map<java.lang.String, java.lang.String> values) {
+        copyOnWrite();
+        instance.getMutableHeadersMap().putAll(values);
+        return this;
+      }
+
+
+      public int getPropertiesCount() {
+        return instance.getPropertiesMap().size();
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+
+      public boolean containsProperties(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        return instance.getPropertiesMap().containsKey(key);
+      }
+
+      public Builder clearProperties() {
+        copyOnWrite();
+        instance.getMutablePropertiesMap().clear();
+        return this;
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+
+      public Builder removeProperties(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        copyOnWrite();
+        instance.getMutablePropertiesMap().remove(key);
+        return this;
+      }
+      /**
+       * Use {@link #getPropertiesMap()} instead.
+       */
+      @java.lang.Deprecated
+      public java.util.Map<java.lang.String, java.lang.String> getProperties() {
+        return getPropertiesMap();
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+      public java.util.Map<java.lang.String, java.lang.String> getPropertiesMap() {
+        return java.util.Collections.unmodifiableMap(
+            instance.getPropertiesMap());
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+
+      public java.lang.String getPropertiesOrDefault(
+          java.lang.String key,
+          java.lang.String defaultValue) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        java.util.Map<java.lang.String, java.lang.String> map =
+            instance.getPropertiesMap();
+        return map.containsKey(key) ? map.get(key) : defaultValue;
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+
+      public java.lang.String getPropertiesOrThrow(
+          java.lang.String key) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        java.util.Map<java.lang.String, java.lang.String> map =
+            instance.getPropertiesMap();
+        if (!map.containsKey(key)) {
+          throw new java.lang.IllegalArgumentException();
+        }
+        return map.get(key);
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+      public Builder putProperties(
+          java.lang.String key,
+          java.lang.String value) {
+        if (key == null) { throw new java.lang.NullPointerException(); }
+        if (value == null) { throw new java.lang.NullPointerException(); }
+        copyOnWrite();
+        instance.getMutablePropertiesMap().put(key, value);
+        return this;
+      }
+      /**
+       * <code>map&lt;string, string&gt; properties = 2;</code>
+       */
+      public Builder putAllProperties(
+          java.util.Map<java.lang.String, java.lang.String> values) {
+        copyOnWrite();
+        instance.getMutablePropertiesMap().putAll(values);
+        return this;
+      }
+
+      /**
+       * <code>bytes body = 3;</code>
+       */
+      public com.google.protobuf.ByteString getBody() {
+        return instance.getBody();
+      }
+      /**
+       * <code>bytes body = 3;</code>
+       */
+      public Builder setBody(com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setBody(value);
+        return this;
+      }
+      /**
+       * <code>bytes body = 3;</code>
+       */
+      public Builder clearBody() {
+        copyOnWrite();
+        instance.clearBody();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandSend)
+    }
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new com.song.fastmq.net.proto.BrokerApi.CommandSend();
+        }
+        case IS_INITIALIZED: {
+          return DEFAULT_INSTANCE;
+        }
+        case MAKE_IMMUTABLE: {
+          headers_.makeImmutable();
+          properties_.makeImmutable();
+          return null;
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          com.song.fastmq.net.proto.BrokerApi.CommandSend other = (com.song.fastmq.net.proto.BrokerApi.CommandSend) arg1;
+          headers_ = visitor.visitMap(
+              headers_, other.internalGetHeaders());
+          properties_ = visitor.visitMap(
+              properties_, other.internalGetProperties());
+          body_ = visitor.visitByteString(body_ != com.google.protobuf.ByteString.EMPTY, body_,
+              other.body_ != com.google.protobuf.ByteString.EMPTY, other.body_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+            bitField0_ |= other.bitField0_;
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+                case 10: {
+                  if (!headers_.isMutable()) {
+                    headers_ = headers_.mutableCopy();
+                  }
+                  HeadersDefaultEntryHolder.defaultEntry.parseInto(headers_, input, extensionRegistry);  break;
+                }
+                case 18: {
+                  if (!properties_.isMutable()) {
+                    properties_ = properties_.mutableCopy();
+                  }
+                  PropertiesDefaultEntryHolder.defaultEntry.parseInto(properties_, input, extensionRegistry);  break;
+                }
+                case 26: {
+
+                  body_ = input.readBytes();
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.CommandSend.class) {
+              if (PARSER == null) {
+                PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+              }
+            }
+          }
+          return PARSER;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return (byte) 1;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
+    }
+
+
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.CommandSend)
+    private static final com.song.fastmq.net.proto.BrokerApi.CommandSend DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new CommandSend();
+      DEFAULT_INSTANCE.makeImmutable();
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSend getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<CommandSend> PARSER;
+
+    public static com.google.protobuf.Parser<CommandSend> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
+  }
+
+  public interface CommandSendReceiptOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.CommandSendReceipt)
+      com.google.protobuf.MessageLiteOrBuilder {
+
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    long getProducerId();
+
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    long getSequenceId();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    boolean hasMessageId();
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId();
+  }
+  /**
+   * Protobuf type {@code com.song.fastmq.broker.net.CommandSendReceipt}
+   */
+  public  static final class CommandSendReceipt extends
+      com.google.protobuf.GeneratedMessageLite<
+          CommandSendReceipt, CommandSendReceipt.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandSendReceipt)
+      CommandSendReceiptOrBuilder {
+    private CommandSendReceipt() {
+    }
+    public static final int PRODUCER_ID_FIELD_NUMBER = 1;
+    private long producerId_;
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    public long getProducerId() {
+      return producerId_;
+    }
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    private void setProducerId(long value) {
+      
+      producerId_ = value;
+    }
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    private void clearProducerId() {
+      
+      producerId_ = 0L;
+    }
+
+    public static final int SEQUENCE_ID_FIELD_NUMBER = 2;
+    private long sequenceId_;
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    public long getSequenceId() {
+      return sequenceId_;
+    }
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    private void setSequenceId(long value) {
+      
+      sequenceId_ = value;
+    }
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    private void clearSequenceId() {
+      
+      sequenceId_ = 0L;
+    }
+
+    public static final int MESSAGE_ID_FIELD_NUMBER = 3;
+    private com.song.fastmq.net.proto.BrokerApi.MessageIdData messageId_;
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    public boolean hasMessageId() {
+      return messageId_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+      return messageId_ == null ? com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance() : messageId_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      messageId_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void setMessageId(
+        com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+      messageId_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (messageId_ != null &&
+          messageId_ != com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance()) {
+        messageId_ =
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.newBuilder(messageId_).mergeFrom(value).buildPartial();
+      } else {
+        messageId_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void clearMessageId() {  messageId_ = null;
+      
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (producerId_ != 0L) {
+        output.writeUInt64(1, producerId_);
+      }
+      if (sequenceId_ != 0L) {
+        output.writeUInt64(2, sequenceId_);
+      }
+      if (messageId_ != null) {
+        output.writeMessage(3, getMessageId());
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (producerId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(1, producerId_);
+      }
+      if (sequenceId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(2, sequenceId_);
+      }
+      if (messageId_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, getMessageId());
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
+    }
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
+
+    /**
+     * Protobuf type {@code com.song.fastmq.broker.net.CommandSendReceipt}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageLite.Builder<
+          com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.CommandSendReceipt)
+        com.song.fastmq.net.proto.BrokerApi.CommandSendReceiptOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.newBuilder()
+      private Builder() {
+        super(DEFAULT_INSTANCE);
+      }
+
+
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public long getProducerId() {
+        return instance.getProducerId();
+      }
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public Builder setProducerId(long value) {
+        copyOnWrite();
+        instance.setProducerId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public Builder clearProducerId() {
+        copyOnWrite();
+        instance.clearProducerId();
+        return this;
+      }
+
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public long getSequenceId() {
+        return instance.getSequenceId();
+      }
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public Builder setSequenceId(long value) {
+        copyOnWrite();
+        instance.setSequenceId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public Builder clearSequenceId() {
+        copyOnWrite();
+        instance.clearSequenceId();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public boolean hasMessageId() {
+        return instance.hasMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+        return instance.getMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.setMessageId(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder setMessageId(
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+        copyOnWrite();
+        instance.setMessageId(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.mergeMessageId(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder clearMessageId() {  copyOnWrite();
+        instance.clearMessageId();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandSendReceipt)
+    }
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt();
+        }
+        case IS_INITIALIZED: {
+          return DEFAULT_INSTANCE;
+        }
+        case MAKE_IMMUTABLE: {
+          return null;
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt other = (com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt) arg1;
+          producerId_ = visitor.visitLong(producerId_ != 0L, producerId_,
+              other.producerId_ != 0L, other.producerId_);
+          sequenceId_ = visitor.visitLong(sequenceId_ != 0L, sequenceId_,
+              other.sequenceId_ != 0L, other.sequenceId_);
+          messageId_ = visitor.visitMessage(messageId_, other.messageId_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+                case 8: {
+
+                  producerId_ = input.readUInt64();
+                  break;
+                }
+                case 16: {
+
+                  sequenceId_ = input.readUInt64();
+                  break;
+                }
+                case 26: {
+                  com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder subBuilder = null;
+                  if (messageId_ != null) {
+                    subBuilder = messageId_.toBuilder();
+                  }
+                  messageId_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.MessageIdData.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(messageId_);
+                    messageId_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.class) {
+              if (PARSER == null) {
+                PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+              }
+            }
+          }
+          return PARSER;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return (byte) 1;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
+    }
+
+
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.CommandSendReceipt)
+    private static final com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new CommandSendReceipt();
+      DEFAULT_INSTANCE.makeImmutable();
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<CommandSendReceipt> PARSER;
+
+    public static com.google.protobuf.Parser<CommandSendReceipt> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
+  }
+
+  public interface CommandSendErrorOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.CommandSendError)
+      com.google.protobuf.MessageLiteOrBuilder {
+
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    long getProducerId();
+
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    long getSequenceId();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    int getErrorValue();
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.ServerError getError();
+
+    /**
+     * <code>string message = 4;</code>
+     */
+    java.lang.String getMessage();
+    /**
+     * <code>string message = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getMessageBytes();
+  }
+  /**
+   * Protobuf type {@code com.song.fastmq.broker.net.CommandSendError}
+   */
+  public  static final class CommandSendError extends
+      com.google.protobuf.GeneratedMessageLite<
+          CommandSendError, CommandSendError.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandSendError)
+      CommandSendErrorOrBuilder {
+    private CommandSendError() {
+      message_ = "";
+    }
+    public static final int PRODUCER_ID_FIELD_NUMBER = 1;
+    private long producerId_;
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    public long getProducerId() {
+      return producerId_;
+    }
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    private void setProducerId(long value) {
+      
+      producerId_ = value;
+    }
+    /**
+     * <code>uint64 producer_id = 1;</code>
+     */
+    private void clearProducerId() {
+      
+      producerId_ = 0L;
+    }
+
+    public static final int SEQUENCE_ID_FIELD_NUMBER = 2;
+    private long sequenceId_;
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    public long getSequenceId() {
+      return sequenceId_;
+    }
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    private void setSequenceId(long value) {
+      
+      sequenceId_ = value;
+    }
+    /**
+     * <code>uint64 sequence_id = 2;</code>
+     */
+    private void clearSequenceId() {
+      
+      sequenceId_ = 0L;
+    }
+
+    public static final int ERROR_FIELD_NUMBER = 3;
+    private int error_;
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    public int getErrorValue() {
+      return error_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.ServerError getError() {
+      com.song.fastmq.net.proto.BrokerApi.ServerError result = com.song.fastmq.net.proto.BrokerApi.ServerError.forNumber(error_);
+      return result == null ? com.song.fastmq.net.proto.BrokerApi.ServerError.UNRECOGNIZED : result;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    private void setErrorValue(int value) {
+        error_ = value;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    private void setError(com.song.fastmq.net.proto.BrokerApi.ServerError value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      
+      error_ = value.getNumber();
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+     */
+    private void clearError() {
+      
+      error_ = 0;
+    }
+
+    public static final int MESSAGE_FIELD_NUMBER = 4;
+    private java.lang.String message_;
+    /**
+     * <code>string message = 4;</code>
+     */
+    public java.lang.String getMessage() {
+      return message_;
+    }
+    /**
+     * <code>string message = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getMessageBytes() {
+      return com.google.protobuf.ByteString.copyFromUtf8(message_);
+    }
+    /**
+     * <code>string message = 4;</code>
+     */
+    private void setMessage(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      message_ = value;
+    }
+    /**
+     * <code>string message = 4;</code>
+     */
+    private void clearMessage() {
+      
+      message_ = getDefaultInstance().getMessage();
+    }
+    /**
+     * <code>string message = 4;</code>
+     */
+    private void setMessageBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      message_ = value.toStringUtf8();
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (producerId_ != 0L) {
+        output.writeUInt64(1, producerId_);
+      }
+      if (sequenceId_ != 0L) {
+        output.writeUInt64(2, sequenceId_);
+      }
+      if (error_ != com.song.fastmq.net.proto.BrokerApi.ServerError.UnknownError.getNumber()) {
+        output.writeEnum(3, error_);
+      }
+      if (!message_.isEmpty()) {
+        output.writeString(4, getMessage());
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (producerId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(1, producerId_);
+      }
+      if (sequenceId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(2, sequenceId_);
+      }
+      if (error_ != com.song.fastmq.net.proto.BrokerApi.ServerError.UnknownError.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, error_);
+      }
+      if (!message_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(4, getMessage());
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
+    }
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.CommandSendError prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
+
+    /**
+     * Protobuf type {@code com.song.fastmq.broker.net.CommandSendError}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageLite.Builder<
+          com.song.fastmq.net.proto.BrokerApi.CommandSendError, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.CommandSendError)
+        com.song.fastmq.net.proto.BrokerApi.CommandSendErrorOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.CommandSendError.newBuilder()
+      private Builder() {
+        super(DEFAULT_INSTANCE);
+      }
+
+
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public long getProducerId() {
+        return instance.getProducerId();
+      }
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public Builder setProducerId(long value) {
+        copyOnWrite();
+        instance.setProducerId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 producer_id = 1;</code>
+       */
+      public Builder clearProducerId() {
+        copyOnWrite();
+        instance.clearProducerId();
+        return this;
+      }
+
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public long getSequenceId() {
+        return instance.getSequenceId();
+      }
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public Builder setSequenceId(long value) {
+        copyOnWrite();
+        instance.setSequenceId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 sequence_id = 2;</code>
+       */
+      public Builder clearSequenceId() {
+        copyOnWrite();
+        instance.clearSequenceId();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+       */
+      public int getErrorValue() {
+        return instance.getErrorValue();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+       */
+      public Builder setErrorValue(int value) {
+        copyOnWrite();
+        instance.setErrorValue(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.ServerError getError() {
+        return instance.getError();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+       */
+      public Builder setError(com.song.fastmq.net.proto.BrokerApi.ServerError value) {
+        copyOnWrite();
+        instance.setError(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.ServerError error = 3;</code>
+       */
+      public Builder clearError() {
+        copyOnWrite();
+        instance.clearError();
+        return this;
+      }
+
+      /**
+       * <code>string message = 4;</code>
+       */
+      public java.lang.String getMessage() {
+        return instance.getMessage();
+      }
+      /**
+       * <code>string message = 4;</code>
+       */
+      public com.google.protobuf.ByteString
+          getMessageBytes() {
+        return instance.getMessageBytes();
+      }
+      /**
+       * <code>string message = 4;</code>
+       */
+      public Builder setMessage(
+          java.lang.String value) {
+        copyOnWrite();
+        instance.setMessage(value);
+        return this;
+      }
+      /**
+       * <code>string message = 4;</code>
+       */
+      public Builder clearMessage() {
+        copyOnWrite();
+        instance.clearMessage();
+        return this;
+      }
+      /**
+       * <code>string message = 4;</code>
+       */
+      public Builder setMessageBytes(
+          com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setMessageBytes(value);
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandSendError)
+    }
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new com.song.fastmq.net.proto.BrokerApi.CommandSendError();
+        }
+        case IS_INITIALIZED: {
+          return DEFAULT_INSTANCE;
+        }
+        case MAKE_IMMUTABLE: {
+          return null;
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          com.song.fastmq.net.proto.BrokerApi.CommandSendError other = (com.song.fastmq.net.proto.BrokerApi.CommandSendError) arg1;
+          producerId_ = visitor.visitLong(producerId_ != 0L, producerId_,
+              other.producerId_ != 0L, other.producerId_);
+          sequenceId_ = visitor.visitLong(sequenceId_ != 0L, sequenceId_,
+              other.sequenceId_ != 0L, other.sequenceId_);
+          error_ = visitor.visitInt(error_ != 0, error_,    other.error_ != 0, other.error_);
+          message_ = visitor.visitString(!message_.isEmpty(), message_,
+              !other.message_.isEmpty(), other.message_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+                case 8: {
+
+                  producerId_ = input.readUInt64();
+                  break;
+                }
+                case 16: {
+
+                  sequenceId_ = input.readUInt64();
+                  break;
+                }
+                case 24: {
+                  int rawValue = input.readEnum();
+
+                  error_ = rawValue;
+                  break;
+                }
+                case 34: {
+                  java.lang.String s = input.readStringRequireUtf8();
+
+                  message_ = s;
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.CommandSendError.class) {
+              if (PARSER == null) {
+                PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+              }
+            }
+          }
+          return PARSER;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return (byte) 1;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
+    }
+
+
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.CommandSendError)
+    private static final com.song.fastmq.net.proto.BrokerApi.CommandSendError DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new CommandSendError();
+      DEFAULT_INSTANCE.makeImmutable();
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandSendError getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<CommandSendError> PARSER;
+
+    public static com.google.protobuf.Parser<CommandSendError> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
+  }
+
   public interface CommandOrBuilder extends
       // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.Command)
       com.google.protobuf.MessageLiteOrBuilder {
@@ -1860,6 +3464,33 @@ public final class BrokerApi {
      * <code>.com.song.fastmq.broker.net.CommandProducerSuccess producerSuccess = 3;</code>
      */
     com.song.fastmq.net.proto.BrokerApi.CommandProducerSuccess getProducerSuccess();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    boolean hasSend();
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.CommandSend getSend();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    boolean hasSendReceipt();
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt getSendReceipt();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    boolean hasSendError();
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.CommandSendError getSendError();
   }
   /**
    * Protobuf type {@code com.song.fastmq.broker.net.Command}
@@ -2211,6 +3842,162 @@ public final class BrokerApi {
       
     }
 
+    public static final int SEND_FIELD_NUMBER = 4;
+    private com.song.fastmq.net.proto.BrokerApi.CommandSend send_;
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    public boolean hasSend() {
+      return send_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.CommandSend getSend() {
+      return send_ == null ? com.song.fastmq.net.proto.BrokerApi.CommandSend.getDefaultInstance() : send_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    private void setSend(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      send_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    private void setSend(
+        com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
+      send_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    private void mergeSend(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
+      if (send_ != null &&
+          send_ != com.song.fastmq.net.proto.BrokerApi.CommandSend.getDefaultInstance()) {
+        send_ =
+          com.song.fastmq.net.proto.BrokerApi.CommandSend.newBuilder(send_).mergeFrom(value).buildPartial();
+      } else {
+        send_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+     */
+    private void clearSend() {  send_ = null;
+      
+    }
+
+    public static final int SEND_RECEIPT_FIELD_NUMBER = 5;
+    private com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt sendReceipt_;
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    public boolean hasSendReceipt() {
+      return sendReceipt_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt getSendReceipt() {
+      return sendReceipt_ == null ? com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.getDefaultInstance() : sendReceipt_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    private void setSendReceipt(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      sendReceipt_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    private void setSendReceipt(
+        com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.Builder builderForValue) {
+      sendReceipt_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    private void mergeSendReceipt(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt value) {
+      if (sendReceipt_ != null &&
+          sendReceipt_ != com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.getDefaultInstance()) {
+        sendReceipt_ =
+          com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.newBuilder(sendReceipt_).mergeFrom(value).buildPartial();
+      } else {
+        sendReceipt_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+     */
+    private void clearSendReceipt() {  sendReceipt_ = null;
+      
+    }
+
+    public static final int SEND_ERROR_FIELD_NUMBER = 6;
+    private com.song.fastmq.net.proto.BrokerApi.CommandSendError sendError_;
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    public boolean hasSendError() {
+      return sendError_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.CommandSendError getSendError() {
+      return sendError_ == null ? com.song.fastmq.net.proto.BrokerApi.CommandSendError.getDefaultInstance() : sendError_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    private void setSendError(com.song.fastmq.net.proto.BrokerApi.CommandSendError value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      sendError_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    private void setSendError(
+        com.song.fastmq.net.proto.BrokerApi.CommandSendError.Builder builderForValue) {
+      sendError_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    private void mergeSendError(com.song.fastmq.net.proto.BrokerApi.CommandSendError value) {
+      if (sendError_ != null &&
+          sendError_ != com.song.fastmq.net.proto.BrokerApi.CommandSendError.getDefaultInstance()) {
+        sendError_ =
+          com.song.fastmq.net.proto.BrokerApi.CommandSendError.newBuilder(sendError_).mergeFrom(value).buildPartial();
+      } else {
+        sendError_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+     */
+    private void clearSendError() {  sendError_ = null;
+      
+    }
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (type_ != com.song.fastmq.net.proto.BrokerApi.Command.Type.CONNECT.getNumber()) {
@@ -2221,6 +4008,15 @@ public final class BrokerApi {
       }
       if (producerSuccess_ != null) {
         output.writeMessage(3, getProducerSuccess());
+      }
+      if (send_ != null) {
+        output.writeMessage(4, getSend());
+      }
+      if (sendReceipt_ != null) {
+        output.writeMessage(5, getSendReceipt());
+      }
+      if (sendError_ != null) {
+        output.writeMessage(6, getSendError());
       }
       unknownFields.writeTo(output);
     }
@@ -2241,6 +4037,18 @@ public final class BrokerApi {
       if (producerSuccess_ != null) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, getProducerSuccess());
+      }
+      if (send_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, getSend());
+      }
+      if (sendReceipt_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(5, getSendReceipt());
+      }
+      if (sendError_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(6, getSendError());
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
@@ -2469,6 +4277,141 @@ public final class BrokerApi {
         return this;
       }
 
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public boolean hasSend() {
+        return instance.hasSend();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.CommandSend getSend() {
+        return instance.getSend();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public Builder setSend(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
+        copyOnWrite();
+        instance.setSend(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public Builder setSend(
+          com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
+        copyOnWrite();
+        instance.setSend(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public Builder mergeSend(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
+        copyOnWrite();
+        instance.mergeSend(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSend send = 4;</code>
+       */
+      public Builder clearSend() {  copyOnWrite();
+        instance.clearSend();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public boolean hasSendReceipt() {
+        return instance.hasSendReceipt();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt getSendReceipt() {
+        return instance.getSendReceipt();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public Builder setSendReceipt(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt value) {
+        copyOnWrite();
+        instance.setSendReceipt(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public Builder setSendReceipt(
+          com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.Builder builderForValue) {
+        copyOnWrite();
+        instance.setSendReceipt(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public Builder mergeSendReceipt(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt value) {
+        copyOnWrite();
+        instance.mergeSendReceipt(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendReceipt send_receipt = 5;</code>
+       */
+      public Builder clearSendReceipt() {  copyOnWrite();
+        instance.clearSendReceipt();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public boolean hasSendError() {
+        return instance.hasSendError();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.CommandSendError getSendError() {
+        return instance.getSendError();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public Builder setSendError(com.song.fastmq.net.proto.BrokerApi.CommandSendError value) {
+        copyOnWrite();
+        instance.setSendError(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public Builder setSendError(
+          com.song.fastmq.net.proto.BrokerApi.CommandSendError.Builder builderForValue) {
+        copyOnWrite();
+        instance.setSendError(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public Builder mergeSendError(com.song.fastmq.net.proto.BrokerApi.CommandSendError value) {
+        copyOnWrite();
+        instance.mergeSendError(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandSendError send_error = 6;</code>
+       */
+      public Builder clearSendError() {  copyOnWrite();
+        instance.clearSendError();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.Command)
     }
     @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
@@ -2494,6 +4437,9 @@ public final class BrokerApi {
           type_ = visitor.visitInt(type_ != 0, type_,    other.type_ != 0, other.type_);
           producer_ = visitor.visitMessage(producer_, other.producer_);
           producerSuccess_ = visitor.visitMessage(producerSuccess_, other.producerSuccess_);
+          send_ = visitor.visitMessage(send_, other.send_);
+          sendReceipt_ = visitor.visitMessage(sendReceipt_, other.sendReceipt_);
+          sendError_ = visitor.visitMessage(sendError_, other.sendError_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
           }
@@ -2549,6 +4495,45 @@ public final class BrokerApi {
                   if (subBuilder != null) {
                     subBuilder.mergeFrom(producerSuccess_);
                     producerSuccess_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 34: {
+                  com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder subBuilder = null;
+                  if (send_ != null) {
+                    subBuilder = send_.toBuilder();
+                  }
+                  send_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.CommandSend.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(send_);
+                    send_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 42: {
+                  com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.Builder subBuilder = null;
+                  if (sendReceipt_ != null) {
+                    subBuilder = sendReceipt_.toBuilder();
+                  }
+                  sendReceipt_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.CommandSendReceipt.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(sendReceipt_);
+                    sendReceipt_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 50: {
+                  com.song.fastmq.net.proto.BrokerApi.CommandSendError.Builder subBuilder = null;
+                  if (sendError_ != null) {
+                    subBuilder = sendError_.toBuilder();
+                  }
+                  sendError_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.CommandSendError.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(sendError_);
+                    sendError_ = subBuilder.buildPartial();
                   }
 
                   break;

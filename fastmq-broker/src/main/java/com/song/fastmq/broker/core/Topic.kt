@@ -19,5 +19,5 @@ interface Topic {
 
     fun getName(): String
 
-    fun close(): CompletableFuture<Void>
+    fun close()
 }
