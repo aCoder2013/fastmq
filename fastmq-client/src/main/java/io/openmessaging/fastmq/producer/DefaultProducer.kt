@@ -19,7 +19,7 @@ import java.util.function.Consumer
 /**
  * @author song
  */
-class DefaultProducer(private val properties: KeyValue) : Producer {
+class DefaultProducer(private val properties: KeyValue, private val cnxPool: RemotingConnectionPool) : Producer {
 
     private val producerId: Long
 
@@ -32,8 +32,6 @@ class DefaultProducer(private val properties: KeyValue) : Producer {
     private var state = AtomicReference<State>(State.NONE)
 
     private var cnxClient: Channel? = null
-
-    private val cnxPool: RemotingConnectionPool = RemotingConnectionPool()
 
     init {
         if (this.properties.containsKey(FastMQConfigKeys.PRODUCER_NAME)) {

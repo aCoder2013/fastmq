@@ -1,6 +1,7 @@
 package io.openmessaging.fastmq
 
 import io.openmessaging.*
+import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.producer.DefaultProducer
 import io.openmessaging.fastmq.utils.ClientUtils
 import io.openmessaging.observer.Observer
@@ -9,6 +10,8 @@ import io.openmessaging.observer.Observer
  * @author song
  */
 class MessagingAccessPointImpl(val properties: KeyValue) : MessagingAccessPoint {
+
+    private val nettyConnectionPool = RemotingConnectionPool()
 
     override fun startup() {
     }
@@ -42,11 +45,11 @@ class MessagingAccessPointImpl(val properties: KeyValue) : MessagingAccessPoint 
     }
 
     override fun createProducer(): Producer {
-        return DefaultProducer(this.properties)
+        return DefaultProducer(this.properties, this.nettyConnectionPool)
     }
 
     override fun createProducer(properties: KeyValue): Producer {
-        return DefaultProducer(ClientUtils.buildKeyValue(this.properties, properties))
+        return DefaultProducer(ClientUtils.buildKeyValue(this.properties, properties), this.nettyConnectionPool)
     }
 
     override fun createPushConsumer(): PushConsumer {
