@@ -1,4 +1,4 @@
-package com.song.fastmq.client.utils
+package io.openmessaging.fastmq.utils
 
 import com.google.protobuf.ByteString
 import com.song.fastmq.net.proto.BrokerApi
@@ -6,12 +6,25 @@ import com.song.fastmq.storage.common.utils.Utils
 import io.openmessaging.BytesMessage
 import io.openmessaging.KeyValue
 import io.openmessaging.OMS
+import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
 /**
  * @author song
  */
 object ClientUtils {
+
+    private val producerIdGenerator = AtomicLong(System.currentTimeMillis())
+
+    private val consumerIdGenerator = AtomicLong(System.currentTimeMillis())
+
+    fun getNextProducerId(): Long {
+        return producerIdGenerator.incrementAndGet()
+    }
+
+    fun getNextConsumerId(): Long {
+        return consumerIdGenerator.incrementAndGet()
+    }
 
     fun buildInstanceName(): String {
         val localAddress = Utils.getLocalAddress()

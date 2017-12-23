@@ -1,8 +1,9 @@
-package com.song.fastmq.client.impl
+package io.openmessaging.fastmq.impl
 
-import com.song.fastmq.client.BytesMessageImpl
+import io.openmessaging.MessagingAccessPointFactory
 import io.openmessaging.Producer
 import io.openmessaging.PropertyKeys
+import io.openmessaging.fastmq.domain.BytesMessageImpl
 import io.openmessaging.internal.DefaultKeyValue
 import org.junit.Before
 import org.junit.Test
@@ -16,14 +17,13 @@ class DefaultProducerTest {
 
     @Before
     fun setUp() {
+        val messagingAccessPoint = MessagingAccessPointFactory.getMessagingAccessPoint("openmessaging:fastmq://127.0.0.1:7164/namespace")
         val properties = DefaultKeyValue()
         properties.put(PropertyKeys.SRC_TOPIC, "Test-topic")
-        properties.put(PropertyKeys.ACCESS_POINTS, "127.0.0.1:7164")
-        val messagingAccessPoint = MessagingAccessPointImpl(properties)
-        producer = messagingAccessPoint.createProducer()
+        properties.put(PropertyKeys.PRODUCER_ID, System.currentTimeMillis())
+        producer = messagingAccessPoint.createProducer(properties)
         producer?.startup()
     }
-
 
     @Test
     fun send() {

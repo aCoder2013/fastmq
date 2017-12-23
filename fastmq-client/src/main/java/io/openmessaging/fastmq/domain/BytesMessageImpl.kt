@@ -1,4 +1,4 @@
-package com.song.fastmq.client
+package io.openmessaging.fastmq.domain
 
 import io.openmessaging.BytesMessage
 import io.openmessaging.KeyValue

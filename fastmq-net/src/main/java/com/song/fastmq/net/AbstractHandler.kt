@@ -15,6 +15,7 @@ open class AbstractHandler : AbstractMessageDecoder() {
 
     @Throws(Exception::class)
     override fun channelActive(ctx: ChannelHandlerContext) {
+        super.channelActive(ctx)
         this.remoteAddress = ctx.channel().remoteAddress()
         this.ctx = ctx
         logger.debug("Channel connect to {} successfully.", this.remoteAddress.toString())

@@ -1,4 +1,4 @@
-package com.song.fastmq.client
+package io.openmessaging.fastmq.domain
 
 /**
  * @author song

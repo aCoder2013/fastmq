@@ -1,4 +1,4 @@
-package com.song.fastmq.client.impl
+package io.openmessaging.fastmq.impl
 
 import java.util.concurrent.ConcurrentHashMap
 

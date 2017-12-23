@@ -1,4 +1,4 @@
-package com.song.fastmq.client.impl
+package io.openmessaging.fastmq.net
 
 import com.song.fastmq.storage.common.utils.Utils
 import io.netty.bootstrap.Bootstrap
@@ -17,7 +17,6 @@ import org.apache.commons.lang3.SystemUtils
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.InetSocketAddress
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -25,12 +24,14 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class RemotingConnectionPool : Closeable {
 
-    private val pool: ConcurrentHashMap<InetSocketAddress, CompletableFuture<ClientCnxClient>> = ConcurrentHashMap()
+    private val pool: ConcurrentHashMap<InetSocketAddress, NettyChannel> = ConcurrentHashMap()
 
     private val bootstrap: Bootstrap
     private val eventLoopGroup: EventLoopGroup
 
     private val MaxMessageSize = 5 * 1024 * 1024
+
+    private val nettyClientConfig = NettyClientConfig()
 
     init {
         this.eventLoopGroup = getEventLoopGroup()
@@ -45,39 +46,26 @@ class RemotingConnectionPool : Closeable {
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
         bootstrap.option(ChannelOption.TCP_NODELAY, true)
         bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-
+        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.connectTimeoutMillis)
         bootstrap.handler(object : ChannelInitializer<SocketChannel>() {
+
             @Throws(Exception::class)
             public override fun initChannel(ch: SocketChannel) {
                 ch.pipeline().addLast("frameDecoder", LengthFieldBasedFrameDecoder(MaxMessageSize, 0, 4, 0, 4))
-                ch.pipeline().addLast("handler", ClientCnxClient())
+                ch.pipeline().addLast("handler", ClientCnxHandler())
             }
         })
     }
 
-    fun getConnection(address: InetSocketAddress): CompletableFuture<ClientCnxClient> {
+    fun getConnection(address: InetSocketAddress): NettyChannel {
         return this.pool.computeIfAbsent(address) {
             createConnection(it)
         }
     }
 
-    private fun createConnection(address: InetSocketAddress): CompletableFuture<ClientCnxClient> {
-        val connectionFuture = CompletableFuture<ClientCnxClient>()
-        val channelFuture = bootstrap.connect(address).sync()
-        connectionFuture.complete(channelFuture.channel().pipeline().get("handler") as ClientCnxClient)
-//        bootstrap.connect(address).addListener {
-//            ChannelFutureListener { future ->
-//                logger.info("Create connection")
-//                if (!future.isSuccess) {
-//                    connectionFuture.completeExceptionally(FastMqClientException(future.cause()))
-//                    return@ChannelFutureListener
-//                }
-//                logger.info("[{}] connected to server .", future.channel())
-//                val cnx = future.channel().pipeline().get("handler") as ClientCnxClient
-//                connectionFuture.complete(cnx)
-//            }
-//        }
-        return connectionFuture
+    private fun createConnection(address: InetSocketAddress): NettyChannel {
+        val channelFuture = bootstrap.connect(address)
+        return NettyChannel(channelFuture)
     }
 
     override fun close() {

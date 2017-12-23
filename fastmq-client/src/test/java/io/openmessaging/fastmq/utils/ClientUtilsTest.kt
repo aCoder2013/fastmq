@@ -1,4 +1,4 @@
-package com.song.fastmq.client.utils
+package io.openmessaging.fastmq.utils
 
 import org.junit.Test
 

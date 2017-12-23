@@ -1,6 +1,6 @@
 package com.song.fastmq.broker.support
 
-import com.song.fastmq.broker.core.ServerCnxClient
+import com.song.fastmq.broker.core.ServerCnxHandler
 import com.song.fastmq.storage.storage.BkLedgerStorage
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
@@ -14,7 +14,7 @@ class BrokerChannelInitializer(val bkLedgerStorage: BkLedgerStorage) : ChannelIn
 
     override fun initChannel(ch: SocketChannel) {
         ch.pipeline().addLast("frameDecoder", LengthFieldBasedFrameDecoder(5 * 1024 * 1024, 0, 4, 0, 4))
-        ch.pipeline().addLast("handler", ServerCnxClient(bkLedgerStorage))
+        ch.pipeline().addLast("handler", ServerCnxHandler(bkLedgerStorage))
     }
 
 }

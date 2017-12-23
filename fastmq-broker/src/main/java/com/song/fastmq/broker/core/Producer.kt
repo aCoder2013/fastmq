@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * @author song
  */
-class Producer(val topic: Topic, val cnx: ServerCnxClient, val producerName: String, val producerId: Long) {
+class Producer(val topic: Topic, val cnx: ServerCnxHandler, val producerName: String, val producerId: Long) {
 
     @Volatile
     private var isClosed = false

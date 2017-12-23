@@ -1,7 +1,8 @@
-package com.song.fastmq.client.impl
+package io.openmessaging.fastmq
 
-import com.song.fastmq.client.utils.ClientUtils
 import io.openmessaging.*
+import io.openmessaging.fastmq.producer.DefaultProducer
+import io.openmessaging.fastmq.utils.ClientUtils
 import io.openmessaging.observer.Observer
 
 /**

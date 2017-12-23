@@ -1,4 +1,4 @@
-package com.song.fastmq.client.impl
+package io.openmessaging.fastmq.net
 
 import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 /**
  * @author song
  */
-class ClientCnxClient : AbstractHandler() {
+class ClientCnxHandler : AbstractHandler() {
 
     override fun channelActive(ctx: ChannelHandlerContext) {
         super.channelActive(ctx)
@@ -31,7 +31,7 @@ class ClientCnxClient : AbstractHandler() {
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(ClientCnxClient::class.java)
+        private val logger = LoggerFactory.getLogger(ClientCnxHandler::class.java)
     }
 
 }

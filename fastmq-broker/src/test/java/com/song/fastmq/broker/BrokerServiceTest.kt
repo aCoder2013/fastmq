@@ -17,11 +17,12 @@ class BrokerServiceTest {
 
     @Test
     fun start() {
-        Thread.sleep(100000000000)
+        Thread.sleep(10000000)
     }
 
     @Test
     fun close() {
+        brokerService.close()
     }
 
 }

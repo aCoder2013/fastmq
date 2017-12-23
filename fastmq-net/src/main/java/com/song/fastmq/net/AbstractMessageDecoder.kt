@@ -37,6 +37,15 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
                     handleProducerSuccess(command.producerSuccess, buffer)
                     logger.info("Producer success :{}.", command.toString())
                 }
+                BrokerApi.Command.Type.SEND -> {
+                    checkArgument(command.hasProducer())
+                }
+                BrokerApi.Command.Type.SEND_RECEIPT -> {
+
+                }
+                BrokerApi.Command.Type.SEND_ERROR -> {
+
+                }
                 else -> throw RuntimeException("Unknown command type :" + command.type)
             }
         } finally {

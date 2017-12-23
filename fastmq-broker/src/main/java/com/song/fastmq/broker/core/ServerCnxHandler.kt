@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * @author song
  */
-class ServerCnxClient(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
+class ServerCnxHandler(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
 
     private var state = State.NONE
 
@@ -83,7 +83,7 @@ class ServerCnxClient(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() 
         val future = CompletableFuture<Producer>()
         bkLedgerStorage.asyncOpen(topicName, object : AsyncCallbacks.CommonCallback<LogManager, LedgerStorageException> {
             override fun onCompleted(data: LogManager, version: Version) {
-                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnxClient, producerName, producerId)
+                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnxHandler, producerName, producerId)
                 future.complete(producer)
             }
 
@@ -105,7 +105,7 @@ class ServerCnxClient(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() 
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(ServerCnxClient::class.java)
+        private val logger = LoggerFactory.getLogger(ServerCnxHandler::class.java)
 
     }
 }
