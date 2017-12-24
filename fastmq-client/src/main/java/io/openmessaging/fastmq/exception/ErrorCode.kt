@@ -5,6 +5,7 @@ package io.openmessaging.fastmq.exception
  */
 enum class ErrorCode(val code: Int) {
 
-    CONNECTION_LOSS(1)
+    CONNECTION_LOSS(1),
 
+    WRONG_MESSAGE_FORMAT(2)
 }

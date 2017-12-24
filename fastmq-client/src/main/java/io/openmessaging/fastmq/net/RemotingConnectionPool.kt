@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class RemotingConnectionPool : Closeable {
 
-    private val pool: ConcurrentHashMap<InetSocketAddress, NettyChannel> = ConcurrentHashMap()
+    private val pool: ConcurrentHashMap<InetSocketAddress, ClientCnx> = ConcurrentHashMap()
 
     private val bootstrap: Bootstrap
     private val eventLoopGroup: EventLoopGroup
@@ -62,15 +62,15 @@ class RemotingConnectionPool : Closeable {
         })
     }
 
-    fun getConnection(address: InetSocketAddress): NettyChannel {
+    fun getConnection(address: InetSocketAddress): ClientCnx {
         return this.pool.computeIfAbsent(address) {
             createConnection(it)
         }
     }
 
-    private fun createConnection(address: InetSocketAddress): NettyChannel {
-        val channelFuture = bootstrap.connect(address)
-        return NettyChannel(channelFuture)
+    private fun createConnection(address: InetSocketAddress): ClientCnx {
+        val channelFuture = bootstrap.connect(address).syncUninterruptibly()
+        return channelFuture.channel().pipeline().get("handler") as ClientCnx
     }
 
     override fun close() {
@@ -81,17 +81,17 @@ class RemotingConnectionPool : Closeable {
         val numThreads = Utils.AVAILABLE_PROCESSORS
         val threadFactory = DefaultThreadFactory("fastmq-client-io")
 
-        try {
-            return EpollEventLoopGroup(numThreads, threadFactory)
+        return try {
+            EpollEventLoopGroup(numThreads, threadFactory)
         } catch (e: ExceptionInInitializerError) {
             logger.debug("Unable to load EpollEventLoop", e)
-            return NioEventLoopGroup(numThreads, threadFactory)
+            NioEventLoopGroup(numThreads, threadFactory)
         } catch (e: NoClassDefFoundError) {
             logger.debug("Unable to load EpollEventLoop", e)
-            return NioEventLoopGroup(numThreads, threadFactory)
+            NioEventLoopGroup(numThreads, threadFactory)
         } catch (e: UnsatisfiedLinkError) {
             logger.debug("Unable to load EpollEventLoop", e)
-            return NioEventLoopGroup(numThreads, threadFactory)
+            NioEventLoopGroup(numThreads, threadFactory)
         }
     }
 

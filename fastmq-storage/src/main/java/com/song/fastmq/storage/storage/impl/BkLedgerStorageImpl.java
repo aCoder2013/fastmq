@@ -3,6 +3,7 @@ package com.song.fastmq.storage.storage.impl;
 import com.song.fastmq.storage.storage.BkLedgerStorage;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.LogManager;
+import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.CommonCallback;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
@@ -50,6 +51,8 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 
 	private final LogInfoStorage logInfoStorage;
 
+	private final OffsetStorage offsetStorage;
+
 	private final ConcurrentMap<String, CompletableFuture<LogManager>> ledgers = new ConcurrentHashMap<>();
 
 	public BkLedgerStorageImpl(ClientConfiguration clientConfiguration, BookKeeperConfig config)
@@ -80,6 +83,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 		curatorFramework.start();
 		asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
 		logInfoStorage = new LogInfoStorageImpl(asyncCuratorFramework);
+		offsetStorage = new ZkOffsetStorageImpl(logInfoStorage, asyncCuratorFramework);
 	}
 
 	@Override
@@ -125,12 +129,10 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 		CommonPool.executeBlocking(() -> ledgers.computeIfAbsent(name, (mlName) -> {
 			CompletableFuture<LogManager> future = new CompletableFuture<>();
 			LogManagerImpl ledgerManager = new LogManagerImpl(mlName, bookKeeperConfig,
-				// TODO: 2017/12/12 fix null offsetStorage
-				bookKeeper, this.asyncCuratorFramework, logInfoStorage, null);
+				bookKeeper, this.asyncCuratorFramework, logInfoStorage, offsetStorage);
 			ledgerManager.init(new CommonCallback<Void, LedgerStorageException>() {
 				@Override
 				public void onCompleted(Void data, Version version) {
-					System.out.println("init回调了!");
 					currentVersion = version;
 					future.complete(ledgerManager);
 				}
@@ -142,10 +144,8 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 				}
 			});
 			return future;
-		}).thenAccept(manager -> {
-			System.out.println("完成了哦!");
-			asyncCallback.onCompleted(manager, new ZkVersion(0));
 		})
+			.thenAccept(manager -> asyncCallback.onCompleted(manager, new ZkVersion(0)))
 			.exceptionally(throwable -> {
 				asyncCallback.onThrowable(new LedgerStorageException(throwable));
 				return null;

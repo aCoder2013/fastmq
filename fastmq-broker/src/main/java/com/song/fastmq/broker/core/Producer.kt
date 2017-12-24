@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * @author song
  */
-class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, val producerId: Long) {
+class Producer(private val topic: Topic, val cnx: ServerCnx, private val producerName: String, private val producerId: Long) {
 
     @Volatile
     private var isClosed = false
