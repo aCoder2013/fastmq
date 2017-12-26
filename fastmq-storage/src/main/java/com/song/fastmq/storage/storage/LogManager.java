@@ -17,5 +17,7 @@ public interface LogManager {
 
     void asyncOpenCursor(String name, AsyncCallbacks.OpenCursorCallback callback);
 
+    boolean isClosed();
+
     void close() throws InterruptedException, LedgerStorageException;
 }

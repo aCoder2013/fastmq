@@ -119,7 +119,13 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 		if (completableFuture != null && completableFuture.isDone()) {
 			try {
 				LogManager logManager = completableFuture.get();
-				asyncCallback.onCompleted(logManager, currentVersion);
+				synchronized (this){
+					if(!logManager.isClosed()){
+						asyncCallback.onCompleted(logManager, currentVersion);
+					}else {
+						ledgers.remove(name);
+					}
+				}
 			} catch (InterruptedException e) {
 				asyncCallback.onThrowable(new LedgerStorageException(e));
 			} catch (ExecutionException e) {

@@ -37,25 +37,28 @@ class MessageId(val ledgerId: Long, val entryId: Long) : Comparable<MessageId> {
         return "MessageId(ledgerId=$ledgerId, entryId=$entryId)"
     }
 
-    @Throws(IOException::class)
-    fun fromByteArray(data: ByteArray): MessageId {
-        checkNotNull(data)
-        val builder = BrokerApi.MessageIdData.newBuilder()
-
-        val idData: BrokerApi.MessageIdData
-        try {
-            idData = builder.mergeFrom(data).build()
-        } catch (e: UninitializedMessageException) {
-            throw IOException(e)
-        }
-        return MessageId(idData.ledgerId, idData.entryId)
-    }
-
     fun toByteArray(): ByteArray {
         val builder = BrokerApi.MessageIdData.newBuilder()
         builder.ledgerId = ledgerId
         builder.entryId = entryId
         val msgId = builder.build()
         return msgId.toByteArray()
+    }
+
+    companion object {
+
+        @Throws(IOException::class)
+        fun fromByteArray(data: ByteArray): MessageId {
+            checkNotNull(data)
+            val builder = BrokerApi.MessageIdData.newBuilder()
+
+            val idData: BrokerApi.MessageIdData
+            try {
+                idData = builder.mergeFrom(data).build()
+            } catch (e: UninitializedMessageException) {
+                throw IOException(e)
+            }
+            return MessageId(idData.ledgerId, idData.entryId)
+        }
     }
 }

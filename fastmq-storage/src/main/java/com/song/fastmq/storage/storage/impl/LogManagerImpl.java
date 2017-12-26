@@ -15,6 +15,17 @@ import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.metadata.LogSegment;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.support.ReadEntryCommand;
+
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BookieException.Code;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.curator.x.async.AsyncCuratorFramework;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,15 +38,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.BookieException.Code;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.curator.x.async.AsyncCuratorFramework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by song on 2017/11/5.
@@ -219,6 +221,11 @@ public class LogManagerImpl implements LogManager {
         });
     }
 
+    @Override
+    public boolean isClosed() {
+        return this.state.get() == State.CLOSED;
+    }
+
 
     void asyncReadEntries(ReadEntryCommand readEntryCommand) {
         // TODO: 2017/11/19 custom thread pool
@@ -343,7 +350,7 @@ public class LogManagerImpl implements LogManager {
     }
 
     @Override
-    public void close() throws InterruptedException, LedgerStorageException {
+    public synchronized void close() throws InterruptedException, LedgerStorageException {
         if (state.get() == State.CLOSED) {
             logger.warn("LogManager is closed,so we just ignore this close quest.");
             return;

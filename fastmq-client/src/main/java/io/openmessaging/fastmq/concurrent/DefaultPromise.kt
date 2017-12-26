@@ -4,14 +4,11 @@ import io.openmessaging.Promise
 import io.openmessaging.PromiseListener
 import io.openmessaging.exception.OMSRuntimeException
 import org.slf4j.LoggerFactory
-import java.util.*
 
 /**
  * @author song
  */
 class DefaultPromise<V> : Promise<V> {
-
-    private val LOG = LoggerFactory.getLogger(DefaultPromise::class.java)
 
     private val lock = java.lang.Object()
 
@@ -19,8 +16,6 @@ class DefaultPromise<V> : Promise<V> {
     private var state = FutureState.DOING
 
     private var result: V? = null
-
-    private var timeout: Long = 0L
 
     private var createTime: Long = 0L
 
@@ -30,8 +25,6 @@ class DefaultPromise<V> : Promise<V> {
 
     init {
         createTime = System.currentTimeMillis()
-        promiseListenerList = ArrayList()
-        timeout = 1000000000
     }
 
     override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
@@ -47,7 +40,7 @@ class DefaultPromise<V> : Promise<V> {
     }
 
     override fun get(): V? {
-        return result
+        return get(-1)
     }
 
     override fun get(timeout: Long): V? {
@@ -71,7 +64,7 @@ class DefaultPromise<V> : Promise<V> {
                         try {
                             lock.wait(waitTime)
                         } catch (e: InterruptedException) {
-                            LOG.error("promise get value interrupted,excepiton:{}", e.message)
+                            logger.error("promise get value interrupted,exception:{}", e.message)
                         }
 
                         if (!isDoing()) {
@@ -107,10 +100,7 @@ class DefaultPromise<V> : Promise<V> {
         return done()
     }
 
-    override fun addListener(listener: PromiseListener<V>?) {
-        if (listener == null) {
-            throw NullPointerException("FutureListener is null")
-        }
+    override fun addListener(listener: PromiseListener<V>) {
 
         var notifyNow = false
         synchronized(lock) {
@@ -134,8 +124,8 @@ class DefaultPromise<V> : Promise<V> {
     }
 
     private fun notifyListeners() {
-        if (promiseListenerList != null) {
-            for (listener in promiseListenerList!!) {
+        promiseListenerList?.let {
+            for (listener in it) {
                 notifyListener(listener)
             }
         }
@@ -191,7 +181,7 @@ class DefaultPromise<V> : Promise<V> {
             else
                 listener.operationCompleted(this)
         } catch (t: Throwable) {
-            LOG.error("notifyListener {} Error:{}", listener.javaClass.simpleName, t)
+            logger.error("notifyListener {} Error:{}", listener.javaClass.simpleName, t)
         }
     }
 
@@ -210,4 +200,7 @@ class DefaultPromise<V> : Promise<V> {
         return true
     }
 
+    companion object {
+        private val logger = LoggerFactory.getLogger(DefaultPromise::class.java)
+    }
 }

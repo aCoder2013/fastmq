@@ -103,7 +103,7 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     }
 
     override fun sendOneway(message: Message, properties: KeyValue) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        sendInternal(message, OMS.newKeyValue(), properties)
     }
 
     override fun createBytesMessageToQueue(queue: String, body: ByteArray): BytesMessage {
@@ -115,19 +115,21 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     }
 
     override fun sendAsync(message: Message): Promise<SendResult> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return sendInternal(message, OMS.newKeyValue(), OMS.newKeyValue())
     }
 
     override fun sendAsync(message: Message, properties: KeyValue): Promise<SendResult> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return sendInternal(message, OMS.newKeyValue(), properties)
     }
 
     override fun send(message: Message): SendResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val promise = sendInternal(message, OMS.newKeyValue(), OMS.newKeyValue())
+        return promise.get()
     }
 
-    override fun send(message: Message, properties: KeyValue?): SendResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun send(message: Message, properties: KeyValue): SendResult {
+        val promise = sendInternal(message, OMS.newKeyValue(), properties)
+        return promise.get()
     }
 
     @Throws(Exception::class)

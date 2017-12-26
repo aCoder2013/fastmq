@@ -4,9 +4,11 @@ import io.openmessaging.MessagingAccessPointFactory
 import io.openmessaging.Producer
 import io.openmessaging.PropertyKeys
 import io.openmessaging.fastmq.domain.BytesMessageImpl
+import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.internal.DefaultKeyValue
 import org.junit.Before
 import org.junit.Test
+import java.util.*
 
 /**
  * @author song
@@ -27,9 +29,14 @@ class DefaultProducerTest {
 
     @Test
     fun send() {
-        val message = BytesMessageImpl()
-        message.setBody("Hello World".toByteArray())
-        producer?.sendOneway(message) ?: throw RuntimeException("Producer shouldn't be null")
+        var i =0
+        while (i++ < 100){
+            val message = BytesMessageImpl()
+            message.setBody("Hello World".toByteArray())
+            val sendResult = producer?.send(message) ?: throw RuntimeException("Producer shouldn't be null")
+            val messageId = MessageId.fromByteArray(Base64.getDecoder().decode(sendResult.messageId()))
+            println(messageId)
+        }
         Thread.sleep(100000)
     }
 }

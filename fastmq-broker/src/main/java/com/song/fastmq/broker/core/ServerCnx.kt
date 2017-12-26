@@ -58,6 +58,7 @@ class ServerCnx(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
                 logger.error("Close producer failed,maybe already closed", e)
             }
         })
+        producers.clear()
     }
 
     override fun channelWritabilityChanged(ctx: ChannelHandlerContext?) {
@@ -82,8 +83,7 @@ class ServerCnx(val bkLedgerStorage: BkLedgerStorage) : AbstractHandler() {
         val producerId = commandProducer.producerId
         val requestId = commandProducer.requestId
 
-        val producerFuture = CompletableFuture<Producer>()
-        val existingProducerFuture = producers.get(producerId)
+        val existingProducerFuture = producers[producerId]
         if (existingProducerFuture != null) {
             if (existingProducerFuture.isDone && !existingProducerFuture.isCompletedExceptionally) {
                 val producer = existingProducerFuture.getNow(null)

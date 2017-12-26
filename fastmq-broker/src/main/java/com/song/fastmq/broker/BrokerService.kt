@@ -25,7 +25,7 @@ import java.io.Closeable
 /**
  * @author song
  */
-class BrokerService(val port: Int = 7164) : Closeable {
+class BrokerService(private val port: Int = 7164) : Closeable {
 
     private val bkLedgerStorage: BkLedgerStorage
 
