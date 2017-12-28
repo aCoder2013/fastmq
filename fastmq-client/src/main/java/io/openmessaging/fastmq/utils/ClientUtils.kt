@@ -18,6 +18,8 @@ object ClientUtils {
 
     private val consumerIdGenerator = AtomicLong(System.currentTimeMillis())
 
+    private val SEPARATOR = ";"
+
     fun getNextProducerId(): Long {
         return producerIdGenerator.incrementAndGet()
     }
@@ -25,6 +27,16 @@ object ClientUtils {
     fun getNextConsumerId(): Long {
         return consumerIdGenerator.incrementAndGet()
     }
+
+    fun parseBootstrapServers(accessPoints: String): ArrayList<String> {
+        val bootstrapServers = ArrayList<String>()
+        accessPoints.split(SEPARATOR).forEach(Consumer {
+            bootstrapServers += it
+        })
+        check(bootstrapServers.isNotEmpty())
+        return bootstrapServers
+    }
+
 
     fun buildInstanceName(): String {
         val localAddress = Utils.getLocalAddress()

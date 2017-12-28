@@ -11,10 +11,10 @@ import io.netty.buffer.ByteBuf
 /**
  * @author song
  */
-class PersistentTopic(val topic: String, val logManager: LogManager) : Topic {
+class PersistentTopic(val topic: String, private val logManager: LogManager) : Topic {
 
     override fun getName(): String {
-        return ""
+        return topic
     }
 
     override fun close() {

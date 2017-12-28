@@ -8,7 +8,7 @@ import java.io.IOException
 /**
  * @author song
  */
-class MessageId(val ledgerId: Long, val entryId: Long) : Comparable<MessageId> {
+class MessageId(private val ledgerId: Long, private val entryId: Long) : Comparable<MessageId> {
 
     override operator fun compareTo(other: MessageId): Int {
         return ComparisonChain.start().compare(this.ledgerId, other.ledgerId).compare(this.entryId, other.entryId)

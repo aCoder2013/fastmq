@@ -1,6 +1,7 @@
 package io.openmessaging.fastmq
 
 import io.openmessaging.*
+import io.openmessaging.fastmq.consumer.DefaultPullConsumer
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.producer.DefaultProducer
 import io.openmessaging.fastmq.utils.ClientUtils
@@ -9,7 +10,7 @@ import io.openmessaging.observer.Observer
 /**
  * @author song
  */
-class MessagingAccessPointImpl(val properties: KeyValue) : MessagingAccessPoint {
+class MessagingAccessPointImpl(private val properties: KeyValue) : MessagingAccessPoint {
 
     private val nettyConnectionPool = RemotingConnectionPool()
 
@@ -60,8 +61,8 @@ class MessagingAccessPointImpl(val properties: KeyValue) : MessagingAccessPoint 
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun createPullConsumer(queueName: String?): PullConsumer {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun createPullConsumer(queueName: String): PullConsumer {
+        return DefaultPullConsumer(queueName, this.properties, nettyConnectionPool)
     }
 
     override fun createPullConsumer(queueName: String?, properties: KeyValue?): PullConsumer {

@@ -41,12 +41,12 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     private var name: String = if (this.properties.containsKey(FastMQConfigKeys.PRODUCER_NAME)) {
         this.properties.getString(FastMQConfigKeys.PRODUCER_NAME)
     } else {
-        ClientUtils.buildInstanceName()
+        "Producer@${ClientUtils.buildInstanceName()}"
     }
 
     private var topic: String = this.properties.getString(PropertyKeys.SRC_TOPIC)
 
-    private val bootstrapServers = ArrayList<String>()
+    private val bootstrapServers: ArrayList<String>
 
     private var state = AtomicReference<State>(State.NONE)
 
@@ -64,10 +64,7 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     init {
         checkArgument(this.properties.containsKey(PropertyKeys.ACCESS_POINTS))
         val accessPoints = this.properties.getString(PropertyKeys.ACCESS_POINTS)
-        accessPoints.split(SEPARATOR).forEach(Consumer {
-            bootstrapServers.add(it)
-        })
-        checkArgument(bootstrapServers.isNotEmpty())
+        bootstrapServers = ClientUtils.parseBootstrapServers(accessPoints)
     }
 
     @Throws(Exception::class)
@@ -191,8 +188,6 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     companion object {
 
         private val logger = LoggerFactory.getLogger(DefaultProducer::class.java)
-
-        private val SEPARATOR = ";"
 
         private val msgIdGeneratorUpdater = AtomicLongFieldUpdater.newUpdater(DefaultProducer::class.java, "msgIdGenerator")
 

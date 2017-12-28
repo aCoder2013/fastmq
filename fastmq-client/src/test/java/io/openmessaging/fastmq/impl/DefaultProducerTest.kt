@@ -21,7 +21,7 @@ class DefaultProducerTest {
     fun setUp() {
         val messagingAccessPoint = MessagingAccessPointFactory.getMessagingAccessPoint("openmessaging:fastmq://127.0.0.1:7164/namespace")
         val properties = DefaultKeyValue()
-        properties.put(PropertyKeys.SRC_TOPIC, "Test-topic-1")
+        properties.put(PropertyKeys.SRC_TOPIC, "Test-topic-3")
         properties.put(PropertyKeys.PRODUCER_ID, System.currentTimeMillis())
         producer = messagingAccessPoint.createProducer(properties)
         producer?.startup()

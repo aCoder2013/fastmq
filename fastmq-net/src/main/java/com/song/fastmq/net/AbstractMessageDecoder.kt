@@ -27,7 +27,7 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
             builder = Command.newBuilder()
             command = builder.mergeFrom(CodedInputStream.newInstance(buffer.nioBuffer())).build()
             buffer.writerIndex(writerIndex)
-            logger.debug("[{}] Received cmd {}", ctx.channel().remoteAddress(), command.type)
+            logger.info("[{}] Received cmd {}", ctx.channel().remoteAddress(), command.type)
             when (command.type) {
                 BrokerApi.Command.Type.PRODUCER -> {
                     checkArgument(command.hasProducer())
@@ -49,8 +49,30 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
                     checkArgument(command.hasSendError())
                     handleSendError(command.sendError)
                 }
+                BrokerApi.Command.Type.SUBSCRIBE -> {
+                    checkArgument(command.hasSubscribe())
+                    handleSubscribe(command.subscribe)
+                }
+                BrokerApi.Command.Type.SUCCESS -> {
+                    checkArgument(command.hasSuccess())
+                    handleSuccess(command.success)
+                }
+                BrokerApi.Command.Type.ERROR -> {
+                    checkArgument(command.hasError())
+                    handleError(command.error)
+                }
+                BrokerApi.Command.Type.PULL_MESSAGE -> {
+                    checkArgument(command.hasPullMessage())
+                    handlePullMessage(command.pullMessage)
+                }
+                BrokerApi.Command.Type.MESSAGE -> {
+                    checkArgument(command.hasMessage())
+                    handleMessage(command.message)
+                }
                 else -> throw RuntimeException("Unknown command type :" + command.type)
             }
+        } catch (e: Exception) {
+            logger.error("Process message failed", e)
         } finally {
             buffer.release()
         }
@@ -73,6 +95,26 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
     }
 
     open fun handleSendError(sendError: CommandSendError) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleSubscribe(subscribe: CommandSubscribe) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleSuccess(success: BrokerApi.CommandSuccess) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleError(error: BrokerApi.CommandError) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handlePullMessage(pullMessage: CommandPullMessage) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleMessage(message: CommandMessage) {
         throw UnsupportedOperationException()
     }
 

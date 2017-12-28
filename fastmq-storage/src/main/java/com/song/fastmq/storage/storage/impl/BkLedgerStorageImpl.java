@@ -158,6 +158,11 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 			}));
 	}
 
+	@Override
+	public void close(String name) {
+
+	}
+
 	class Result {
 
 		LogManager logManager;

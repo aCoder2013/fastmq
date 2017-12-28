@@ -47,6 +47,35 @@ message CommandSendError {
     string message = 4;
 }
 
+message CommandSubscribe {
+    string topic = 1;
+    uint64 consumer_id = 2;
+    uint64 request_id = 3;
+    string consumer_name = 4;
+}
+
+message CommandMessage {
+    uint64 consumer_id = 1;
+    repeated CommandSend messages = 2;
+}
+
+message CommandError {
+    uint64 request_id = 1;
+    ServerError error = 2;
+    string message = 3;
+}
+
+message CommandSuccess {
+    uint64 request_id = 1;
+}
+
+message CommandPullMessage {
+    string topic = 1;
+    uint64 consumer_id = 2;
+    uint64 request_id = 3;
+    uint32 max_message = 4;
+}
+
 message Command {
     enum Type {
         CONNECT = 0;
@@ -72,6 +101,8 @@ message Command {
         CLOSE_CONSUMER = 14;
 
         PRODUCER_SUCCESS = 15;
+
+        PULL_MESSAGE = 16;
     }
 
     Type type = 1;
@@ -85,6 +116,16 @@ message Command {
     CommandSendReceipt send_receipt = 5;
 
     CommandSendError send_error = 6;
+
+    CommandSubscribe subscribe = 7;
+
+    CommandError error = 8;
+
+    CommandSuccess success = 9;
+
+    CommandPullMessage pull_message = 10;
+
+    CommandMessage message = 11;
 }
 
 enum ServerError {
