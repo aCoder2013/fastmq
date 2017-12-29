@@ -8,7 +8,7 @@ import com.song.fastmq.storage.storage.support.LedgerStorageException;
  *
  * Created by song on 2017/11/4.
  */
-public interface BkLedgerStorage {
+public interface LogManagerFactory {
 
 	/**
 	 * Open a ledger of given name. If the ledger doesn't exist, a new one will be automatically

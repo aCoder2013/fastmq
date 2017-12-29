@@ -2,9 +2,9 @@ package com.song.fastmq.broker
 
 import com.song.fastmq.broker.support.BrokerChannelInitializer
 import com.song.fastmq.storage.common.utils.Utils
-import com.song.fastmq.storage.storage.BkLedgerStorage
+import com.song.fastmq.storage.storage.LogManagerFactory
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
-import com.song.fastmq.storage.storage.impl.BkLedgerStorageImpl
+import com.song.fastmq.storage.storage.impl.LogManagerFactoryImpl
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.AdaptiveRecvByteBufAllocator
@@ -27,7 +27,7 @@ import java.io.Closeable
  */
 class BrokerService(private val port: Int = 7164) : Closeable {
 
-    private val bkLedgerStorage: BkLedgerStorage
+    private val logManagerFactory: LogManagerFactory
 
     private val acceptorGroup: EventLoopGroup
 
@@ -37,7 +37,7 @@ class BrokerService(private val port: Int = 7164) : Closeable {
         val clientConfiguration = ClientConfiguration()
         clientConfiguration.zkServers = "127.0.0.1:2181"
         val bkConfig = BookKeeperConfig()
-        bkLedgerStorage = BkLedgerStorageImpl(clientConfiguration, bkConfig)
+        logManagerFactory = LogManagerFactoryImpl(clientConfiguration, bkConfig)
         var acceptorEventLoop: EventLoopGroup
         var workersEventLoop: EventLoopGroup
 
@@ -77,7 +77,7 @@ class BrokerService(private val port: Int = 7164) : Closeable {
             bootstrap.channel(NioServerSocketChannel::class.java)
         }
 
-        bootstrap.childHandler(BrokerChannelInitializer(bkLedgerStorage))
+        bootstrap.childHandler(BrokerChannelInitializer(logManagerFactory))
         bootstrap.bind(port).sync()
         logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
     }

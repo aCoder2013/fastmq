@@ -14,8 +14,8 @@ import io.openmessaging.fastmq.net.ClientCnx
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
@@ -49,7 +49,7 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
 
     private val schedulePullMessagePool: ScheduledExecutorService
 
-    private val messageQueue = ConcurrentLinkedQueue<Message>()
+    private val messageQueue = LinkedBlockingQueue<Message>(MAX_MESSAGE_CACHE_CAPACITY)
 
     init {
         val accessPoints = this.properties.getString(PropertyKeys.ACCESS_POINTS)
@@ -62,7 +62,13 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
     }
 
     override fun shutdown() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        synchronized(this) {
+            check(state.get() != State.CLOSED, {
+                "Consumer[$consumerId] is already closed!"
+            })
+            this.schedulePullMessagePool.shutdown()
+            this.state.set(State.CLOSED)
+        }
     }
 
     override fun properties(): KeyValue {
@@ -85,21 +91,16 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
                 it.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(subscribe.toByteArray())) ?: throw OMSRuntimeException("-1", "Connect to broker failed!")
                 it.registerConsumer(consumerId, this)
             } ?: throw OMSRuntimeException("-1", "Get connection failed!")
-            this.schedulePullMessagePool.scheduleAtFixedRate(Worker(this), 0L, 10L, TimeUnit.SECONDS)
+            this.schedulePullMessagePool.scheduleAtFixedRate(PullMessageWorker(this), 0L, 200L, TimeUnit.MILLISECONDS)
             this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
         } else {
             throw OMSRuntimeException("-1", "Consumer is already starting or has started!")
         }
     }
 
+    @Throws(InterruptedException::class)
     override fun poll(): Message {
-        while (true) {
-            if (this.messageQueue.isEmpty()) {
-                Thread.sleep(100)
-            } else {
-                return this.messageQueue.poll()
-            }
-        }
+        return this.messageQueue.take()
     }
 
     override fun poll(properties: KeyValue?): Message {
@@ -108,26 +109,39 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
 
     fun receivedMessage(messages: Iterable<Message>) {
         logger.info("Received message :" + messages)
-        this.messageQueue.addAll(messages)
+        messages.forEach({
+            if (!messageQueue.offer(it)) {
+                //Normal this shouldn't happen because pull worker's flow control
+                logger.info("Local message queue is full, discard :{}.", it)
+            }
+        })
     }
 
     enum class State {
         NONE,
         CONNECTING,
-        CONNECTED
+        CONNECTED,
+        CLOSED
     }
 
-    class Worker(private val consumer: DefaultPullConsumer) : Runnable {
+    class PullMessageWorker(private val consumer: DefaultPullConsumer) : Runnable {
 
         override fun run() {
             try {
-                val command = Commands.newPullMessage(consumer.queueName, consumer.consumerId, requestIdGenerator.incrementAndGet(consumer), 20)
-                consumer.clientCnx?.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+                val maxMessage = Math.min(MAX_MESSAGE_PULL_NUM, consumer.messageQueue.remainingCapacity())
+                if (maxMessage > 0) {
+                    val command = Commands
+                            .newPullMessage(consumer.queueName, consumer.consumerId,
+                                    requestIdGenerator.incrementAndGet(consumer),
+                                    maxMessage)
+                    consumer.clientCnx?.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+                } else {
+                    logger.info("Pull message request is canceled, because there is enough messages in the queue!")
+                }
             } catch (e: Exception) {
                 logger.error("Pull message failed_" + e.message, e)
             }
         }
-
     }
 
     companion object {
@@ -135,6 +149,10 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
         private val logger = LoggerFactory.getLogger(DefaultPullConsumer::class.java)
 
         private val requestIdGenerator = AtomicLongFieldUpdater.newUpdater(DefaultPullConsumer::class.java, "requestId")
+
+        private val MAX_MESSAGE_CACHE_CAPACITY = 1000
+
+        private val MAX_MESSAGE_PULL_NUM = 32
 
     }
 }

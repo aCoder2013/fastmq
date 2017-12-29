@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage.impl;
 
-import com.song.fastmq.storage.storage.BkLedgerStorage;
+import com.song.fastmq.storage.storage.LogManagerFactory;
 import com.song.fastmq.storage.storage.LogInfoStorage;
 import com.song.fastmq.storage.storage.LogManager;
 import com.song.fastmq.storage.storage.OffsetStorage;
@@ -32,12 +32,12 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Default implementation of {@link BkLedgerStorage}
+ * Default implementation of {@link LogManagerFactory}
  * Created by song on 2017/11/4.
  */
-public class BkLedgerStorageImpl implements BkLedgerStorage {
+public class LogManagerFactoryImpl implements LogManagerFactory {
 
-	private static final Logger logger = LoggerFactory.getLogger(BkLedgerStorageImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(LogManagerFactoryImpl.class);
 
 	private volatile Version currentVersion;
 
@@ -55,7 +55,7 @@ public class BkLedgerStorageImpl implements BkLedgerStorage {
 
 	private final ConcurrentMap<String, CompletableFuture<LogManager>> ledgers = new ConcurrentHashMap<>();
 
-	public BkLedgerStorageImpl(ClientConfiguration clientConfiguration, BookKeeperConfig config)
+	public LogManagerFactoryImpl(ClientConfiguration clientConfiguration, BookKeeperConfig config)
 		throws Exception {
 		bookKeeperConfig = config;
 		checkNotNull(clientConfiguration);

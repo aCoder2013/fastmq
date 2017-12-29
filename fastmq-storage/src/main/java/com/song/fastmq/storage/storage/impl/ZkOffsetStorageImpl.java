@@ -224,7 +224,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     }
 
     private String getReaderPath(LogReaderInfo logReaderInfo) {
-        return ZK_OFFSET_STORAGE_PREFIX_PATH + logReaderInfo.getLogName() + ZkUtils.SEPERATOR
+        return ZK_OFFSET_STORAGE_PREFIX_PATH + logReaderInfo.getLogName() + ZkUtils.INSTANCE.getSEPARATOR()
             + logReaderInfo
             .getLogReaderName();
     }
