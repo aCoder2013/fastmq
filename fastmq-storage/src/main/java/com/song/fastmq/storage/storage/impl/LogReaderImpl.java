@@ -10,6 +10,7 @@ import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.Version;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks;
 import com.song.fastmq.storage.storage.concurrent.CommonPool;
+import com.song.fastmq.storage.storage.support.InvalidLedgerException;
 import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.support.ReadEntryCommand;
 import java.util.List;

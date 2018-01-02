@@ -21,11 +21,11 @@ class LogManagerFactoryTest {
         val bkLedgerStorage = LogManagerFactoryImpl(clientConfiguration, bkConfig)
         bkLedgerStorage.asyncOpen("just-a-test", object : AsyncCallbacks.CommonCallback<LogManager, LedgerStorageException> {
             override fun onCompleted(data: LogManager?, version: Version?) {
-                println("成功了!")
+                println("Got it!")
             }
 
             override fun onThrowable(throwable: LedgerStorageException) {
-                println("失败了")
+                println("Fucking failed!")
                 throwable.printStackTrace()
             }
 
