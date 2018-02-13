@@ -3,14 +3,12 @@ package com.song.fastmq.storage.storage.impl;
 import com.song.fastmq.storage.common.utils.JsonUtils;
 import com.song.fastmq.storage.common.utils.JsonUtils.JsonException;
 import com.song.fastmq.storage.common.utils.Result;
-import com.song.fastmq.storage.storage.LogInfoStorage;
-import com.song.fastmq.storage.storage.LogReaderInfo;
+import com.song.fastmq.storage.storage.ConsumerInfo;
+import com.song.fastmq.storage.storage.MetadataStorage;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.ReadOffsetCallback;
-import com.song.fastmq.storage.storage.metadata.Log;
 import com.song.fastmq.storage.storage.metadata.LogSegment;
-import com.song.fastmq.storage.storage.support.LedgerStorageException;
 import com.song.fastmq.storage.storage.support.OffsetStorageException;
 import com.song.fastmq.storage.storage.utils.ZkUtils;
 import java.util.EnumSet;
@@ -40,17 +38,17 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
 
     private static final String ZK_OFFSET_STORAGE_PREFIX_PATH = ZK_OFFSET_STORAGE_PREFIX + "/";
 
-    private final LogInfoStorage logInfoStorage;
+    private final MetadataStorage metadataStorage;
 
     private final AsyncCuratorFramework asyncCuratorFramework;
 
     private final ExecutorService offsetThreadPool;
 
-    private final ConcurrentMap<LogReaderInfo, Offset> offsetCache = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ConsumerInfo, Offset> offsetCache = new ConcurrentHashMap<>();
 
-    public ZkOffsetStorageImpl(LogInfoStorage logInfoStorage,
+    public ZkOffsetStorageImpl(MetadataStorage metadataStorage,
         AsyncCuratorFramework asyncCuratorFramework) {
-        this.logInfoStorage = logInfoStorage;
+        this.metadataStorage = metadataStorage;
         this.asyncCuratorFramework = asyncCuratorFramework;
         offsetThreadPool = Executors.newSingleThreadExecutor(
             new BasicThreadFactory.Builder().uncaughtExceptionHandler((t, e) -> logger
@@ -59,14 +57,14 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     }
 
     @Override
-    public void commitOffset(LogReaderInfo logReaderInfo, Offset offset) {
-        this.offsetCache.put(logReaderInfo, offset);
+    public void commitOffset(ConsumerInfo consumerInfo, Offset offset) {
+        this.offsetCache.put(consumerInfo, offset);
     }
 
     @Override
-    public Offset queryOffset(LogReaderInfo logReaderInfo) throws OffsetStorageException {
+    public Offset queryOffset(ConsumerInfo consumerInfo) throws OffsetStorageException {
         Result<Offset> result = new Result<>();
-        asyncQueryOffset(logReaderInfo, new ReadOffsetCallback() {
+        asyncQueryOffset(consumerInfo, new ReadOffsetCallback() {
             @Override
             public void onComplete(Offset offset) {
                 result.setData(offset);
@@ -85,14 +83,14 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     }
 
     @Override
-    public void asyncQueryOffset(final LogReaderInfo logReaderInfo, ReadOffsetCallback callback) {
-        if (this.offsetCache.containsKey(logReaderInfo)) {
-            callback.onComplete(this.offsetCache.get(logReaderInfo));
+    public void asyncQueryOffset(final ConsumerInfo consumerInfo, ReadOffsetCallback callback) {
+        if (this.offsetCache.containsKey(consumerInfo)) {
+            callback.onComplete(this.offsetCache.get(consumerInfo));
             return;
         }
         AtomicReference<Throwable> throwableReference = new AtomicReference<>();
-        Offset offset = this.offsetCache.computeIfAbsent(logReaderInfo, reader -> {
-            CompletableFuture<Offset> future = asyncEnsureOffsetExist(logReaderInfo, callback);
+        Offset offset = this.offsetCache.computeIfAbsent(consumerInfo, reader -> {
+            CompletableFuture<Offset> future = asyncEnsureOffsetExist(consumerInfo, callback);
             try {
                 return future.get();
             } catch (InterruptedException e) {
@@ -110,11 +108,11 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     }
 
     @Override
-    public void persistOffset(LogReaderInfo logReaderInfo) throws InterruptedException {
+    public void persistOffset(ConsumerInfo consumerInfo) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        if (this.offsetCache.containsKey(logReaderInfo)) {
-            Offset offset = this.offsetCache.get(logReaderInfo);
-            String path = getReaderPath(logReaderInfo);
+        if (this.offsetCache.containsKey(consumerInfo)) {
+            Offset offset = this.offsetCache.get(consumerInfo);
+            String path = getReaderPath(consumerInfo);
             try {
                 this.asyncCuratorFramework.setData()
                     .forPath(path, JsonUtils.toJson(offset).getBytes())
@@ -124,7 +122,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                         } else {
                             logger.info(
                                 "Successfully persist offset for consumer[{}] of topic [{}] : {}",
-                                logReaderInfo.getLogReaderName(), logReaderInfo.getLogName(),
+                                consumerInfo.getConsumerName(), consumerInfo.getTopic(),
                                 offset.toString());
                         }
                         latch.countDown();
@@ -134,20 +132,20 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
             }
             latch.await();
         } else {
-            logger.warn("Topic[{}]-consumer[{}] offset doesn't exist.", logReaderInfo.getLogName(),
-                logReaderInfo.getLogReaderName());
+            logger.warn("Topic[{}]-consumer[{}] offset doesn't exist.", consumerInfo.getTopic(),
+                consumerInfo.getConsumerName());
         }
     }
 
     @Override
-    public void removeOffset(LogReaderInfo logReaderInfo) {
+    public void removeOffset(ConsumerInfo consumerInfo) {
         this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed))
-            .forPath(getReaderPath(logReaderInfo)).whenComplete((aVoid, throwable) -> {
+            .forPath(getReaderPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
                 logger.error("Delete consumer offset failed", throwable);
             } else {
                 logger
-                    .info("Consumer[{}] offset has been safely deleted.", logReaderInfo.toString());
+                    .info("Consumer[{}] offset has been safely deleted.", consumerInfo.toString());
             }
         });
     }
@@ -156,10 +154,10 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
      * Async get offset from zookeeper, if it doesn't exist then create a offset
      * with default setting.
      */
-    private CompletableFuture<Offset> asyncEnsureOffsetExist(LogReaderInfo logReaderInfo,
+    private CompletableFuture<Offset> asyncEnsureOffsetExist(ConsumerInfo consumerInfo,
         ReadOffsetCallback callback) {
         CompletableFuture<Offset> future = new CompletableFuture<>();
-        String path = getReaderPath(logReaderInfo);
+        String path = getReaderPath(consumerInfo);
         this.asyncCuratorFramework.checkExists()
             .forPath(path)
             .whenComplete((stat, throwable) -> {
@@ -168,40 +166,35 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                     return;
                 }
                 if (stat == null) {
-                    offsetThreadPool.submit(() -> {
-                        Log log;
-                        try {
-                            log = logInfoStorage.getLogInfo(logReaderInfo.getLogName());
-                        } catch (InterruptedException | LedgerStorageException e) {
-                            future.completeExceptionally(e);
-                            return;
-                        }
-                        log.getSegments()
-                            .sort((o1, o2) -> (int) (o1.getLedgerId() - o2.getLedgerId()));
-                        LogSegment logSegment = log.getSegments().get(0);
-                        logger.info(JsonUtils.toJsonQuietly(logSegment));
-                        long ledgerId = logSegment.getLedgerId();
-                        try {
-                            byte[] bytes = JsonUtils.toJson(new Offset(ledgerId, 0)).getBytes();
-                            asyncCuratorFramework.create()
-                                .withOptions(EnumSet.of(CreateOption.createParentsIfNeeded))
-                                .forPath(path, bytes)
-                                .whenComplete((s, throwable1) -> {
-                                    if (throwable1 != null) {
-                                        future.completeExceptionally(throwable1);
-                                    } else {
-                                        try {
-                                            future.complete(JsonUtils
-                                                .fromJson(new String(bytes), Offset.class));
-                                        } catch (JsonException e) {
-                                            future.completeExceptionally(e);
+                    offsetThreadPool.submit(() -> metadataStorage.getLogInfo(consumerInfo.getTopic())
+                        .subscribe(log -> {
+                            long ledgerId = 0;
+                            if (log.getSegments().size() > 0) {
+                                log.getSegments().sort((o1, o2) -> (int) (o1.getLedgerId() - o2.getLedgerId()));
+                                LogSegment logSegment = log.getSegments().get(0);
+                                ledgerId = logSegment.getLedgerId();
+                            }
+                            try {
+                                byte[] bytes = JsonUtils.toJson(new Offset(ledgerId, 0)).getBytes();
+                                asyncCuratorFramework.create()
+                                    .withOptions(EnumSet.of(CreateOption.createParentsIfNeeded))
+                                    .forPath(path, bytes)
+                                    .whenComplete((s, throwable1) -> {
+                                        if (throwable1 != null) {
+                                            future.completeExceptionally(throwable1);
+                                        } else {
+                                            try {
+                                                future.complete(JsonUtils
+                                                    .fromJson(new String(bytes), Offset.class));
+                                            } catch (JsonException e) {
+                                                future.completeExceptionally(e);
+                                            }
                                         }
-                                    }
-                                });
-                        } catch (JsonException e) {
-                            future.completeExceptionally(e);
-                        }
-                    });
+                                    });
+                            } catch (JsonException e) {
+                                future.completeExceptionally(e);
+                            }
+                        }));
                 } else {
                     this.offsetThreadPool
                         .submit(() -> asyncCuratorFramework.getData().forPath(path)
@@ -223,9 +216,9 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
         return future;
     }
 
-    private String getReaderPath(LogReaderInfo logReaderInfo) {
-        return ZK_OFFSET_STORAGE_PREFIX_PATH + logReaderInfo.getLogName() + ZkUtils.INSTANCE.getSEPARATOR()
-            + logReaderInfo
-            .getLogReaderName();
+    private String getReaderPath(ConsumerInfo consumerInfo) {
+        return ZK_OFFSET_STORAGE_PREFIX_PATH + consumerInfo.getTopic() + ZkUtils.INSTANCE.getSEPARATOR()
+            + consumerInfo
+            .getConsumerName();
     }
 }

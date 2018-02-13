@@ -8,14 +8,14 @@ import com.song.fastmq.storage.storage.support.OffsetStorageException;
  */
 public interface OffsetStorage {
 
-    void commitOffset(LogReaderInfo logReaderInfo, Offset offset);
+    void commitOffset(ConsumerInfo consumerInfo, Offset offset);
 
-    Offset queryOffset(LogReaderInfo logReaderInfo) throws OffsetStorageException;
+    Offset queryOffset(ConsumerInfo consumerInfo) throws OffsetStorageException;
 
-    void asyncQueryOffset(LogReaderInfo logReaderInfo,
+    void asyncQueryOffset(ConsumerInfo consumerInfo,
         AsyncCallbacks.ReadOffsetCallback callback);
 
-    void persistOffset(LogReaderInfo logReaderInfo) throws InterruptedException;
+    void persistOffset(ConsumerInfo consumerInfo) throws InterruptedException;
 
-    void removeOffset(LogReaderInfo logReaderInfo);
+    void removeOffset(ConsumerInfo consumerInfo);
 }

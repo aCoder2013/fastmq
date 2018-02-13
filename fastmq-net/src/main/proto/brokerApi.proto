@@ -74,6 +74,7 @@ message CommandPullMessage {
     uint64 consumer_id = 2;
     uint64 request_id = 3;
     uint32 max_message = 4;
+    string offset = 5;
 }
 
 message Command {

@@ -1,10 +1,10 @@
 package com.song.fastmq.storage.storage.concurrent;
 
+import com.song.fastmq.storage.storage.GetMessageResult;
 import com.song.fastmq.storage.storage.LogReader;
 import com.song.fastmq.storage.storage.LogRecord;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.Version;
-
 import java.util.List;
 
 /**
@@ -12,48 +12,63 @@ import java.util.List;
  */
 public class AsyncCallbacks {
 
-	public interface VoidCallback {
+    public interface VoidCallback {
 
-		void onComplete();
+        void onComplete();
 
-		void onThrowable(Throwable throwable);
-	}
+        void onThrowable(Throwable throwable);
+    }
 
-	public interface ReadEntryCallback {
+    public interface ReadEntryCallback {
 
-		void readEntryComplete(List<LogRecord> entries);
+        void readEntryComplete(List<LogRecord> entries);
 
-		void readEntryFailed(Throwable throwable);
-	}
+        void readEntryFailed(Throwable throwable);
+    }
 
-	public interface CloseLedgerCursorCallback {
+    public interface CloseLedgerCursorCallback {
 
-		void onComplete();
+        void onComplete();
 
-		void onThrowable(Throwable throwable);
-	}
+        void onThrowable(Throwable throwable);
+    }
 
-	public interface OpenCursorCallback {
+    public interface OpenCursorCallback {
 
-		void onComplete(LogReader logReader);
+        void onComplete(LogReader logReader);
 
-		void onThrowable(Throwable throwable);
-	}
+        void onThrowable(Throwable throwable);
+    }
 
-	public interface ReadOffsetCallback {
+    public interface ReadOffsetCallback {
 
-		void onComplete(Offset offset);
+        void onComplete(Offset offset);
 
-		void onThrowable(Throwable throwable);
-	}
+        void onThrowable(Throwable throwable);
+    }
 
-	/**
-	 * Created by song on 2017/11/5.
-	 */
-	public interface CommonCallback<T, E> {
+    public interface PutMessageCallback {
 
-		void onCompleted(T data, Version version);
+        void onComplete(Offset offset);
 
-		void onThrowable(E throwable);
-	}
+        void onThrowable(Throwable throwable);
+    }
+
+    public interface GetMessageCallback {
+
+        void readEntryComplete(GetMessageResult result);
+
+        void readEntryFailed(Throwable throwable);
+
+    }
+
+    /**
+     * Created by song on 2017/11/5.
+     */
+    public interface CommonCallback<T, E> {
+
+        void onCompleted(T data, Version version);
+
+        void onThrowable(E throwable);
+    }
 }

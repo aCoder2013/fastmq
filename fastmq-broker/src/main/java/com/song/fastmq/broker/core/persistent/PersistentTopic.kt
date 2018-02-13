@@ -1,40 +1,39 @@
 package com.song.fastmq.broker.core.persistent
 
 import com.song.fastmq.broker.core.Topic
-import com.song.fastmq.storage.storage.LogManager
+import com.song.fastmq.storage.common.message.Message
+import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
-import com.song.fastmq.storage.storage.Version
-import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks
-import com.song.fastmq.storage.storage.support.LedgerStorageException
 import io.netty.buffer.ByteBuf
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 
 /**
  * @author song
  */
-class PersistentTopic(val topic: String, private val logManager: LogManager) : Topic {
+class PersistentTopic(private val topic: String, private val messageStorage: MessageStorage) : Topic {
 
-    override fun getName(): String {
-        return topic
+    override fun getName() = topic
+
+    override fun publishMessage(headersAndPayload: ByteBuf): Observable<Offset> {
+        return Observable.create<Offset> { observable: ObservableEmitter<Offset> ->
+            messageStorage.appendMessage(Message(data = headersAndPayload.array()))
+                    .doOnNext {
+                        observable.onNext(it)
+                        headersAndPayload.release()
+                    }
+                    .doOnComplete {
+                        observable.onComplete()
+                    }
+                    .doOnError {
+                        headersAndPayload.release()
+                        observable.onError(it)
+                    }
+        }
     }
 
     override fun close() {
-        logManager.close()
-    }
-
-    override fun publishMessage(headersAndPayload: ByteBuf, callback: Topic.PublishCallback) {
-        logManager.asyncAddEntry(headersAndPayload.array(), object : AsyncCallbacks.CommonCallback<Offset, LedgerStorageException> {
-            override fun onCompleted(data: Offset?, version: Version?) {
-                headersAndPayload.release()
-                data?.let {
-                    callback.onCompleted(it.ledgerId, it.entryId)
-                } ?: callback.onThrowable(LedgerStorageException("Offset is absent,this shouldn't happen."))
-            }
-
-            override fun onThrowable(throwable: LedgerStorageException) {
-                headersAndPayload.release()
-                callback.onThrowable(throwable)
-            }
-        })
+        messageStorage.close()
     }
 
 }

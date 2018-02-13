@@ -12,7 +12,7 @@
     <artifactId>fastmq-storage</artifactId>
 
     <properties>
-        <bookkeeper.version>4.5.0</bookkeeper.version>
+        <bookkeeper.version>4.6.0</bookkeeper.version>
         <curator-version>4.0.0</curator-version>
         <commons-lang3.version>3.5</commons-lang3.version>
       <kotlin.version>1.2.10</kotlin.version>
@@ -70,7 +70,7 @@
       </dependency>
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-test</artifactId>
+        <artifactId>kotlin-test-junit</artifactId>
         <version>${kotlin.version}</version>
         <scope>test</scope>
       </dependency>
