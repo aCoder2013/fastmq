@@ -7,9 +7,11 @@ import com.song.fastmq.net.proto.BrokerApi
 import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.storage.common.domain.FastMQConfigKeys
 import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.storage.storage.ConsumerInfo
 import com.song.fastmq.storage.storage.MessageStorage
-import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.Offset
+import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
+import com.song.fastmq.storage.storage.support.OffsetStorageException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
@@ -21,7 +23,7 @@ import java.util.concurrent.TimeoutException
 /**
  * @author song
  */
-class ServerCnx(private val messageStorageFactory: MessageStorageFactory) : AbstractHandler() {
+class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : AbstractHandler() {
 
     private var state = State.NONE
 
@@ -132,7 +134,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactory) : Abst
         val consumerName = subscribe.consumerName
         val requestId = subscribe.requestId
 
-        var consumer = this.consumers[consumerId]
+        val consumer = this.consumers[consumerId]
         if (consumer == null) {
             this.messageStorageFactory.open(topic)
                     .subscribe(object : OnCompletedObserver<MessageStorage>() {
@@ -152,7 +154,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactory) : Abst
                                                 BrokerApi.ServerError.UnknownError,
                                                 "Consumer is already present on the connection").toByteArray()))
                             } else {
-                                ctx?.writeAndFlush(Commands.newSuccess(requestId))
+                                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
                             }
                         }
                     })
@@ -161,10 +163,10 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactory) : Abst
 
     override fun handlePullMessage(pullMessage: BrokerApi.CommandPullMessage) {
         val consumerId = pullMessage.consumerId
+        val messageId = pullMessage.messageId
         this.consumers[consumerId]?.let {
-            //todo:add offset to pull message entity
-            val messages = it.readMessage(Offset.NULL_OFFSET, pullMessage.maxMessage)
-            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newMessage(consumerId, messages).toByteArray()))
+            val command = it.readMessage(Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
+            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
         } ?: run {
             logger.error("Consumer not exist :{} ", consumerId)
             ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
@@ -173,9 +175,19 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactory) : Abst
         }
     }
 
+    override fun handleFetchOffset(fetchOffset: BrokerApi.CommandFetchOffset) {
+        try {
+            val offset = messageStorageFactory.offsetStorage
+                    .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
+            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                    .newFetchOffsetResponse(fetchOffset.topic, fetchOffset.consumerId,
+                            offset.ledgerId, offset.entryId).toByteArray()))
+        } catch (e: OffsetStorageException) {
+            logger.error(e.message, e)
+        }
+    }
+
     companion object {
-
         private val logger = LoggerFactory.getLogger(ServerCnx::class.java)
-
     }
 }

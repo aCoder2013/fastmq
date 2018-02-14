@@ -2,7 +2,6 @@ package com.song.fastmq.broker
 
 import com.song.fastmq.broker.support.BrokerChannelInitializer
 import com.song.fastmq.storage.common.utils.Utils
-import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import io.netty.bootstrap.ServerBootstrap
@@ -27,7 +26,7 @@ import java.io.Closeable
  */
 class BrokerService(private val port: Int = 7164) : Closeable {
 
-    private val messageStorageFactory: MessageStorageFactory
+    private val messageStorageFactory: MessageStorageFactoryImpl
 
     private val acceptorGroup: EventLoopGroup
 

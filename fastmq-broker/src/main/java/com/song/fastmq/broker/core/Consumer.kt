@@ -16,7 +16,9 @@ import java.util.*
  */
 class Consumer(private val messageStorage: MessageStorage) {
 
-    fun readMessage(offset: Offset, maxToRead: Int): List<BrokerApi.CommandSend> {
+    fun readMessage(offset: Offset, maxToRead: Int): BrokerApi.Command {
+        val builder = BrokerApi.CommandMessage.newBuilder()
+        builder.consumerId = -1
         val messages = Lists.newArrayListWithExpectedSize<BrokerApi.CommandSend>(maxToRead)
         messageStorage.queryMessage(offset, maxToRead)
                 .subscribeOn(Schedulers.io())
@@ -27,21 +29,34 @@ class Consumer(private val messageStorage: MessageStorage) {
 
                     override fun onNext(t: GetMessageResult) {
                         t.messages.forEach {
-                            val builder = BrokerApi.CommandSend.newBuilder().mergeFrom(it.data)
                             val id = BrokerApi.MessageIdData.newBuilder()
                                     .setLedgerId(it.messageId.ledgerId)
                                     .setEntryId(it.messageId.entryId)
                                     .build()
-                            builder.putHeaders(FastMQConfigKeys.MESSAGE_ID, Base64.getEncoder().encodeToString(id.toByteArray()))
-                            messages.add(builder.build())
+                            val message = BrokerApi.CommandSend
+                                    .newBuilder()
+                                    .mergeFrom(it.data)
+                                    .putHeaders(FastMQConfigKeys.MESSAGE_ID, Base64.getEncoder().encodeToString(id.toByteArray()))
+                                    .build()
+                            messages.add(message)
                         }
+                        builder.nextReadOffset = BrokerApi.MessageIdData
+                                .newBuilder()
+                                .setLedgerId(t.nextReadOffset.ledgerId)
+                                .setEntryId(t.nextReadOffset.entryId)
+                                .build()
+                        builder.addAllMessages(messages)
                     }
 
                     override fun onComplete() {
                     }
 
                 })
-        return messages
+
+        return BrokerApi.Command.newBuilder()
+                .setType(BrokerApi.Command.Type.MESSAGE)
+                .setMessage(builder)
+                .build()
     }
 
     companion object {

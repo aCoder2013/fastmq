@@ -42,7 +42,7 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     private val metadataStorage: MetadataStorage
 
-    private val offsetStorage: OffsetStorage
+    val offsetStorage: OffsetStorage
 
     private val messageStorageCache = ConcurrentHashMap<String, MessageStorage>()
 

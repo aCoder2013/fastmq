@@ -1,7 +1,7 @@
 package com.song.fastmq.broker.support
 
 import com.song.fastmq.broker.core.ServerCnx
-import com.song.fastmq.storage.storage.MessageStorageFactory
+import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder
@@ -12,7 +12,7 @@ import io.netty.handler.logging.LoggingHandler
 /**
  * @author song
  */
-class BrokerChannelInitializer(private val messageStorageFactory: MessageStorageFactory) : ChannelInitializer<SocketChannel>() {
+class BrokerChannelInitializer(private val messageStorageFactory: MessageStorageFactoryImpl) : ChannelInitializer<SocketChannel>() {
 
     override fun initChannel(ch: SocketChannel) {
         ch.pipeline().addLast(LoggingHandler(LogLevel.INFO))

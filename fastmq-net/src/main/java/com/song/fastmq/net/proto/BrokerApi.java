@@ -4019,21 +4019,40 @@ public final class BrokerApi {
       com.google.protobuf.MessageLiteOrBuilder {
 
     /**
-     * <code>uint64 consumer_id = 1;</code>
+     * <code>string topic = 1;</code>
+     */
+    java.lang.String getTopic();
+    /**
+     * <code>string topic = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getTopicBytes();
+
+    /**
+     * <code>uint64 consumer_id = 2;</code>
      */
     long getConsumerId();
 
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    boolean hasNextReadOffset();
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.MessageIdData getNextReadOffset();
+
+    /**
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     java.util.List<com.song.fastmq.net.proto.BrokerApi.CommandSend> 
         getMessagesList();
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     com.song.fastmq.net.proto.BrokerApi.CommandSend getMessages(int index);
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     int getMessagesCount();
   }
@@ -4046,61 +4065,160 @@ public final class BrokerApi {
       // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandMessage)
       CommandMessageOrBuilder {
     private CommandMessage() {
+      topic_ = "";
       messages_ = emptyProtobufList();
     }
     private int bitField0_;
-    public static final int CONSUMER_ID_FIELD_NUMBER = 1;
+    public static final int TOPIC_FIELD_NUMBER = 1;
+    private java.lang.String topic_;
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public java.lang.String getTopic() {
+      return topic_;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getTopicBytes() {
+      return com.google.protobuf.ByteString.copyFromUtf8(topic_);
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopic(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      topic_ = value;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void clearTopic() {
+      
+      topic_ = getDefaultInstance().getTopic();
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopicBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      topic_ = value.toStringUtf8();
+    }
+
+    public static final int CONSUMER_ID_FIELD_NUMBER = 2;
     private long consumerId_;
     /**
-     * <code>uint64 consumer_id = 1;</code>
+     * <code>uint64 consumer_id = 2;</code>
      */
     public long getConsumerId() {
       return consumerId_;
     }
     /**
-     * <code>uint64 consumer_id = 1;</code>
+     * <code>uint64 consumer_id = 2;</code>
      */
     private void setConsumerId(long value) {
       
       consumerId_ = value;
     }
     /**
-     * <code>uint64 consumer_id = 1;</code>
+     * <code>uint64 consumer_id = 2;</code>
      */
     private void clearConsumerId() {
       
       consumerId_ = 0L;
     }
 
-    public static final int MESSAGES_FIELD_NUMBER = 2;
+    public static final int NEXT_READ_OFFSET_FIELD_NUMBER = 3;
+    private com.song.fastmq.net.proto.BrokerApi.MessageIdData nextReadOffset_;
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    public boolean hasNextReadOffset() {
+      return nextReadOffset_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.MessageIdData getNextReadOffset() {
+      return nextReadOffset_ == null ? com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance() : nextReadOffset_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    private void setNextReadOffset(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      nextReadOffset_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    private void setNextReadOffset(
+        com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+      nextReadOffset_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    private void mergeNextReadOffset(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (nextReadOffset_ != null &&
+          nextReadOffset_ != com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance()) {
+        nextReadOffset_ =
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.newBuilder(nextReadOffset_).mergeFrom(value).buildPartial();
+      } else {
+        nextReadOffset_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+     */
+    private void clearNextReadOffset() {  nextReadOffset_ = null;
+      
+    }
+
+    public static final int MESSAGES_FIELD_NUMBER = 4;
     private com.google.protobuf.Internal.ProtobufList<com.song.fastmq.net.proto.BrokerApi.CommandSend> messages_;
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     public java.util.List<com.song.fastmq.net.proto.BrokerApi.CommandSend> getMessagesList() {
       return messages_;
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     public java.util.List<? extends com.song.fastmq.net.proto.BrokerApi.CommandSendOrBuilder> 
         getMessagesOrBuilderList() {
       return messages_;
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     public int getMessagesCount() {
       return messages_.size();
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     public com.song.fastmq.net.proto.BrokerApi.CommandSend getMessages(int index) {
       return messages_.get(index);
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     public com.song.fastmq.net.proto.BrokerApi.CommandSendOrBuilder getMessagesOrBuilder(
         int index) {
@@ -4114,7 +4232,7 @@ public final class BrokerApi {
     }
 
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void setMessages(
         int index, com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
@@ -4125,7 +4243,7 @@ public final class BrokerApi {
       messages_.set(index, value);
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void setMessages(
         int index, com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4133,7 +4251,7 @@ public final class BrokerApi {
       messages_.set(index, builderForValue.build());
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void addMessages(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
       if (value == null) {
@@ -4143,7 +4261,7 @@ public final class BrokerApi {
       messages_.add(value);
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void addMessages(
         int index, com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
@@ -4154,7 +4272,7 @@ public final class BrokerApi {
       messages_.add(index, value);
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void addMessages(
         com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4162,7 +4280,7 @@ public final class BrokerApi {
       messages_.add(builderForValue.build());
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void addMessages(
         int index, com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4170,7 +4288,7 @@ public final class BrokerApi {
       messages_.add(index, builderForValue.build());
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void addAllMessages(
         java.lang.Iterable<? extends com.song.fastmq.net.proto.BrokerApi.CommandSend> values) {
@@ -4179,13 +4297,13 @@ public final class BrokerApi {
           values, messages_);
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void clearMessages() {
       messages_ = emptyProtobufList();
     }
     /**
-     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+     * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
      */
     private void removeMessages(int index) {
       ensureMessagesIsMutable();
@@ -4194,11 +4312,17 @@ public final class BrokerApi {
 
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
+      if (!topic_.isEmpty()) {
+        output.writeString(1, getTopic());
+      }
       if (consumerId_ != 0L) {
-        output.writeUInt64(1, consumerId_);
+        output.writeUInt64(2, consumerId_);
+      }
+      if (nextReadOffset_ != null) {
+        output.writeMessage(3, getNextReadOffset());
       }
       for (int i = 0; i < messages_.size(); i++) {
-        output.writeMessage(2, messages_.get(i));
+        output.writeMessage(4, messages_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -4208,13 +4332,21 @@ public final class BrokerApi {
       if (size != -1) return size;
 
       size = 0;
+      if (!topic_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(1, getTopic());
+      }
       if (consumerId_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt64Size(1, consumerId_);
+          .computeUInt64Size(2, consumerId_);
+      }
+      if (nextReadOffset_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, getNextReadOffset());
       }
       for (int i = 0; i < messages_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, messages_.get(i));
+          .computeMessageSize(4, messages_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
@@ -4317,13 +4449,53 @@ public final class BrokerApi {
 
 
       /**
-       * <code>uint64 consumer_id = 1;</code>
+       * <code>string topic = 1;</code>
+       */
+      public java.lang.String getTopic() {
+        return instance.getTopic();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTopicBytes() {
+        return instance.getTopicBytes();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopic(
+          java.lang.String value) {
+        copyOnWrite();
+        instance.setTopic(value);
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder clearTopic() {
+        copyOnWrite();
+        instance.clearTopic();
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopicBytes(
+          com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setTopicBytes(value);
+        return this;
+      }
+
+      /**
+       * <code>uint64 consumer_id = 2;</code>
        */
       public long getConsumerId() {
         return instance.getConsumerId();
       }
       /**
-       * <code>uint64 consumer_id = 1;</code>
+       * <code>uint64 consumer_id = 2;</code>
        */
       public Builder setConsumerId(long value) {
         copyOnWrite();
@@ -4331,7 +4503,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>uint64 consumer_id = 1;</code>
+       * <code>uint64 consumer_id = 2;</code>
        */
       public Builder clearConsumerId() {
         copyOnWrite();
@@ -4340,25 +4512,70 @@ public final class BrokerApi {
       }
 
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public boolean hasNextReadOffset() {
+        return instance.hasNextReadOffset();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.MessageIdData getNextReadOffset() {
+        return instance.getNextReadOffset();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public Builder setNextReadOffset(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.setNextReadOffset(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public Builder setNextReadOffset(
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+        copyOnWrite();
+        instance.setNextReadOffset(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public Builder mergeNextReadOffset(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.mergeNextReadOffset(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData next_read_offset = 3;</code>
+       */
+      public Builder clearNextReadOffset() {  copyOnWrite();
+        instance.clearNextReadOffset();
+        return this;
+      }
+
+      /**
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public java.util.List<com.song.fastmq.net.proto.BrokerApi.CommandSend> getMessagesList() {
         return java.util.Collections.unmodifiableList(
             instance.getMessagesList());
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public int getMessagesCount() {
         return instance.getMessagesCount();
       }/**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public com.song.fastmq.net.proto.BrokerApi.CommandSend getMessages(int index) {
         return instance.getMessages(index);
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder setMessages(
           int index, com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
@@ -4367,7 +4584,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder setMessages(
           int index, com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4376,7 +4593,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder addMessages(com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
         copyOnWrite();
@@ -4384,7 +4601,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder addMessages(
           int index, com.song.fastmq.net.proto.BrokerApi.CommandSend value) {
@@ -4393,7 +4610,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder addMessages(
           com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4402,7 +4619,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder addMessages(
           int index, com.song.fastmq.net.proto.BrokerApi.CommandSend.Builder builderForValue) {
@@ -4411,7 +4628,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder addAllMessages(
           java.lang.Iterable<? extends com.song.fastmq.net.proto.BrokerApi.CommandSend> values) {
@@ -4420,7 +4637,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder clearMessages() {
         copyOnWrite();
@@ -4428,7 +4645,7 @@ public final class BrokerApi {
         return this;
       }
       /**
-       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 2;</code>
+       * <code>repeated .com.song.fastmq.broker.net.CommandSend messages = 4;</code>
        */
       public Builder removeMessages(int index) {
         copyOnWrite();
@@ -4459,8 +4676,11 @@ public final class BrokerApi {
         case VISIT: {
           Visitor visitor = (Visitor) arg0;
           com.song.fastmq.net.proto.BrokerApi.CommandMessage other = (com.song.fastmq.net.proto.BrokerApi.CommandMessage) arg1;
+          topic_ = visitor.visitString(!topic_.isEmpty(), topic_,
+              !other.topic_.isEmpty(), other.topic_);
           consumerId_ = visitor.visitLong(consumerId_ != 0L, consumerId_,
               other.consumerId_ != 0L, other.consumerId_);
+          nextReadOffset_ = visitor.visitMessage(nextReadOffset_, other.nextReadOffset_);
           messages_= visitor.visitList(messages_, other.messages_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
@@ -4490,12 +4710,31 @@ public final class BrokerApi {
                   }
                   break;
                 }
-                case 8: {
+                case 10: {
+                  java.lang.String s = input.readStringRequireUtf8();
+
+                  topic_ = s;
+                  break;
+                }
+                case 16: {
 
                   consumerId_ = input.readUInt64();
                   break;
                 }
-                case 18: {
+                case 26: {
+                  com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder subBuilder = null;
+                  if (nextReadOffset_ != null) {
+                    subBuilder = nextReadOffset_.toBuilder();
+                  }
+                  nextReadOffset_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.MessageIdData.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(nextReadOffset_);
+                    nextReadOffset_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 34: {
                   if (!messages_.isModifiable()) {
                     messages_ =
                         com.google.protobuf.GeneratedMessageLite.mutableCopy(messages_);
@@ -5378,6 +5617,15 @@ public final class BrokerApi {
      * <code>uint32 max_message = 4;</code>
      */
     int getMaxMessage();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    boolean hasMessageId();
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId();
   }
   /**
    * Protobuf type {@code com.song.fastmq.broker.net.CommandPullMessage}
@@ -5505,6 +5753,58 @@ public final class BrokerApi {
       maxMessage_ = 0;
     }
 
+    public static final int MESSAGE_ID_FIELD_NUMBER = 5;
+    private com.song.fastmq.net.proto.BrokerApi.MessageIdData messageId_;
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    public boolean hasMessageId() {
+      return messageId_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+      return messageId_ == null ? com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance() : messageId_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    private void setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      messageId_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    private void setMessageId(
+        com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+      messageId_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    private void mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (messageId_ != null &&
+          messageId_ != com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance()) {
+        messageId_ =
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.newBuilder(messageId_).mergeFrom(value).buildPartial();
+      } else {
+        messageId_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+     */
+    private void clearMessageId() {  messageId_ = null;
+      
+    }
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (!topic_.isEmpty()) {
@@ -5518,6 +5818,9 @@ public final class BrokerApi {
       }
       if (maxMessage_ != 0) {
         output.writeUInt32(4, maxMessage_);
+      }
+      if (messageId_ != null) {
+        output.writeMessage(5, getMessageId());
       }
       unknownFields.writeTo(output);
     }
@@ -5542,6 +5845,10 @@ public final class BrokerApi {
       if (maxMessage_ != 0) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(4, maxMessage_);
+      }
+      if (messageId_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(5, getMessageId());
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
@@ -5752,6 +6059,51 @@ public final class BrokerApi {
         return this;
       }
 
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public boolean hasMessageId() {
+        return instance.hasMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+        return instance.getMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public Builder setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.setMessageId(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public Builder setMessageId(
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+        copyOnWrite();
+        instance.setMessageId(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public Builder mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.mergeMessageId(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 5;</code>
+       */
+      public Builder clearMessageId() {  copyOnWrite();
+        instance.clearMessageId();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandPullMessage)
     }
     @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
@@ -5782,6 +6134,7 @@ public final class BrokerApi {
               other.requestId_ != 0L, other.requestId_);
           maxMessage_ = visitor.visitInt(maxMessage_ != 0, maxMessage_,
               other.maxMessage_ != 0, other.maxMessage_);
+          messageId_ = visitor.visitMessage(messageId_, other.messageId_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
           }
@@ -5828,6 +6181,19 @@ public final class BrokerApi {
                 case 32: {
 
                   maxMessage_ = input.readUInt32();
+                  break;
+                }
+                case 42: {
+                  com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder subBuilder = null;
+                  if (messageId_ != null) {
+                    subBuilder = messageId_.toBuilder();
+                  }
+                  messageId_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.MessageIdData.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(messageId_);
+                    messageId_ = subBuilder.buildPartial();
+                  }
+
                   break;
                 }
               }
@@ -5879,6 +6245,1116 @@ public final class BrokerApi {
     private static volatile com.google.protobuf.Parser<CommandPullMessage> PARSER;
 
     public static com.google.protobuf.Parser<CommandPullMessage> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
+  }
+
+  public interface CommandFetchOffsetOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.CommandFetchOffset)
+      com.google.protobuf.MessageLiteOrBuilder {
+
+    /**
+     * <code>string topic = 1;</code>
+     */
+    java.lang.String getTopic();
+    /**
+     * <code>string topic = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getTopicBytes();
+
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    long getConsumerId();
+
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    java.lang.String getConsumerName();
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getConsumerNameBytes();
+
+    /**
+     * <code>uint64 request_id = 4;</code>
+     */
+    long getRequestId();
+  }
+  /**
+   * Protobuf type {@code com.song.fastmq.broker.net.CommandFetchOffset}
+   */
+  public  static final class CommandFetchOffset extends
+      com.google.protobuf.GeneratedMessageLite<
+          CommandFetchOffset, CommandFetchOffset.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandFetchOffset)
+      CommandFetchOffsetOrBuilder {
+    private CommandFetchOffset() {
+      topic_ = "";
+      consumerName_ = "";
+    }
+    public static final int TOPIC_FIELD_NUMBER = 1;
+    private java.lang.String topic_;
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public java.lang.String getTopic() {
+      return topic_;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getTopicBytes() {
+      return com.google.protobuf.ByteString.copyFromUtf8(topic_);
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopic(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      topic_ = value;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void clearTopic() {
+      
+      topic_ = getDefaultInstance().getTopic();
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopicBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      topic_ = value.toStringUtf8();
+    }
+
+    public static final int CONSUMER_ID_FIELD_NUMBER = 2;
+    private long consumerId_;
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    public long getConsumerId() {
+      return consumerId_;
+    }
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    private void setConsumerId(long value) {
+      
+      consumerId_ = value;
+    }
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    private void clearConsumerId() {
+      
+      consumerId_ = 0L;
+    }
+
+    public static final int CONSUMER_NAME_FIELD_NUMBER = 3;
+    private java.lang.String consumerName_;
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    public java.lang.String getConsumerName() {
+      return consumerName_;
+    }
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getConsumerNameBytes() {
+      return com.google.protobuf.ByteString.copyFromUtf8(consumerName_);
+    }
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    private void setConsumerName(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      consumerName_ = value;
+    }
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    private void clearConsumerName() {
+      
+      consumerName_ = getDefaultInstance().getConsumerName();
+    }
+    /**
+     * <code>string consumer_name = 3;</code>
+     */
+    private void setConsumerNameBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      consumerName_ = value.toStringUtf8();
+    }
+
+    public static final int REQUEST_ID_FIELD_NUMBER = 4;
+    private long requestId_;
+    /**
+     * <code>uint64 request_id = 4;</code>
+     */
+    public long getRequestId() {
+      return requestId_;
+    }
+    /**
+     * <code>uint64 request_id = 4;</code>
+     */
+    private void setRequestId(long value) {
+      
+      requestId_ = value;
+    }
+    /**
+     * <code>uint64 request_id = 4;</code>
+     */
+    private void clearRequestId() {
+      
+      requestId_ = 0L;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!topic_.isEmpty()) {
+        output.writeString(1, getTopic());
+      }
+      if (consumerId_ != 0L) {
+        output.writeUInt64(2, consumerId_);
+      }
+      if (!consumerName_.isEmpty()) {
+        output.writeString(3, getConsumerName());
+      }
+      if (requestId_ != 0L) {
+        output.writeUInt64(4, requestId_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!topic_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(1, getTopic());
+      }
+      if (consumerId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(2, consumerId_);
+      }
+      if (!consumerName_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(3, getConsumerName());
+      }
+      if (requestId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(4, requestId_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
+    }
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
+
+    /**
+     * Protobuf type {@code com.song.fastmq.broker.net.CommandFetchOffset}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageLite.Builder<
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.CommandFetchOffset)
+        com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.newBuilder()
+      private Builder() {
+        super(DEFAULT_INSTANCE);
+      }
+
+
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public java.lang.String getTopic() {
+        return instance.getTopic();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTopicBytes() {
+        return instance.getTopicBytes();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopic(
+          java.lang.String value) {
+        copyOnWrite();
+        instance.setTopic(value);
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder clearTopic() {
+        copyOnWrite();
+        instance.clearTopic();
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopicBytes(
+          com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setTopicBytes(value);
+        return this;
+      }
+
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public long getConsumerId() {
+        return instance.getConsumerId();
+      }
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public Builder setConsumerId(long value) {
+        copyOnWrite();
+        instance.setConsumerId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public Builder clearConsumerId() {
+        copyOnWrite();
+        instance.clearConsumerId();
+        return this;
+      }
+
+      /**
+       * <code>string consumer_name = 3;</code>
+       */
+      public java.lang.String getConsumerName() {
+        return instance.getConsumerName();
+      }
+      /**
+       * <code>string consumer_name = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getConsumerNameBytes() {
+        return instance.getConsumerNameBytes();
+      }
+      /**
+       * <code>string consumer_name = 3;</code>
+       */
+      public Builder setConsumerName(
+          java.lang.String value) {
+        copyOnWrite();
+        instance.setConsumerName(value);
+        return this;
+      }
+      /**
+       * <code>string consumer_name = 3;</code>
+       */
+      public Builder clearConsumerName() {
+        copyOnWrite();
+        instance.clearConsumerName();
+        return this;
+      }
+      /**
+       * <code>string consumer_name = 3;</code>
+       */
+      public Builder setConsumerNameBytes(
+          com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setConsumerNameBytes(value);
+        return this;
+      }
+
+      /**
+       * <code>uint64 request_id = 4;</code>
+       */
+      public long getRequestId() {
+        return instance.getRequestId();
+      }
+      /**
+       * <code>uint64 request_id = 4;</code>
+       */
+      public Builder setRequestId(long value) {
+        copyOnWrite();
+        instance.setRequestId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 request_id = 4;</code>
+       */
+      public Builder clearRequestId() {
+        copyOnWrite();
+        instance.clearRequestId();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandFetchOffset)
+    }
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset();
+        }
+        case IS_INITIALIZED: {
+          return DEFAULT_INSTANCE;
+        }
+        case MAKE_IMMUTABLE: {
+          return null;
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset other = (com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset) arg1;
+          topic_ = visitor.visitString(!topic_.isEmpty(), topic_,
+              !other.topic_.isEmpty(), other.topic_);
+          consumerId_ = visitor.visitLong(consumerId_ != 0L, consumerId_,
+              other.consumerId_ != 0L, other.consumerId_);
+          consumerName_ = visitor.visitString(!consumerName_.isEmpty(), consumerName_,
+              !other.consumerName_.isEmpty(), other.consumerName_);
+          requestId_ = visitor.visitLong(requestId_ != 0L, requestId_,
+              other.requestId_ != 0L, other.requestId_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+                case 10: {
+                  java.lang.String s = input.readStringRequireUtf8();
+
+                  topic_ = s;
+                  break;
+                }
+                case 16: {
+
+                  consumerId_ = input.readUInt64();
+                  break;
+                }
+                case 26: {
+                  java.lang.String s = input.readStringRequireUtf8();
+
+                  consumerName_ = s;
+                  break;
+                }
+                case 32: {
+
+                  requestId_ = input.readUInt64();
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.class) {
+              if (PARSER == null) {
+                PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+              }
+            }
+          }
+          return PARSER;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return (byte) 1;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
+    }
+
+
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.CommandFetchOffset)
+    private static final com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new CommandFetchOffset();
+      DEFAULT_INSTANCE.makeImmutable();
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<CommandFetchOffset> PARSER;
+
+    public static com.google.protobuf.Parser<CommandFetchOffset> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
+  }
+
+  public interface CommandFetchOffsetResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:com.song.fastmq.broker.net.CommandFetchOffsetResponse)
+      com.google.protobuf.MessageLiteOrBuilder {
+
+    /**
+     * <code>string topic = 1;</code>
+     */
+    java.lang.String getTopic();
+    /**
+     * <code>string topic = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getTopicBytes();
+
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    long getConsumerId();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    boolean hasMessageId();
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId();
+  }
+  /**
+   * Protobuf type {@code com.song.fastmq.broker.net.CommandFetchOffsetResponse}
+   */
+  public  static final class CommandFetchOffsetResponse extends
+      com.google.protobuf.GeneratedMessageLite<
+          CommandFetchOffsetResponse, CommandFetchOffsetResponse.Builder> implements
+      // @@protoc_insertion_point(message_implements:com.song.fastmq.broker.net.CommandFetchOffsetResponse)
+      CommandFetchOffsetResponseOrBuilder {
+    private CommandFetchOffsetResponse() {
+      topic_ = "";
+    }
+    public static final int TOPIC_FIELD_NUMBER = 1;
+    private java.lang.String topic_;
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public java.lang.String getTopic() {
+      return topic_;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getTopicBytes() {
+      return com.google.protobuf.ByteString.copyFromUtf8(topic_);
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopic(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      topic_ = value;
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void clearTopic() {
+      
+      topic_ = getDefaultInstance().getTopic();
+    }
+    /**
+     * <code>string topic = 1;</code>
+     */
+    private void setTopicBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      topic_ = value.toStringUtf8();
+    }
+
+    public static final int CONSUMER_ID_FIELD_NUMBER = 2;
+    private long consumerId_;
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    public long getConsumerId() {
+      return consumerId_;
+    }
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    private void setConsumerId(long value) {
+      
+      consumerId_ = value;
+    }
+    /**
+     * <code>uint64 consumer_id = 2;</code>
+     */
+    private void clearConsumerId() {
+      
+      consumerId_ = 0L;
+    }
+
+    public static final int MESSAGE_ID_FIELD_NUMBER = 3;
+    private com.song.fastmq.net.proto.BrokerApi.MessageIdData messageId_;
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    public boolean hasMessageId() {
+      return messageId_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+      return messageId_ == null ? com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance() : messageId_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      messageId_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void setMessageId(
+        com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+      messageId_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+      if (messageId_ != null &&
+          messageId_ != com.song.fastmq.net.proto.BrokerApi.MessageIdData.getDefaultInstance()) {
+        messageId_ =
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.newBuilder(messageId_).mergeFrom(value).buildPartial();
+      } else {
+        messageId_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+     */
+    private void clearMessageId() {  messageId_ = null;
+      
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!topic_.isEmpty()) {
+        output.writeString(1, getTopic());
+      }
+      if (consumerId_ != 0L) {
+        output.writeUInt64(2, consumerId_);
+      }
+      if (messageId_ != null) {
+        output.writeMessage(3, getMessageId());
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!topic_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(1, getTopic());
+      }
+      if (consumerId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(2, consumerId_);
+      }
+      if (messageId_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, getMessageId());
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
+    }
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
+    }
+    public static Builder newBuilder(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
+
+    /**
+     * Protobuf type {@code com.song.fastmq.broker.net.CommandFetchOffsetResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageLite.Builder<
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse, Builder> implements
+        // @@protoc_insertion_point(builder_implements:com.song.fastmq.broker.net.CommandFetchOffsetResponse)
+        com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponseOrBuilder {
+      // Construct using com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.newBuilder()
+      private Builder() {
+        super(DEFAULT_INSTANCE);
+      }
+
+
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public java.lang.String getTopic() {
+        return instance.getTopic();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTopicBytes() {
+        return instance.getTopicBytes();
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopic(
+          java.lang.String value) {
+        copyOnWrite();
+        instance.setTopic(value);
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder clearTopic() {
+        copyOnWrite();
+        instance.clearTopic();
+        return this;
+      }
+      /**
+       * <code>string topic = 1;</code>
+       */
+      public Builder setTopicBytes(
+          com.google.protobuf.ByteString value) {
+        copyOnWrite();
+        instance.setTopicBytes(value);
+        return this;
+      }
+
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public long getConsumerId() {
+        return instance.getConsumerId();
+      }
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public Builder setConsumerId(long value) {
+        copyOnWrite();
+        instance.setConsumerId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 consumer_id = 2;</code>
+       */
+      public Builder clearConsumerId() {
+        copyOnWrite();
+        instance.clearConsumerId();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public boolean hasMessageId() {
+        return instance.hasMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.MessageIdData getMessageId() {
+        return instance.getMessageId();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder setMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.setMessageId(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder setMessageId(
+          com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder builderForValue) {
+        copyOnWrite();
+        instance.setMessageId(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder mergeMessageId(com.song.fastmq.net.proto.BrokerApi.MessageIdData value) {
+        copyOnWrite();
+        instance.mergeMessageId(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.MessageIdData message_id = 3;</code>
+       */
+      public Builder clearMessageId() {  copyOnWrite();
+        instance.clearMessageId();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandFetchOffsetResponse)
+    }
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse();
+        }
+        case IS_INITIALIZED: {
+          return DEFAULT_INSTANCE;
+        }
+        case MAKE_IMMUTABLE: {
+          return null;
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse other = (com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse) arg1;
+          topic_ = visitor.visitString(!topic_.isEmpty(), topic_,
+              !other.topic_.isEmpty(), other.topic_);
+          consumerId_ = visitor.visitLong(consumerId_ != 0L, consumerId_,
+              other.consumerId_ != 0L, other.consumerId_);
+          messageId_ = visitor.visitMessage(messageId_, other.messageId_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+                case 10: {
+                  java.lang.String s = input.readStringRequireUtf8();
+
+                  topic_ = s;
+                  break;
+                }
+                case 16: {
+
+                  consumerId_ = input.readUInt64();
+                  break;
+                }
+                case 26: {
+                  com.song.fastmq.net.proto.BrokerApi.MessageIdData.Builder subBuilder = null;
+                  if (messageId_ != null) {
+                    subBuilder = messageId_.toBuilder();
+                  }
+                  messageId_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.MessageIdData.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(messageId_);
+                    messageId_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          if (PARSER == null) {    synchronized (com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.class) {
+              if (PARSER == null) {
+                PARSER = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+              }
+            }
+          }
+          return PARSER;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return (byte) 1;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
+    }
+
+
+    // @@protoc_insertion_point(class_scope:com.song.fastmq.broker.net.CommandFetchOffsetResponse)
+    private static final com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new CommandFetchOffsetResponse();
+      DEFAULT_INSTANCE.makeImmutable();
+    }
+
+    public static com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<CommandFetchOffsetResponse> PARSER;
+
+    public static com.google.protobuf.Parser<CommandFetchOffsetResponse> parser() {
       return DEFAULT_INSTANCE.getParserForType();
     }
   }
@@ -5985,6 +7461,24 @@ public final class BrokerApi {
      * <code>.com.song.fastmq.broker.net.CommandMessage message = 11;</code>
      */
     com.song.fastmq.net.proto.BrokerApi.CommandMessage getMessage();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    boolean hasFetchOffset();
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset getFetchOffset();
+
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    boolean hasFetchOffsetResponse();
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse getFetchOffsetResponse();
   }
   /**
    * Protobuf type {@code com.song.fastmq.broker.net.Command}
@@ -6069,6 +7563,14 @@ public final class BrokerApi {
        * <code>PULL_MESSAGE = 16;</code>
        */
       PULL_MESSAGE(16),
+      /**
+       * <code>FETCH_CONSUMER_OFFSET = 17;</code>
+       */
+      FETCH_CONSUMER_OFFSET(17),
+      /**
+       * <code>FETCH_CONSUMER_OFFSET_RESPONSE = 18;</code>
+       */
+      FETCH_CONSUMER_OFFSET_RESPONSE(18),
       UNRECOGNIZED(-1),
       ;
 
@@ -6140,6 +7642,14 @@ public final class BrokerApi {
        * <code>PULL_MESSAGE = 16;</code>
        */
       public static final int PULL_MESSAGE_VALUE = 16;
+      /**
+       * <code>FETCH_CONSUMER_OFFSET = 17;</code>
+       */
+      public static final int FETCH_CONSUMER_OFFSET_VALUE = 17;
+      /**
+       * <code>FETCH_CONSUMER_OFFSET_RESPONSE = 18;</code>
+       */
+      public static final int FETCH_CONSUMER_OFFSET_RESPONSE_VALUE = 18;
 
 
       public final int getNumber() {
@@ -6177,6 +7687,8 @@ public final class BrokerApi {
           case 14: return CLOSE_CONSUMER;
           case 15: return PRODUCER_SUCCESS;
           case 16: return PULL_MESSAGE;
+          case 17: return FETCH_CONSUMER_OFFSET;
+          case 18: return FETCH_CONSUMER_OFFSET_RESPONSE;
           default: return null;
         }
       }
@@ -6761,6 +8273,110 @@ public final class BrokerApi {
       
     }
 
+    public static final int FETCH_OFFSET_FIELD_NUMBER = 12;
+    private com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset fetchOffset_;
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    public boolean hasFetchOffset() {
+      return fetchOffset_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset getFetchOffset() {
+      return fetchOffset_ == null ? com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.getDefaultInstance() : fetchOffset_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    private void setFetchOffset(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      fetchOffset_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    private void setFetchOffset(
+        com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.Builder builderForValue) {
+      fetchOffset_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    private void mergeFetchOffset(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset value) {
+      if (fetchOffset_ != null &&
+          fetchOffset_ != com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.getDefaultInstance()) {
+        fetchOffset_ =
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.newBuilder(fetchOffset_).mergeFrom(value).buildPartial();
+      } else {
+        fetchOffset_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+     */
+    private void clearFetchOffset() {  fetchOffset_ = null;
+      
+    }
+
+    public static final int FETCH_OFFSET_RESPONSE_FIELD_NUMBER = 13;
+    private com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse fetchOffsetResponse_;
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    public boolean hasFetchOffsetResponse() {
+      return fetchOffsetResponse_ != null;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    public com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse getFetchOffsetResponse() {
+      return fetchOffsetResponse_ == null ? com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.getDefaultInstance() : fetchOffsetResponse_;
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    private void setFetchOffsetResponse(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      fetchOffsetResponse_ = value;
+      
+      }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    private void setFetchOffsetResponse(
+        com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.Builder builderForValue) {
+      fetchOffsetResponse_ = builderForValue.build();
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    private void mergeFetchOffsetResponse(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse value) {
+      if (fetchOffsetResponse_ != null &&
+          fetchOffsetResponse_ != com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.getDefaultInstance()) {
+        fetchOffsetResponse_ =
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.newBuilder(fetchOffsetResponse_).mergeFrom(value).buildPartial();
+      } else {
+        fetchOffsetResponse_ = value;
+      }
+      
+    }
+    /**
+     * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+     */
+    private void clearFetchOffsetResponse() {  fetchOffsetResponse_ = null;
+      
+    }
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (type_ != com.song.fastmq.net.proto.BrokerApi.Command.Type.CONNECT.getNumber()) {
@@ -6795,6 +8411,12 @@ public final class BrokerApi {
       }
       if (message_ != null) {
         output.writeMessage(11, getMessage());
+      }
+      if (fetchOffset_ != null) {
+        output.writeMessage(12, getFetchOffset());
+      }
+      if (fetchOffsetResponse_ != null) {
+        output.writeMessage(13, getFetchOffsetResponse());
       }
       unknownFields.writeTo(output);
     }
@@ -6847,6 +8469,14 @@ public final class BrokerApi {
       if (message_ != null) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(11, getMessage());
+      }
+      if (fetchOffset_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(12, getFetchOffset());
+      }
+      if (fetchOffsetResponse_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(13, getFetchOffsetResponse());
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
@@ -7435,6 +9065,96 @@ public final class BrokerApi {
         return this;
       }
 
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public boolean hasFetchOffset() {
+        return instance.hasFetchOffset();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset getFetchOffset() {
+        return instance.getFetchOffset();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public Builder setFetchOffset(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset value) {
+        copyOnWrite();
+        instance.setFetchOffset(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public Builder setFetchOffset(
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.Builder builderForValue) {
+        copyOnWrite();
+        instance.setFetchOffset(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public Builder mergeFetchOffset(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset value) {
+        copyOnWrite();
+        instance.mergeFetchOffset(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffset fetch_offset = 12;</code>
+       */
+      public Builder clearFetchOffset() {  copyOnWrite();
+        instance.clearFetchOffset();
+        return this;
+      }
+
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public boolean hasFetchOffsetResponse() {
+        return instance.hasFetchOffsetResponse();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse getFetchOffsetResponse() {
+        return instance.getFetchOffsetResponse();
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public Builder setFetchOffsetResponse(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse value) {
+        copyOnWrite();
+        instance.setFetchOffsetResponse(value);
+        return this;
+        }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public Builder setFetchOffsetResponse(
+          com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.Builder builderForValue) {
+        copyOnWrite();
+        instance.setFetchOffsetResponse(builderForValue);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public Builder mergeFetchOffsetResponse(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse value) {
+        copyOnWrite();
+        instance.mergeFetchOffsetResponse(value);
+        return this;
+      }
+      /**
+       * <code>.com.song.fastmq.broker.net.CommandFetchOffsetResponse fetch_offset_response = 13;</code>
+       */
+      public Builder clearFetchOffsetResponse() {  copyOnWrite();
+        instance.clearFetchOffsetResponse();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.Command)
     }
     @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
@@ -7468,6 +9188,8 @@ public final class BrokerApi {
           success_ = visitor.visitMessage(success_, other.success_);
           pullMessage_ = visitor.visitMessage(pullMessage_, other.pullMessage_);
           message_ = visitor.visitMessage(message_, other.message_);
+          fetchOffset_ = visitor.visitMessage(fetchOffset_, other.fetchOffset_);
+          fetchOffsetResponse_ = visitor.visitMessage(fetchOffsetResponse_, other.fetchOffsetResponse_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
           }
@@ -7627,6 +9349,32 @@ public final class BrokerApi {
                   if (subBuilder != null) {
                     subBuilder.mergeFrom(message_);
                     message_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 98: {
+                  com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.Builder subBuilder = null;
+                  if (fetchOffset_ != null) {
+                    subBuilder = fetchOffset_.toBuilder();
+                  }
+                  fetchOffset_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffset.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(fetchOffset_);
+                    fetchOffset_ = subBuilder.buildPartial();
+                  }
+
+                  break;
+                }
+                case 106: {
+                  com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.Builder subBuilder = null;
+                  if (fetchOffsetResponse_ != null) {
+                    subBuilder = fetchOffsetResponse_.toBuilder();
+                  }
+                  fetchOffsetResponse_ = input.readMessage(com.song.fastmq.net.proto.BrokerApi.CommandFetchOffsetResponse.parser(), extensionRegistry);
+                  if (subBuilder != null) {
+                    subBuilder.mergeFrom(fetchOffsetResponse_);
+                    fetchOffsetResponse_ = subBuilder.buildPartial();
                   }
 
                   break;

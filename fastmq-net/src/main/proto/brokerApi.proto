@@ -55,8 +55,10 @@ message CommandSubscribe {
 }
 
 message CommandMessage {
-    uint64 consumer_id = 1;
-    repeated CommandSend messages = 2;
+    string topic = 1;
+    uint64 consumer_id = 2;
+    MessageIdData next_read_offset = 3;
+    repeated CommandSend messages = 4;
 }
 
 message CommandError {
@@ -74,7 +76,20 @@ message CommandPullMessage {
     uint64 consumer_id = 2;
     uint64 request_id = 3;
     uint32 max_message = 4;
-    string offset = 5;
+    MessageIdData message_id = 5;
+}
+
+message CommandFetchOffset {
+    string topic = 1;
+    uint64 consumer_id = 2;
+    string consumer_name = 3;
+    uint64 request_id = 4;
+}
+
+message CommandFetchOffsetResponse {
+    string topic = 1;
+    uint64 consumer_id = 2;
+    MessageIdData message_id = 3;
 }
 
 message Command {
@@ -104,6 +119,10 @@ message Command {
         PRODUCER_SUCCESS = 15;
 
         PULL_MESSAGE = 16;
+
+        FETCH_CONSUMER_OFFSET = 17;
+
+        FETCH_CONSUMER_OFFSET_RESPONSE = 18;
     }
 
     Type type = 1;
@@ -127,6 +146,10 @@ message Command {
     CommandPullMessage pull_message = 10;
 
     CommandMessage message = 11;
+
+    CommandFetchOffset fetch_offset = 12;
+
+    CommandFetchOffsetResponse fetch_offset_response = 13;
 }
 
 enum ServerError {

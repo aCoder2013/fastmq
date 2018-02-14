@@ -103,7 +103,6 @@ class MessageStorageImplTest {
                         fail(e.message)
                     }
                 })
-        TODO("当前Ledger读取完成则将游标移动到下一个")
     }
 
     @After

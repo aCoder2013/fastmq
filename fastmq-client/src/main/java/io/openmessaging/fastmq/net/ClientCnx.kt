@@ -6,9 +6,9 @@ import com.song.fastmq.net.proto.BrokerApi
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import io.openmessaging.Message
-import io.openmessaging.PullConsumer
 import io.openmessaging.fastmq.consumer.DefaultPullConsumer
 import io.openmessaging.fastmq.domain.BytesMessageImpl
+import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.fastmq.producer.DefaultProducer
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -20,16 +20,11 @@ class ClientCnx : AbstractHandler() {
 
     private val producers = ConcurrentHashMap<Long, DefaultProducer>()
 
-    private val consumers = ConcurrentHashMap<Long, PullConsumer>()
+    private val consumers = ConcurrentHashMap<Long, DefaultPullConsumer>()
 
     override fun channelActive(ctx: ChannelHandlerContext) {
         super.channelActive(ctx)
         logger.info("Connected to broker {}.", ctx.channel())
-    }
-
-    override fun channelInactive(ctx: ChannelHandlerContext) {
-        super.channelInactive(ctx)
-
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
@@ -56,8 +51,9 @@ class ClientCnx : AbstractHandler() {
             ledgerId = sendReceipt.messageId.ledgerId
             entryId = sendReceipt.messageId.entryId
         }
-        producers[producerId]?.ackReceived(this, sequenceId, ledgerId, entryId) ?: logger.warn("Producer[{}] not exist,ignore received message id {}:{}",
-                producerId, ledgerId, entryId)
+        producers[producerId]?.ackReceived(this, sequenceId, ledgerId, entryId) ?:
+                logger.warn("Producer[{}] not exist,ignore received message id {}:{}",
+                        producerId, ledgerId, entryId)
         logger.debug("{} Got send receipt from producer[{}]: msg---{}, msgId---{}:{}", ctx?.channel(), producerId, sequenceId, ledgerId, entryId)
     }
 
@@ -65,7 +61,7 @@ class ClientCnx : AbstractHandler() {
         this.producers.put(producerId, producer)
     }
 
-    fun registerConsumer(consumerId: Long, consumer: PullConsumer) {
+    fun registerConsumer(consumerId: Long, consumer: DefaultPullConsumer) {
         consumers.put(consumerId, consumer)
     }
 
@@ -80,8 +76,7 @@ class ClientCnx : AbstractHandler() {
     override fun handleMessage(message: BrokerApi.CommandMessage) {
         logger.info("Received message : " + message.toString())
         val consumerId = message.consumerId
-        this.consumers[consumerId]?.let {
-            val pullConsumer = it as DefaultPullConsumer
+        this.consumers[consumerId]?.let { pullConsumer ->
             val msgs = Lists.newArrayListWithExpectedSize<Message>(message.messagesCount)
             message.messagesList.forEach({
                 val msg = BytesMessageImpl()
@@ -95,7 +90,21 @@ class ClientCnx : AbstractHandler() {
                 msgs.add(msg)
             })
             pullConsumer.receivedMessage(msgs)
+            pullConsumer.refreshReadOffset(MessageId(message.nextReadOffset.ledgerId, message.nextReadOffset.entryId))
         } ?: logger.warn("Consumer[{}] not exist,just ignore!", consumerId)
+    }
+
+
+    override fun handleFetchOffsetResponse(fetchOffsetResponse: BrokerApi.CommandFetchOffsetResponse) {
+        val consumerId = fetchOffsetResponse.consumerId
+        val pullConsumer = this.consumers[consumerId]
+        val messageId = fetchOffsetResponse.messageId
+        if (pullConsumer != null) {
+            logger.info("PullConsumer[{}] Update read offset from {} to {}", pullConsumer.readOffset, messageId)
+            pullConsumer.refreshReadOffset(MessageId(messageId.ledgerId, messageId.entryId))
+        } else {
+            logger.warn("Consumer[{}] with offset ledgerId = {} entryId = {}  not exist.", consumerId, messageId.ledgerId, messageId.entryId)
+        }
     }
 
     companion object {

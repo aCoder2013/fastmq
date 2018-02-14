@@ -8,7 +8,7 @@ import java.io.IOException
 /**
  * @author song
  */
-class MessageId(private val ledgerId: Long, private val entryId: Long) : Comparable<MessageId> {
+class MessageId(val ledgerId: Long, val entryId: Long) : Comparable<MessageId> {
 
     override operator fun compareTo(other: MessageId): Int {
         return ComparisonChain.start().compare(this.ledgerId, other.ledgerId).compare(this.entryId, other.entryId)
@@ -46,6 +46,8 @@ class MessageId(private val ledgerId: Long, private val entryId: Long) : Compara
     }
 
     companion object {
+
+        val NULL_ID = MessageId(-1, -1)
 
         @Throws(IOException::class)
         fun fromByteArray(data: ByteArray): MessageId {
