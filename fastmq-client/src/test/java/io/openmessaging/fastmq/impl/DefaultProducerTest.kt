@@ -15,7 +15,7 @@ import java.util.*
  */
 class DefaultProducerTest {
 
-    var producer: Producer? = null
+    private var producer: Producer? = null
 
     @Before
     fun setUp() {
@@ -36,6 +36,7 @@ class DefaultProducerTest {
             val sendResult = producer?.send(message) ?: throw RuntimeException("Producer shouldn't be null")
             val messageId = MessageId.fromByteArray(Base64.getDecoder().decode(sendResult.messageId()))
             println(messageId)
+            Thread.sleep(1000)
         }
         Thread.sleep(100000)
     }

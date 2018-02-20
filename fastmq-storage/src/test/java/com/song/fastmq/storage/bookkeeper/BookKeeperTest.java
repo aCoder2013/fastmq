@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -104,7 +105,7 @@ public class BookKeeperTest {
         bkc.close();
     }
 
-    private BookKeeper getKeeper() throws IOException, InterruptedException, KeeperException {
+    private BookKeeper getKeeper() throws IOException, InterruptedException, KeeperException, BKException {
         String connectionString = "127.0.0.1:2181";
         return new BookKeeper(connectionString);
     }

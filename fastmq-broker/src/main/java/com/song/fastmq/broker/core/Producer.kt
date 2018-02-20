@@ -1,10 +1,13 @@
 package com.song.fastmq.broker.core
 
 import com.song.fastmq.net.proto.Commands
+import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
+import io.reactivex.Observer
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import org.slf4j.LoggerFactory
-import java.util.concurrent.CompletableFuture
 
 
 /**
@@ -15,21 +18,28 @@ class Producer(private val topic: Topic, val cnx: ServerCnx, private val produce
     @Volatile
     private var isClosed = false
 
-    private var closeFuture: CompletableFuture<Void>? = null
-
     fun publishMessage(producerId: Long, sequenceId: Long, payload: ByteBuf) {
-        topic.publishMessage(payload, object : Topic.PublishCallback {
+        this.topic.publishMessage(payload)
+                .subscribeOn(Schedulers.io())
+                .subscribe(object : Observer<Offset> {
 
-            override fun onCompleted(ledgerId: Long, entryId: Long) {
-                val sendReceipt = Commands.newSendReceipt(producerId, sequenceId, ledgerId, entryId)
-                cnx.ctx?.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
-            }
+                    override fun onNext(t: Offset) {
+                        val sendReceipt = Commands.newSendReceipt(producerId, sequenceId, t.ledgerId, t.entryId)
+                        cnx.ctx?.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
+                    }
 
-            override fun onThrowable(e: Throwable) {
-                val sendError = Commands.newSendError(producerId, sequenceId, e)
-                cnx.ctx?.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
-            }
-        })
+                    override fun onError(e: Throwable) {
+                        val sendError = Commands.newSendError(producerId, sequenceId, e)
+                        cnx.ctx?.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
+                    }
+
+                    override fun onSubscribe(d: Disposable) {
+                    }
+
+                    override fun onComplete() {
+                        logger.debug("Producer[$producerId] publish message[$sequenceId] done.")
+                    }
+                })
     }
 
     fun close() {

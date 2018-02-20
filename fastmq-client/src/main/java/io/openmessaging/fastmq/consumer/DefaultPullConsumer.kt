@@ -10,6 +10,7 @@ import io.openmessaging.Message
 import io.openmessaging.PropertyKeys
 import io.openmessaging.PullConsumer
 import io.openmessaging.exception.OMSRuntimeException
+import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.fastmq.net.ClientCnx
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
@@ -24,7 +25,8 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * @author song
  */
-class DefaultPullConsumer(private val queueName: String, private val properties: KeyValue, private val remotingConnectionPool: RemotingConnectionPool) : PullConsumer {
+class DefaultPullConsumer(private val queueName: String, private val properties: KeyValue,
+                          private val remotingConnectionPool: RemotingConnectionPool) : PullConsumer {
 
     private val consumerId: Long = if (properties.containsKey(PropertyKeys.CONSUMER_ID)) {
         this.properties.getLong(PropertyKeys.CONSUMER_ID)
@@ -35,7 +37,7 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
     private var consumername: String = if (properties.containsKey(FastMQConfigKeys.CONSUMER_NAME)) {
         this.properties.getString(FastMQConfigKeys.CONSUMER_NAME)
     } else {
-        "Consumer@${ClientUtils.buildInstanceName()}"
+        "Consumer@${ClientUtils.buildInstanceName()}@$queueName"
     }
 
     @Volatile
@@ -50,6 +52,8 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
     private val schedulePullMessagePool: ScheduledExecutorService
 
     private val messageQueue = LinkedBlockingQueue<Message>(MAX_MESSAGE_CACHE_CAPACITY)
+
+    var readOffset = MessageId.NULL_ID
 
     init {
         val accessPoints = this.properties.getString(PropertyKeys.ACCESS_POINTS)
@@ -91,8 +95,12 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
                 it.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(subscribe.toByteArray())) ?: throw OMSRuntimeException("-1", "Connect to broker failed!")
                 it.registerConsumer(consumerId, this)
             } ?: throw OMSRuntimeException("-1", "Get connection failed!")
-            this.schedulePullMessagePool.scheduleAtFixedRate(PullMessageWorker(this), 0L, 200L, TimeUnit.MILLISECONDS)
-            this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
+            this.state.compareAndSet(State.CONNECTING, State.FETCH_OFFSET)
+            val fetchOffset = Commands.newFetchOffset(queueName, consumerId, requestIdGenerator.incrementAndGet(this))
+            clientCnx?.let {
+                it.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(fetchOffset.toByteArray())) ?:
+                        throw OMSRuntimeException("-1", "Connect to broker failed!")
+            }
         } else {
             throw OMSRuntimeException("-1", "Consumer is already starting or has started!")
         }
@@ -117,10 +125,21 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
         })
     }
 
+    fun refreshReadOffset(messageId: MessageId) {
+        if (this.state.compareAndSet(State.FETCH_OFFSET, State.CONNECTED)) {
+            this.readOffset = messageId
+            this.schedulePullMessagePool
+                    .scheduleAtFixedRate(PullMessageWorker(this), 0L, 200L, TimeUnit.MILLISECONDS)
+        } else if (this.state.get() == State.CONNECTED) {
+            this.readOffset = messageId
+        }
+    }
+
     enum class State {
         NONE,
         CONNECTING,
         CONNECTED,
+        FETCH_OFFSET,
         CLOSED
     }
 
@@ -128,12 +147,14 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
 
         override fun run() {
             try {
+                //todo 定时持久化Offset
                 val maxMessage = Math.min(MAX_MESSAGE_PULL_NUM, consumer.messageQueue.remainingCapacity())
                 if (maxMessage > 0) {
+                    val readOffset = consumer.readOffset
                     val command = Commands
                             .newPullMessage(consumer.queueName, consumer.consumerId,
                                     requestIdGenerator.incrementAndGet(consumer),
-                                    maxMessage)
+                                    maxMessage, readOffset.ledgerId, readOffset.entryId)
                     consumer.clientCnx?.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 } else {
                     logger.info("Pull message request is canceled, because there is enough messages in the queue!")

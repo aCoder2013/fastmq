@@ -1,21 +1,15 @@
 package com.song.fastmq.broker.core
 
+import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.ByteBuf
-import java.util.concurrent.CompletableFuture
+import io.reactivex.Observable
 
 /**
  * @author song
  */
 interface Topic {
 
-    interface PublishCallback {
-
-        fun onCompleted(ledgerId: Long, entryId: Long)
-
-        fun onThrowable(e: Throwable)
-    }
-
-    fun publishMessage(headersAndPayload: ByteBuf, callback: PublishCallback)
+    fun publishMessage(headersAndPayload: ByteBuf) :Observable<Offset>
 
     fun getName(): String
 

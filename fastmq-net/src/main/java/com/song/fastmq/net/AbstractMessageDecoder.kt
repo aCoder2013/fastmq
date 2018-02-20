@@ -20,8 +20,8 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         // Get a buffer that contains the full frame
         val buffer = msg as ByteBuf
-        var command: Command?
-        var builder: Command.Builder?
+        val command: Command
+        val builder: Command.Builder
         try {
             val writerIndex = buffer.writerIndex()
             builder = Command.newBuilder()
@@ -69,6 +69,14 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
                     checkArgument(command.hasMessage())
                     handleMessage(command.message)
                 }
+                BrokerApi.Command.Type.FETCH_CONSUMER_OFFSET -> {
+                    checkArgument(command.hasFetchOffset())
+                    handleFetchOffset(command.fetchOffset)
+                }
+                BrokerApi.Command.Type.FETCH_CONSUMER_OFFSET_RESPONSE -> {
+                    checkArgument(command.hasFetchOffsetResponse())
+                    handleFetchOffsetResponse(command.fetchOffsetResponse)
+                }
                 else -> throw RuntimeException("Unknown command type :" + command.type)
             }
         } catch (e: Exception) {
@@ -115,6 +123,14 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
     }
 
     open fun handleMessage(message: CommandMessage) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleFetchOffset(fetchOffset: CommandFetchOffset) {
+        throw UnsupportedOperationException()
+    }
+
+    open fun handleFetchOffsetResponse(fetchOffsetResponse: CommandFetchOffsetResponse) {
         throw UnsupportedOperationException()
     }
 

@@ -5,7 +5,7 @@ import com.song.fastmq.storage.storage.Offset
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks
 import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks.ReadEntryCallback
 import com.song.fastmq.storage.storage.impl.LogReaderImpl
-import java.util.ArrayList
+import java.util.*
 
 /**
  * @author song
@@ -17,27 +17,27 @@ class ReadEntryCommand(private val ledgerCursor: LogReaderImpl, @field:Volatile 
 
     val callback: ReadEntryCallback
 
-    val readPosition: Offset
-        get() = this.ledgerCursor.readOffset
+//    val readPosition: Offset
+//        get() = this.ledgerCursor.readOffset
 
     init {
         this.callback = callback
     }
 
     override fun readEntryComplete(entries: List<LogRecord>) {
-        if (entries.size > 0) {
+        if (entries.isNotEmpty()) {
             val logRecord = entries[entries.size - 1]
             val offset = logRecord.offset
-            this.ledgerCursor
-                    .updateReadPosition(
-                            Offset(offset.ledgerId, offset.entryId + 1))
+//            this.ledgerCursor
+//                    .updateReadPosition(
+//                            Offset(offset.ledgerId, offset.entryId + 1))
             this.entries.addAll(entries)
         }
         callback.readEntryComplete(this.entries)
     }
 
     fun updateReadPosition(offset: Offset) {
-        this.ledgerCursor.updateReadPosition(offset)
+//        this.ledgerCursor.updateReadPosition(offset)
     }
 
     override fun readEntryFailed(throwable: Throwable) {

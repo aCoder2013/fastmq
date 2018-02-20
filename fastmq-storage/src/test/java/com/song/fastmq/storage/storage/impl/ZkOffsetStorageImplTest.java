@@ -1,11 +1,7 @@
 package com.song.fastmq.storage.storage.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
-
-import com.song.fastmq.storage.storage.LogInfoStorage;
-import com.song.fastmq.storage.storage.LogReaderInfo;
+import com.song.fastmq.storage.storage.MetadataStorage;
+import com.song.fastmq.storage.storage.ConsumerInfo;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.OffsetStorage;
 import com.song.fastmq.storage.storage.metadata.Log;
@@ -25,6 +21,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author song
  */
@@ -34,7 +32,7 @@ public class ZkOffsetStorageImplTest {
     private static Logger logger = LoggerFactory.getLogger(ZkOffsetStorageImplTest.class);
 
     @Mock
-    private LogInfoStorage logInfoStorage;
+    private MetadataStorage metadataStorage;
 
     private OffsetStorage offsetStorage;
 
@@ -51,26 +49,26 @@ public class ZkOffsetStorageImplTest {
         logSegment.setLedgerId(ledgerId);
         logSegment.setTimestamp(System.currentTimeMillis());
         log.setSegments(Collections.singletonList(logSegment));
-        when(logInfoStorage.getLogInfo(any())).thenReturn(log);
+//        when(metadataStorage.getLogInfo(any())).thenReturn(log);
 
         CuratorFramework curatorFramework = CuratorFrameworkFactory
             .newClient("127.0.0.1:2181", new ExponentialBackoffRetry(1000, 3));
         curatorFramework.start();
         asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework);
-        offsetStorage = new ZkOffsetStorageImpl(logInfoStorage, asyncCuratorFramework);
+        offsetStorage = new ZkOffsetStorageImpl(metadataStorage, asyncCuratorFramework);
     }
 
     @Test
     public void queryOffset() throws Exception {
-        LogReaderInfo logReaderInfo = new LogReaderInfo("test", "test-consumer");
-        Offset offset = this.offsetStorage.queryOffset(logReaderInfo);
+        ConsumerInfo consumerInfo = new ConsumerInfo("test", "test-consumer");
+        Offset offset = this.offsetStorage.queryOffset(consumerInfo);
         assertEquals(ledgerId, offset.getLedgerId());
         assertEquals(0, offset.getEntryId());
     }
 
     @After
     public void tearDown() throws Exception {
-        LogReaderInfo logReaderInfo = new LogReaderInfo("test", "test-consumer");
-        this.offsetStorage.removeOffset(logReaderInfo);
+        ConsumerInfo consumerInfo = new ConsumerInfo("test", "test-consumer");
+        this.offsetStorage.removeOffset(consumerInfo);
     }
 }

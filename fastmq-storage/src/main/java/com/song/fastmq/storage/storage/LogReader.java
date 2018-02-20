@@ -23,7 +23,5 @@ public interface LogReader {
 
     void asyncReadEntries(int maxNumberToRead, AsyncCallbacks.ReadEntryCallback callback);
 
-    void updateReadPosition(Offset offset);
-
     void close();
 }

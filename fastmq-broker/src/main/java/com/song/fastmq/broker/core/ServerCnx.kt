@@ -6,32 +6,30 @@ import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
 import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.storage.common.domain.FastMQConfigKeys
-import com.song.fastmq.storage.storage.LogManagerFactory
-import com.song.fastmq.storage.storage.LogManager
-import com.song.fastmq.storage.storage.LogReader
-import com.song.fastmq.storage.storage.Version
-import com.song.fastmq.storage.storage.concurrent.AsyncCallbacks
-import com.song.fastmq.storage.storage.support.LedgerStorageException
+import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.storage.storage.ConsumerInfo
+import com.song.fastmq.storage.storage.MessageStorage
+import com.song.fastmq.storage.storage.Offset
+import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
+import com.song.fastmq.storage.storage.support.OffsetStorageException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import org.slf4j.LoggerFactory
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 /**
  * @author song
  */
-class ServerCnx(private val logManagerFactory: LogManagerFactory) : AbstractHandler() {
+class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : AbstractHandler() {
 
     private var state = State.NONE
 
-    private val producers = ConcurrentHashMap<Long, CompletableFuture<Producer>>()
+    private val producers = ConcurrentHashMap<Long, Producer>()
 
-    private val consumers = ConcurrentHashMap<Long, CompletableFuture<Consumer>>()
+    private val consumers = ConcurrentHashMap<Long, Consumer>()
 
     init {
         state = State.START
@@ -53,10 +51,7 @@ class ServerCnx(private val logManagerFactory: LogManagerFactory) : AbstractHand
         super.channelInactive(ctx)
         producers.values.forEach({
             try {
-                if (it.isDone && !it.isCompletedExceptionally) {
-                    val producer = it.getNow(null)
-                    producer.close()
-                }
+                it.close()
             } catch (e: Exception) {
                 logger.error("Close producer failed,maybe already closed", e)
             }
@@ -81,38 +76,35 @@ class ServerCnx(private val logManagerFactory: LogManagerFactory) : AbstractHand
         } else {
             commandProducer.producerName
         }
-        val topicName = commandProducer.topic
+        val topic = commandProducer.topic
         val producerId = commandProducer.producerId
         val requestId = commandProducer.requestId
 
-        val existingProducerFuture = producers[producerId]
-        if (existingProducerFuture != null) {
-            if (existingProducerFuture.isDone && !existingProducerFuture.isCompletedExceptionally) {
-                val producer = existingProducerFuture.getNow(null)
-                logger.info("[{}] Producer with id  is already created :", remoteAddress, producer)
-            } else {
-                logger.warn("[{}] Producer is already present on the broker.", remoteAddress)
-                return
-            }
-        }
-        logger.info("[{}][{}] Try to create producer with id [{}]", remoteAddress, topicName, producerId)
-        val future = CompletableFuture<Producer>()
-        logManagerFactory.asyncOpen(topicName, object : AsyncCallbacks.CommonCallback<LogManager, LedgerStorageException> {
-            override fun onCompleted(data: LogManager, version: Version) {
-                val producer = Producer(PersistentTopic(topicName, data), this@ServerCnx, producerName, producerId)
-                future.complete(producer)
-            }
+        var existingProducer = producers[producerId]
+        if (existingProducer == null) {
+            logger.info("[{}][{}] Try to create producer with id [{}]", remoteAddress, topic, producerId)
+            this.messageStorageFactory.open(topic).subscribe(object : OnCompletedObserver<MessageStorage>() {
+                override fun onError(e: Throwable) {
+                    logger.error("Open producer failed_" + e.message, e)
+                }
 
-            override fun onThrowable(throwable: LedgerStorageException) {
-                future.completeExceptionally(throwable)
-                throwable.printStackTrace()
-            }
-        })
-        this.producers.putIfAbsent(producerId, future)
-        val producerSuccess = BrokerApi.CommandProducerSuccess.newBuilder()
+                override fun onNext(t: MessageStorage) {
+                    producers.putIfAbsent(producerId, Producer(PersistentTopic(topic, t), this@ServerCnx, producerName, producerId))
+                }
+
+                override fun onComplete() {
+                }
+            })
+        }
+
+        val producerSuccess = BrokerApi.CommandProducerSuccess
+                .newBuilder()
                 .setProducerName(UUID.randomUUID().toString().replace("-", ""))
                 .setRequestId(0L).build()
-        val command = BrokerApi.Command.newBuilder().setProducerSuccess(producerSuccess).setType(BrokerApi.Command.Type.PRODUCER_SUCCESS).build()
+        val command = BrokerApi.Command
+                .newBuilder()
+                .setProducerSuccess(producerSuccess)
+                .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS).build()
         ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
     }
 
@@ -124,13 +116,12 @@ class ServerCnx(private val logManagerFactory: LogManagerFactory) : AbstractHand
         }
         val producerId = commandSend.headersMap[FastMQConfigKeys.PRODUCER_ID]!!.toLong()
         val sequenceId = commandSend.headersMap[FastMQConfigKeys.SEQUENCE_ID]!!.toLong()
-        val producerFuture = this.producers[producerId]
-        if (producerFuture == null || producerFuture.isCompletedExceptionally) {
-            logger.warn("[{}] Producer had already been closed: {},cause :{}", remoteAddress, producerId)
+        val producer = this.producers[producerId]
+        if (producer == null) {
+            logger.warn("[{}] Producer doesn't exist [{}].", remoteAddress, producerId)
             return
         }
         try {
-            val producer = producerFuture.get(3, TimeUnit.SECONDS)
             producer.publishMessage(producerId, sequenceId, Unpooled.wrappedBuffer(commandSend.toByteArray()))
         } catch (e: TimeoutException) {
             logger.info("[{}] Create producer timeout after 3S,{}", remoteAddress, producerId)
@@ -143,52 +134,60 @@ class ServerCnx(private val logManagerFactory: LogManagerFactory) : AbstractHand
         val consumerName = subscribe.consumerName
         val requestId = subscribe.requestId
 
-        val logManager = this.logManagerFactory.open(topic)
-        val future = CompletableFuture<Consumer>()
-        val existingFuture = this.consumers.putIfAbsent(consumerId, future)
-        if (existingFuture != null) {
-            if (existingFuture.isDone && !existingFuture.isCompletedExceptionally) {
-                val consumer = existingFuture.getNow(null)
-                logger.info("[{}] Consumer with the same id is already created: {}", remoteAddress, consumer)
-                ctx?.writeAndFlush(Commands.newSuccess(requestId))
-                return
-            } else {
-                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(requestId, BrokerApi.ServerError.UnknownError, "Consumer is already present on the connection").toByteArray()))
-                return
-            }
-        }
-        logManager.asyncOpenCursor(consumerName, object : AsyncCallbacks.OpenCursorCallback {
-            override fun onComplete(logReader: LogReader) {
-                future.complete(Consumer(logReader))
-                ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
-            }
+        val consumer = this.consumers[consumerId]
+        if (consumer == null) {
+            this.messageStorageFactory.open(topic)
+                    .subscribe(object : OnCompletedObserver<MessageStorage>() {
+                        override fun onError(e: Throwable) {
+                            logger.error("[$topic][$consumerId] Open message storage failed_" + e.message, e)
+                            ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                                    .newError(requestId,
+                                            BrokerApi.ServerError.UnknownError,
+                                            "Create consumer failed").toByteArray()))
+                        }
 
-            override fun onThrowable(throwable: Throwable) {
-                logger.error(throwable.message, throwable)
-                future.completeExceptionally(throwable)
-                ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(requestId, BrokerApi.ServerError.UnknownError, "Consumer is already present on the connection").toByteArray()))
-                consumers.remove(consumerId)
-                return
-            }
-        })
+                        override fun onNext(t: MessageStorage) {
+                            val previous = consumers.putIfAbsent(consumerId, Consumer(t))
+                            if (previous != null) {
+                                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                                        .newError(requestId,
+                                                BrokerApi.ServerError.UnknownError,
+                                                "Consumer is already present on the connection").toByteArray()))
+                            } else {
+                                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
+                            }
+                        }
+                    })
+        }
     }
 
     override fun handlePullMessage(pullMessage: BrokerApi.CommandPullMessage) {
         val consumerId = pullMessage.consumerId
+        val messageId = pullMessage.messageId
         this.consumers[consumerId]?.let {
-            if (it.isDone && !it.isCompletedExceptionally) {
-                val consumer = it.getNow(null)
-                val messages = consumer.readMessage(pullMessage.maxMessage)
-                ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newMessage(consumerId, messages).toByteArray()))
-            } else {
-                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(pullMessage.requestId, BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
-            }
-        } ?: logger.error("Consumer not exist :{} ", consumerId)
+            val command = it.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
+            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+        } ?: run {
+            logger.error("Consumer not exist :{} ", consumerId)
+            ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                    .newError(pullMessage.requestId,
+                            BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
+        }
+    }
+
+    override fun handleFetchOffset(fetchOffset: BrokerApi.CommandFetchOffset) {
+        try {
+            val offset = messageStorageFactory.offsetStorage
+                    .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
+            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                    .newFetchOffsetResponse(fetchOffset.topic, fetchOffset.consumerId,
+                            offset.ledgerId, offset.entryId).toByteArray()))
+        } catch (e: OffsetStorageException) {
+            logger.error(e.message, e)
+        }
     }
 
     companion object {
-
         private val logger = LoggerFactory.getLogger(ServerCnx::class.java)
-
     }
 }
