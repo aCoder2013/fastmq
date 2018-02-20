@@ -328,7 +328,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
         }
         return this.ledgerCache.computeIfAbsent(ledgerId, { lld: Long ->
             Observable.create<LedgerHandle> {
-                this.bookKeeper.asyncOpenLedger(lld, this.config.digestType, this.config.password, { rc, lh, _ ->
+                this.bookKeeper.asyncOpenLedgerNoRecovery(lld, this.config.digestType, this.config.password, { rc, lh, _ ->
                     this.executor.submitOrdered(ledgerId, safeRun {
                         if (rc != BKException.Code.OK) {
                             ledgerCache.remove(ledgerId)

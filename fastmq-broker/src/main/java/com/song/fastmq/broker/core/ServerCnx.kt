@@ -165,7 +165,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         val consumerId = pullMessage.consumerId
         val messageId = pullMessage.messageId
         this.consumers[consumerId]?.let {
-            val command = it.readMessage(Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
+            val command = it.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
             ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
         } ?: run {
             logger.error("Consumer not exist :{} ", consumerId)

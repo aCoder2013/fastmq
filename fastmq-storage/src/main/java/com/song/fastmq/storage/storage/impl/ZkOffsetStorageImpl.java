@@ -76,6 +76,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
             }
         });
         try {
+            // TODO: 2018/2/20 Result is not a good design
             return result.getData();
         } catch (Throwable throwable) {
             throw new OffsetStorageException(throwable);

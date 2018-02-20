@@ -7,7 +7,6 @@ import com.song.fastmq.storage.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.GetMessageResult
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
-import io.reactivex.schedulers.Schedulers
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -16,13 +15,12 @@ import java.util.*
  */
 class Consumer(private val messageStorage: MessageStorage) {
 
-    fun readMessage(offset: Offset, maxToRead: Int): BrokerApi.Command {
+    fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int): BrokerApi.Command {
         val builder = BrokerApi.CommandMessage.newBuilder()
-        builder.consumerId = -1
+        builder.consumerId = consumerId
         val messages = Lists.newArrayListWithExpectedSize<BrokerApi.CommandSend>(maxToRead)
         messageStorage.queryMessage(offset, maxToRead)
-                .subscribeOn(Schedulers.io())
-                .subscribe(object : OnCompletedObserver<GetMessageResult>() {
+                .blockingSubscribe(object : OnCompletedObserver<GetMessageResult>() {
                     override fun onError(e: Throwable) {
                         logger.error("Read message failed_" + e.message, e)
                     }
@@ -55,7 +53,7 @@ class Consumer(private val messageStorage: MessageStorage) {
 
         return BrokerApi.Command.newBuilder()
                 .setType(BrokerApi.Command.Type.MESSAGE)
-                .setMessage(builder)
+                .setMessage(builder.build())
                 .build()
     }
 
