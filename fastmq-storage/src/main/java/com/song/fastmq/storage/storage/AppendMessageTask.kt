@@ -8,14 +8,14 @@ import io.reactivex.ObservableEmitter
 import org.apache.bookkeeper.client.AsyncCallback
 import org.apache.bookkeeper.client.BKException
 import org.apache.bookkeeper.client.LedgerHandle
-import org.apache.bookkeeper.common.util.SafeRunnable
+import org.apache.bookkeeper.util.SafeRunnable
 import org.slf4j.LoggerFactory
 
 /**
  * @author song
  */
 class AppendMessageTask(private val messageStorage: MessageStorageImpl, private val data: ByteBuf,
-                        private val observable: ObservableEmitter<Offset>) : SafeRunnable, AsyncCallback.AddCallback {
+                        private val observable: ObservableEmitter<Offset>) : SafeRunnable(), AsyncCallback.AddCallback {
 
     private var entryId: Long = 0
 

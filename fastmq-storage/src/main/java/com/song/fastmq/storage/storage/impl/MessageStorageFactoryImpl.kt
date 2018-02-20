@@ -50,8 +50,7 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     private val messageOrderedThreadPool = OrderedSafeExecutor
             .newBuilder()
-            .name("Message-ordered-thread-pool=%d")
-            .numThreads(20)
+//            .name("fastmq-message-workers")
             .build()
 
     init {

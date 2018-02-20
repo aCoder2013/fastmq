@@ -15,7 +15,7 @@ import java.util.*
  */
 class DefaultProducerTest {
 
-    var producer: Producer? = null
+    private var producer: Producer? = null
 
     @Before
     fun setUp() {

@@ -126,14 +126,10 @@
             </exclusions>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jre8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
+            <artifactId>kotlin-test-junit</artifactId>
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
@@ -175,6 +171,12 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.bookkeeper</groupId>
+                <artifactId>bookkeeper-server</artifactId>
+                <version>4.6.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
