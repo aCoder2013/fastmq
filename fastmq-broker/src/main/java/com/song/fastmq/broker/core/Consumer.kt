@@ -15,6 +15,9 @@ import java.util.*
  */
 class Consumer(private val messageStorage: MessageStorage) {
 
+    /**
+     * todo:return Observable
+     */
     fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int): BrokerApi.Command {
         val builder = BrokerApi.CommandMessage.newBuilder()
         builder.consumerId = consumerId
