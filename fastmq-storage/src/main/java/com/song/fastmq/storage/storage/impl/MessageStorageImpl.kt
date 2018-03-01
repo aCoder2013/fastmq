@@ -228,7 +228,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
     }
 
     override fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult> {
-        return Observable.create<GetMessageResult> { observable: ObservableEmitter<GetMessageResult> ->
+            return Observable.create<GetMessageResult> { observable: ObservableEmitter<GetMessageResult> ->
             checkArgument(maxMsgNum > 0)
             val ledgerId = offset.ledgerId
             if (ledgerId == this.currentLedger.id) {

@@ -57,10 +57,10 @@ object Utils {
     }
 
     fun normalizeHostAddress(localHost: InetAddress): String {
-        if (localHost is Inet6Address) {
-            return "[" + localHost.getHostAddress() + "]"
+        return if (localHost is Inet6Address) {
+            "[" + localHost.getHostAddress() + "]"
         } else {
-            return localHost.hostAddress
+            localHost.hostAddress
         }
     }
 
@@ -73,11 +73,11 @@ object Utils {
     fun getPid(): Int {
         val runtime = ManagementFactory.getRuntimeMXBean()
         val name = runtime.name // format: "pid@hostname"
-        try {
-            return Integer.parseInt(name.substring(0, name.indexOf('@')))
+        return try {
+            Integer.parseInt(name.substring(0, name.indexOf('@')))
         } catch (e: Exception) {
             logger.error("Get pid failed", e)
-            return -1
+            -1
         }
     }
 }
