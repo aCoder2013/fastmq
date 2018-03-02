@@ -21,7 +21,6 @@ class JsonUtilsTest {
         assertEquals("\"Hello World\"", JsonUtils.toJson(obj))
     }
 
-
     @Test
     @Throws(Exception::class)
     fun fromJson() {

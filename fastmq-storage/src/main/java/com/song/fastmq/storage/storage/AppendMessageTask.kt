@@ -57,7 +57,7 @@ class AppendMessageTask(private val messageStorage: MessageStorageImpl, private 
     }
 
     override fun safeRun() {
-        this.messageStorage.numberOfEntries.incrementAndGet()
+        this.messageStorage.numberOfMessages.incrementAndGet()
         this.messageStorage.totalSize.addAndGet(dataLength.toLong())
 
         this.data.release()

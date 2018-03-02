@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.ArrayList
 
 /**
  * Created by song on 2017/11/5.
@@ -45,7 +44,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
 
     private val ledgerCache = ConcurrentHashMap<Long, Observable<LedgerHandle>>()
 
-    var numberOfEntries = AtomicLong(0)
+    var numberOfMessages = AtomicLong(0)
 
     var totalSize = AtomicLong(0)
 
@@ -141,7 +140,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
             while (iterator.hasNext()) {
                 val logSegment = iterator.next()
                 if (logSegment.entries > 0) {
-                    numberOfEntries.addAndGet(logSegment.entries)
+                    numberOfMessages.addAndGet(logSegment.entries)
                     totalSize.addAndGet(logSegment.size)
                 } else {
                     iterator.remove()
@@ -190,134 +189,138 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
 
     override fun appendMessage(message: Message): Observable<Offset> {
         return Observable.create<Offset> { observable: ObservableEmitter<Offset> ->
-            val buffer = Unpooled.wrappedBuffer(message.data)
-            logger.debug("[{}] asyncAddEntry size={} state={}", this.topic, buffer.readableBytes(), state)
-            val state = this.state.get()
-            if (state == State.Fenced) {
-                observable.onError(MessageStorageException("Attempted to use a fenced managed ledger"))
-                return@create
-            } else if (state == State.CLOSED) {
-                observable.onError(MessageStorageException("Message storage was already closed"))
-                return@create
-            }
-            if (state == State.LEDGER_CLOSING || state == State.LEDGER_CREATING) {
-                logger.debug("[{}] Queue addEntry request", this.topic)
-                this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
-            } else if (state == State.LEDGER_CLOSED) {
-                val now = System.currentTimeMillis()
-                if (now < lastLedgerCreationFailureTimestamp + WAIT_TIME_AFTER_LEDGER_CREATION_FAILURE_MS) {
-                    observable.onError(MessageStorageException("Waiting for new ledger creation to complete"))
-                    return@create
+            this.executor.submitOrdered(this.topic, safeRun {
+                val buffer = Unpooled.wrappedBuffer(message.data)
+                logger.debug("[{}] asyncAddEntry size={} state={}", this.topic, buffer.readableBytes(), state)
+                val state = this.state.get()
+                if (state == State.Fenced) {
+                    observable.onError(MessageStorageException("Attempted to use a fenced managed ledger"))
+                    return@safeRun
+                } else if (state == State.CLOSED) {
+                    observable.onError(MessageStorageException("Message storage was already closed"))
+                    return@safeRun
                 }
-                logger.debug("Create a new ledger for {}.", this.topic)
-                if (this.state.compareAndSet(State.LEDGER_CLOSED, State.LEDGER_CREATING)) {
-                    this.lastLedgerCreationInitiationTimestamp = System.nanoTime()
-                    this.bookKeeper.asyncCreateLedger(config.ensSize, config.writeQuorumSize, config.ackQuorumSize, config.digestType,
-                            config.password, this, null, null)
-                } else {
+                if (state == State.LEDGER_CLOSING || state == State.LEDGER_CREATING) {
+                    logger.debug("[{}] Queue addEntry request", this.topic)
                     this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
+                } else if (state == State.LEDGER_CLOSED) {
+                    val now = System.currentTimeMillis()
+                    if (now < lastLedgerCreationFailureTimestamp + WAIT_TIME_AFTER_LEDGER_CREATION_FAILURE_MS) {
+                        observable.onError(MessageStorageException("Waiting for new ledger creation to complete"))
+                        return@safeRun
+                    }
+                    logger.debug("Create a new ledger for {}.", this.topic)
+                    if (this.state.compareAndSet(State.LEDGER_CLOSED, State.LEDGER_CREATING)) {
+                        this.lastLedgerCreationInitiationTimestamp = System.nanoTime()
+                        this.bookKeeper.asyncCreateLedger(config.ensSize, config.writeQuorumSize, config.ackQuorumSize, config.digestType,
+                                config.password, this, null, null)
+                    } else {
+                        this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
+                    }
+                } else {
+                    checkArgument(state == State.LEDGER_OPENED)
+                    logger.debug("[{}] Write into current ledger lh={}", this.topic, currentLedger.id)
+                    val task = AppendMessageTask(this, buffer, observable)
+                    task.ledgerHandle = this.currentLedger
+                    task.start()
                 }
-            } else {
-                checkArgument(state == State.LEDGER_OPENED)
-                logger.debug("[{}] Write into current ledger lh={}", this.topic, currentLedger.id)
-                val task = AppendMessageTask(this, buffer, observable)
-                task.ledgerHandle = this.currentLedger
-                task.start()
-            }
+            })
         }
     }
 
     override fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult> {
-            return Observable.create<GetMessageResult> { observable: ObservableEmitter<GetMessageResult> ->
-            checkArgument(maxMsgNum > 0)
-            val ledgerId = offset.ledgerId
-            if (ledgerId == this.currentLedger.id) {
-                TODO("")
-            } else {
-                val logSegment = this.ledgers[ledgerId]
-                if (logSegment == null || logSegment.entries == 0L) {
-                    this.executor.submit({
-                        queryMessage(Offset(ledgerId + 1, 0), maxMsgNum)
-                    })
-                    return@create
-                }
-                getLedgerHandle(ledgerId).subscribe(object : OnCompletedObserver<LedgerHandle>() {
+        return Observable.create<GetMessageResult> { observable: ObservableEmitter<GetMessageResult> ->
+            this.executor.submitOrdered(this.topic, safeRun {
+                checkArgument(maxMsgNum > 0)
+                val ledgerId = offset.ledgerId
+                if (ledgerId == this.currentLedger.id) {
+                    TODO("Read from cache")
+                } else {
+                    val logSegment = this.ledgers[ledgerId]
+                    if (logSegment == null || logSegment.entries == 0L) {
+                        this.executor.submit({
+                            queryMessage(Offset(ledgerId + 1, 0), maxMsgNum)
+                        })
+                        return@safeRun
+                    }
+                    getLedgerHandle(ledgerId).subscribe(object : OnCompletedObserver<LedgerHandle>() {
 
-                    override fun onNext(t: LedgerHandle) {
+                        override fun onNext(t: LedgerHandle) {
 
-                        val firstEntry = offset.entryId
+                            val firstEntry = offset.entryId
 
-                        val lastPosition = lastConfirmedEntry
+                            val lastPosition = lastConfirmedEntry
 
-                        val lastEntryInLedger = if (lastPosition.ledgerId == t.id) {
-                            lastPosition.entryId
-                        } else {
-                            t.lastAddConfirmed
-                        }
-
-                        if (firstEntry > lastEntryInLedger) {
-                            logger.info("[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one."
-                                    , topic, ledgerId, lastEntryInLedger)
-                            val nextLedgerId = ledgers.ceilingKey(ledgerId + 1)
-                            if (ledgerId == currentLedger.id || nextLedgerId == null) {
-                                observable.onNext(GetMessageResult(messages = Collections.emptyList()))
-                                observable.onComplete()
+                            val lastEntryInLedger = if (lastPosition.ledgerId == t.id) {
+                                lastPosition.entryId
                             } else {
-                                executor.submitOrdered(ledgerId, safeRun {
-                                    queryMessage(Offset(nextLedgerId, 0), maxMsgNum)
-                                            .subscribe(object : OnCompletedObserver<GetMessageResult>() {
-
-                                                override fun onError(e: Throwable) {
-                                                    observable.onError(e)
-                                                }
-
-                                                override fun onNext(t: GetMessageResult) {
-                                                    observable.onNext(t)
-                                                }
-
-                                                override fun onComplete() {
-                                                    observable.onComplete()
-                                                }
-
-                                            })
-                                })
+                                t.lastAddConfirmed
                             }
-                            return
-                        }
 
-                        val lastEntry = Math.min(firstEntry + maxMsgNum - 1, lastEntryInLedger)
-                        t.asyncReadEntries(firstEntry, lastEntry, { rc, lh, seq, _ ->
-                            if (rc != BKException.Code.OK) {
-                                observable.onError(MessageStorageException(BKException.create(rc)))
-                                return@asyncReadEntries
-                            } else {
-                                var totalSize: Long = 0
-                                val messages = Lists.newArrayListWithExpectedSize<Message>(maxMsgNum)
-                                while (seq.hasMoreElements()) {
-                                    val ledgerEntry = seq.nextElement()
-                                    totalSize += ledgerEntry.length
-                                    val entryBuffer = ledgerEntry.entryBuffer
-                                    val array = ByteArray(entryBuffer.readableBytes())
-                                    entryBuffer.getBytes(entryBuffer.readerIndex(), array)
-                                    val message = Message(messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId), data = array)
-                                    messages.add(message)
+                            if (firstEntry > lastEntryInLedger) {
+                                logger.info("[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one."
+                                        , topic, ledgerId, lastEntryInLedger)
+                                val nextLedgerId = ledgers.ceilingKey(ledgerId + 1)
+                                if (ledgerId == currentLedger.id || nextLedgerId == null) {
+                                    observable.onNext(GetMessageResult(messages = Collections.emptyList()))
+                                    observable.onComplete()
+                                } else {
+                                    executor.submitOrdered(ledgerId, safeRun {
+                                        queryMessage(Offset(nextLedgerId, 0), maxMsgNum)
+                                                .subscribe(object : OnCompletedObserver<GetMessageResult>() {
+
+                                                    override fun onError(e: Throwable) {
+                                                        observable.onError(e)
+                                                    }
+
+                                                    override fun onNext(t: GetMessageResult) {
+                                                        observable.onNext(t)
+                                                    }
+
+                                                    override fun onComplete() {
+                                                        observable.onComplete()
+                                                    }
+
+                                                })
+                                    })
                                 }
-                                observable.onNext(GetMessageResult(Offset(ledgerId, messages[messages.size - 1].messageId.entryId + 1), messages))
-                                observable.onComplete()
-                                return@asyncReadEntries
+                                return
                             }
-                        }, null)
-                    }
 
-                    override fun onComplete() {
-                    }
+                            val lastEntry = Math.min(firstEntry + maxMsgNum - 1, lastEntryInLedger)
+                            t.asyncReadEntries(firstEntry, lastEntry, { rc, lh, seq, _ ->
+                                if (rc != BKException.Code.OK) {
+                                    observable.onError(MessageStorageException(BKException.create(rc)))
+                                    return@asyncReadEntries
+                                } else {
+                                    var totalSize: Long = 0
+                                    val messages = Lists.newArrayListWithExpectedSize<Message>(maxMsgNum)
+                                    while (seq.hasMoreElements()) {
+                                        val ledgerEntry = seq.nextElement()
+                                        totalSize += ledgerEntry.length
+                                        val entryBuffer = ledgerEntry.entryBuffer
+                                        val array = ByteArray(entryBuffer.readableBytes())
+                                        entryBuffer.getBytes(entryBuffer.readerIndex(), array)
+                                        val message = Message(messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId), data = array)
+                                        messages.add(message)
+                                    }
+                                    observable.onNext(GetMessageResult(Offset(ledgerId, messages[messages.size - 1].messageId.entryId + 1), messages))
+                                    observable.onComplete()
+                                    return@asyncReadEntries
+                                }
+                            }, null)
+                        }
 
-                    override fun onError(e: Throwable) {
-                        logger.error("Error open ledger handle [{}],read offset {} - {}", ledgerId, offset, e.message)
-                        observable.onError(e)
-                    }
-                })
-            }
+                        override fun onComplete() {
+                        }
+
+                        override fun onError(e: Throwable) {
+                            logger.error("Error open ledger handle [{}],read offset {} - {}", ledgerId, offset, e.message)
+                            observable.onError(e)
+                        }
+                    })
+                }
+            })
         }
     }
 
@@ -343,6 +346,10 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                 }, null)
             }
         })
+    }
+
+    override fun getNumberOfMessages(): Long {
+        return this.numberOfMessages.get()
     }
 
     @Synchronized
