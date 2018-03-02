@@ -18,4 +18,6 @@ public interface OffsetStorage {
     void persistOffset(ConsumerInfo consumerInfo) throws InterruptedException;
 
     void removeOffset(ConsumerInfo consumerInfo);
+
+    void close();
 }

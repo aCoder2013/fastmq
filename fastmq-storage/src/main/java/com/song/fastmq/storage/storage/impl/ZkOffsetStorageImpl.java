@@ -12,6 +12,7 @@ import com.song.fastmq.storage.storage.metadata.LogSegment;
 import com.song.fastmq.storage.storage.support.OffsetStorageException;
 import com.song.fastmq.storage.storage.utils.ZkUtils;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -19,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.curator.x.async.AsyncCuratorFramework;
@@ -140,7 +142,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
 
     @Override
     public void removeOffset(ConsumerInfo consumerInfo) {
-        this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed))
+        this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.quietly))
             .forPath(getReaderPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
                 logger.error("Delete consumer offset failed", throwable);
@@ -149,6 +151,19 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                     .info("Consumer[{}] offset has been safely deleted.", consumerInfo.toString());
             }
         });
+    }
+
+    @Override public void close() {
+        this.offsetCache.clear();
+        this.offsetThreadPool.shutdown();
+        try {
+            if (!this.offsetThreadPool.awaitTermination(60L, TimeUnit.SECONDS)) {
+                logger.warn("Offset thread pool did not terminate in the specified time.");
+                List<Runnable> droppedTasks = this.offsetThreadPool.shutdownNow();
+                logger.warn("Offset thread pool was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed.");
+            }
+        } catch (InterruptedException ignore) {
+        }
     }
 
     /**
@@ -167,7 +182,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                     return;
                 }
                 if (stat == null) {
-                    offsetThreadPool.submit(() -> metadataStorage.getLogInfo(consumerInfo.getTopic())
+                    this.offsetThreadPool.submit(() -> metadataStorage.getLogInfo(consumerInfo.getTopic())
                         .subscribe(log -> {
                             long ledgerId = 0;
                             if (log.getSegments().size() > 0) {
