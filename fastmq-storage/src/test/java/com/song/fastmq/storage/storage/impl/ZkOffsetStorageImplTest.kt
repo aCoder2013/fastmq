@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.runners.MockitoJUnitRunner
 
+
 /**
  * @author song
  */
@@ -29,6 +30,10 @@ class ZkOffsetStorageImplTest {
     private lateinit var offsetStorage: OffsetStorage
 
     private lateinit var curatorFramework: CuratorFramework
+
+    private val consumerName = "consumer-1"
+
+    private val topic = "test"
 
     @Before
     @Throws(Exception::class)
@@ -43,9 +48,22 @@ class ZkOffsetStorageImplTest {
     }
 
     @Test
+    fun updateOffset() {
+        val consumerInfo = ConsumerInfo(consumerName, topic)
+        this.offsetStorage.commitOffset(consumerInfo, Offset(10, 1024))
+        assertEquals(Offset(10, 1024), this.offsetStorage.queryOffset(consumerInfo))
+
+        this.offsetStorage.commitOffset(consumerInfo, Offset(11, 1023))
+        assertEquals(Offset(11, 1023), this.offsetStorage.queryOffset(consumerInfo))
+
+        this.offsetStorage.commitOffset(consumerInfo, Offset(12, 1022))
+        assertEquals(Offset(12, 1022), this.offsetStorage.queryOffset(consumerInfo))
+    }
+
+    @Test
     @Throws(Exception::class)
     fun queryOffset() {
-        val consumerInfo = ConsumerInfo("consumer-1", "test")
+        val consumerInfo = ConsumerInfo(consumerName, topic)
         /*
             Put into memory cache
          */
@@ -58,7 +76,7 @@ class ZkOffsetStorageImplTest {
     @After
     @Throws(Exception::class)
     fun tearDown() {
-        val consumerInfo = ConsumerInfo("consumer-1", "test")
+        val consumerInfo = ConsumerInfo(consumerName, topic)
         this.offsetStorage.removeOffset(consumerInfo)
         this.offsetStorage.close()
         this.curatorFramework.close()

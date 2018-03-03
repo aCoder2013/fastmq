@@ -112,10 +112,10 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
 
     @Override
     public void persistOffset(ConsumerInfo consumerInfo) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
         if (this.offsetCache.containsKey(consumerInfo)) {
+            CountDownLatch latch = new CountDownLatch(1);
             Offset offset = this.offsetCache.get(consumerInfo);
-            String path = getReaderPath(consumerInfo);
+            String path = buildConsumerPath(consumerInfo);
             try {
                 this.asyncCuratorFramework.setData()
                     .forPath(path, JsonUtils.toJson(offset).getBytes())
@@ -143,7 +143,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     @Override
     public void removeOffset(ConsumerInfo consumerInfo) {
         this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.quietly))
-            .forPath(getReaderPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
+            .forPath(buildConsumerPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
                 logger.error("Delete consumer offset failed", throwable);
             } else {
@@ -173,7 +173,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     private CompletableFuture<Offset> asyncEnsureOffsetExist(ConsumerInfo consumerInfo,
         ReadOffsetCallback callback) {
         CompletableFuture<Offset> future = new CompletableFuture<>();
-        String path = getReaderPath(consumerInfo);
+        String path = buildConsumerPath(consumerInfo);
         this.asyncCuratorFramework.checkExists()
             .forPath(path)
             .whenComplete((stat, throwable) -> {
@@ -232,7 +232,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
         return future;
     }
 
-    private String getReaderPath(ConsumerInfo consumerInfo) {
+    private String buildConsumerPath(ConsumerInfo consumerInfo) {
         return ZK_OFFSET_STORAGE_PREFIX_PATH + consumerInfo.getTopic() + ZkUtils.INSTANCE.getSEPARATOR()
             + consumerInfo
             .getConsumerName();
