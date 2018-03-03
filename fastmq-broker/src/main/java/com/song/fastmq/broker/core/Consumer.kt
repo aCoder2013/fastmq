@@ -7,18 +7,19 @@ import com.song.fastmq.storage.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.GetMessageResult
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
+import io.netty.buffer.Unpooled
 import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
  * @author song
  */
-class Consumer(private val messageStorage: MessageStorage) {
+class Consumer(private val cnx: ServerCnx, private val messageStorage: MessageStorage) {
 
     /**
      * todo:return Observable
      */
-    fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int): BrokerApi.Command {
+    fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int) {
         val builder = BrokerApi.CommandMessage.newBuilder()
         builder.consumerId = consumerId
         val messages = Lists.newArrayListWithExpectedSize<BrokerApi.CommandSend>(maxToRead)
@@ -50,14 +51,13 @@ class Consumer(private val messageStorage: MessageStorage) {
                     }
 
                     override fun onComplete() {
+                        val command = BrokerApi.Command.newBuilder()
+                                .setType(BrokerApi.Command.Type.MESSAGE)
+                                .setMessage(builder.build())
+                                .build()
+                        cnx.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                     }
-
                 })
-
-        return BrokerApi.Command.newBuilder()
-                .setType(BrokerApi.Command.Type.MESSAGE)
-                .setMessage(builder.build())
-                .build()
     }
 
     companion object {

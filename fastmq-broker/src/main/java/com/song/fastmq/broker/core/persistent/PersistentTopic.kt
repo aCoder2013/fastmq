@@ -8,6 +8,7 @@ import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.ByteBuf
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
+import org.slf4j.LoggerFactory
 
 /**
  * @author song
@@ -22,8 +23,8 @@ class PersistentTopic(private val topic: String, private val messageStorage: Mes
                     .subscribe(object : OnCompletedObserver<Offset>() {
 
                         override fun onNext(t: Offset) {
-                            observable.onNext(t)
                             headersAndPayload.release()
+                            observable.onNext(t)
                             observable.onComplete()
                         }
 
@@ -39,4 +40,8 @@ class PersistentTopic(private val topic: String, private val messageStorage: Mes
         messageStorage.close()
     }
 
+
+    companion object {
+        val logger = LoggerFactory.getLogger(PersistentTopic::class.java)
+    }
 }

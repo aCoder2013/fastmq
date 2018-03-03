@@ -1,5 +1,6 @@
 package com.song.fastmq.broker
 
+import com.song.fastmq.broker.exception.FastMQServiceException
 import com.song.fastmq.broker.support.BrokerChannelInitializer
 import com.song.fastmq.storage.common.utils.Utils
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
@@ -20,6 +21,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.commons.lang.SystemUtils
 import org.slf4j.LoggerFactory
 import java.io.Closeable
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * @author song
@@ -31,6 +34,12 @@ class BrokerService(private val port: Int = 7164) : Closeable {
     private val acceptorGroup: EventLoopGroup
 
     private val workerGroup: EventLoopGroup
+
+    private val lock = ReentrantLock()
+
+    private val isClosedCondition = lock.newCondition()
+
+    private var state = State.Init
 
     init {
         val clientConfiguration = ClientConfiguration()
@@ -62,32 +71,52 @@ class BrokerService(private val port: Int = 7164) : Closeable {
 
     @Throws(Exception::class)
     fun start() {
-        val bootstrap = ServerBootstrap()
-        bootstrap.group(acceptorGroup, workerGroup)
-                .option(ChannelOption.SO_BACKLOG, 512)
-                .option(ChannelOption.SO_REUSEADDR, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                        AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
-        if (workerGroup is EpollEventLoopGroup) {
-            bootstrap.channel(EpollServerSocketChannel::class.java)
-            bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
-        } else {
-            bootstrap.channel(NioServerSocketChannel::class.java)
-        }
+        this.lock.withLock {
+            if (state != State.Init) {
+                throw FastMQServiceException("Cannot start the service more than once.")
+            }
+            val bootstrap = ServerBootstrap()
+            bootstrap.group(acceptorGroup, workerGroup)
+                    .option(ChannelOption.SO_BACKLOG, 512)
+                    .option(ChannelOption.SO_REUSEADDR, true)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
+                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                    .childOption(ChannelOption.RCVBUF_ALLOCATOR,
+                            AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
+            if (workerGroup is EpollEventLoopGroup) {
+                bootstrap.channel(EpollServerSocketChannel::class.java)
+                bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
+            } else {
+                bootstrap.channel(NioServerSocketChannel::class.java)
+            }
 
-        bootstrap.childHandler(BrokerChannelInitializer(messageStorageFactory))
-        bootstrap.bind(port).sync()
-        logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
+            bootstrap.childHandler(BrokerChannelInitializer(messageStorageFactory))
+            bootstrap.bind(port).sync()
+            logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
+            state = State.Started
+        }
+    }
+
+    fun waitUntilClosed() {
+        this.lock.withLock {
+            while (state != State.Closed) {
+                isClosedCondition.await()
+            }
+        }
     }
 
     override fun close() {
-        acceptorGroup.shutdownGracefully()
-        workerGroup.shutdownGracefully()
-        logger.info("Broker service shut down.")
+        this.lock.withLock {
+            acceptorGroup.shutdownGracefully()
+            workerGroup.shutdownGracefully()
+            logger.info("Broker service shut down.")
+            state = State.Closed
+        }
     }
 
+    enum class State {
+        Init, Started, Closed
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(BrokerService::class.java)

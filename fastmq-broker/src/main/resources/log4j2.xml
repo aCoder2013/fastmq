@@ -12,6 +12,9 @@
       <AppenderRef ref="Console"/>
     </Root>
 
+    <Logger name="com.song" level="DEBUG">
+      <AppenderRef ref="Console"/>
+    </Logger>
   </Loggers>
 
 </Configuration>

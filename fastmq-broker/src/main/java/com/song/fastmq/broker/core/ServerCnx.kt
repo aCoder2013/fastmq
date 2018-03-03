@@ -1,6 +1,7 @@
 package com.song.fastmq.broker.core
 
 import com.google.common.base.Preconditions.checkArgument
+import com.google.common.base.Throwables
 import com.song.fastmq.broker.core.persistent.PersistentTopic
 import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
@@ -59,14 +60,14 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         producers.clear()
     }
 
-    override fun channelWritabilityChanged(ctx: ChannelHandlerContext?) {
+    override fun channelWritabilityChanged(ctx: ChannelHandlerContext) {
         super.channelWritabilityChanged(ctx)
-        logger.info("Channel writability has changed to ${ctx?.channel()?.isWritable}")
+        logger.info("Channel writability has changed to ${ctx.channel().isWritable}")
     }
 
-    override fun exceptionCaught(ctx: ChannelHandlerContext?, cause: Throwable?) {
-        logger.error("Got exception $remoteAddress,${cause?.message}", cause)
-        ctx?.close()
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+        logger.error("Got exception $remoteAddress,${cause.message}", cause)
+        ctx.close()
     }
 
     override fun handleProducer(commandProducer: BrokerApi.CommandProducer, payload: ByteBuf) {
@@ -105,7 +106,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
                 .newBuilder()
                 .setProducerSuccess(producerSuccess)
                 .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS).build()
-        ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+        ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
     }
 
     override fun handleSend(commandSend: BrokerApi.CommandSend) {
@@ -140,21 +141,21 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
                     .subscribe(object : OnCompletedObserver<MessageStorage>() {
                         override fun onError(e: Throwable) {
                             logger.error("[$topic][$consumerId] Open message storage failed_" + e.message, e)
-                            ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                                     .newError(requestId,
                                             BrokerApi.ServerError.UnknownError,
-                                            "Create consumer failed").toByteArray()))
+                                            Throwables.getStackTraceAsString(e)).toByteArray()))
                         }
 
                         override fun onNext(t: MessageStorage) {
-                            val previous = consumers.putIfAbsent(consumerId, Consumer(t))
+                            val previous = consumers.putIfAbsent(consumerId, Consumer(this@ServerCnx, t))
                             if (previous != null) {
-                                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                                ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                                         .newError(requestId,
                                                 BrokerApi.ServerError.UnknownError,
                                                 "Consumer is already present on the connection").toByteArray()))
                             } else {
-                                ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
+                                ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
                             }
                         }
                     })
@@ -164,12 +165,9 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
     override fun handlePullMessage(pullMessage: BrokerApi.CommandPullMessage) {
         val consumerId = pullMessage.consumerId
         val messageId = pullMessage.messageId
-        this.consumers[consumerId]?.let {
-            val command = it.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
-            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
-        } ?: run {
+        this.consumers[consumerId]?.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage) ?: run {
             logger.error("Consumer not exist :{} ", consumerId)
-            ctx?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                     .newError(pullMessage.requestId,
                             BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
         }
@@ -179,7 +177,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         try {
             val offset = messageStorageFactory.offsetStorage
                     .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
-            ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(Commands
+            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                     .newFetchOffsetResponse(fetchOffset.topic, fetchOffset.consumerId,
                             offset.ledgerId, offset.entryId).toByteArray()))
         } catch (e: OffsetStorageException) {
