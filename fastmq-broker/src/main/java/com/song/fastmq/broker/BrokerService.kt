@@ -109,6 +109,7 @@ class BrokerService(private val port: Int = 7164) : Closeable {
         this.lock.withLock {
             acceptorGroup.shutdownGracefully()
             workerGroup.shutdownGracefully()
+            this.messageStorageFactory.close()
             logger.info("Broker service shut down.")
             state = State.Closed
         }

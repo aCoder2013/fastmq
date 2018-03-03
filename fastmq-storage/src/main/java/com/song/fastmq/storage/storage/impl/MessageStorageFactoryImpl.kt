@@ -50,7 +50,8 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     private val messageOrderedThreadPool = OrderedSafeExecutor
             .newBuilder()
-//            .name("fastmq-message-workers")
+            .name("fastmq-message-workers")
+            .numThreads(20)
             .build()
 
     init {
@@ -111,18 +112,21 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     }
 
     @Synchronized
-    override fun close(name: String) {
-       if(!closed){
-           this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
-           this.messageStorageCache.clear()
-           this.messageOrderedThreadPool.shutdown()
-           if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-               logger.error("Unable to stop message ordered thread pool, in 60S.")
-           }
-           this.bookKeeper.close()
-           this.curatorFramework.close()
-           closed = true
-       }
+    override fun close() {
+        if (!closed) {
+            this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
+            this.messageOrderedThreadPool.shutdown()
+            if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                logger.error("Unable to stop message ordered thread pool, in 60S.")
+            }
+            this.messageStorageCache.forEach { _: String, u: MessageStorage -> u.close()}
+            this.messageStorageCache.clear()
+            this.bookKeeper.close()
+            this.offsetStorage.close()
+            this.curatorFramework.close()
+            this.zooKeeper.close()
+            closed = true
+        }
     }
 
     companion object {
