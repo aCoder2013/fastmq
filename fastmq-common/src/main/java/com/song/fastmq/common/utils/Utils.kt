@@ -15,6 +15,8 @@ object Utils {
 
     private val logger = LoggerFactory.getLogger(Utils::class.java)
 
+    val LINE_SEPARATOR = System.getProperty("line.separator")
+
     val AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors()
 
     fun getLocalAddress(): String? {

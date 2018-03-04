@@ -1,7 +1,7 @@
 package com.song.fastmq.broker;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.song.fastmq.common.logging.Logger;
+import com.song.fastmq.common.logging.LoggerFactory;
 
 /**
  * @author song
