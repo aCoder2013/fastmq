@@ -3,8 +3,8 @@ package io.openmessaging.fastmq.producer
 import com.google.common.base.Preconditions.checkArgument
 import com.song.fastmq.net.proto.BrokerApi
 import com.song.fastmq.net.proto.Commands
-import com.song.fastmq.storage.common.domain.FastMQConfigKeys
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.utils.Utils
 import io.netty.buffer.Unpooled
 import io.openmessaging.*
 import io.openmessaging.exception.OMSException

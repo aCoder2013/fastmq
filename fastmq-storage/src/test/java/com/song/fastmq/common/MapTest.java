@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common;
+package com.song.fastmq.common;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;

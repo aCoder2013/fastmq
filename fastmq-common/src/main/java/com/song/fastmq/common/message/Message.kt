@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.message
+package com.song.fastmq.common.message
 
 import java.util.*
 

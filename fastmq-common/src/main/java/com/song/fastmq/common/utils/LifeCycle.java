@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.utils;
+package com.song.fastmq.common.utils;
 
 /**
  * Created by song on 2017/11/4.

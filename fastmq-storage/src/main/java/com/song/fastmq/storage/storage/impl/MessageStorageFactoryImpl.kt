@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage.impl
 
-import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.MetadataStorage
@@ -116,9 +116,6 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
         if (!closed) {
             this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
             this.messageOrderedThreadPool.shutdown()
-            if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                logger.error("Unable to stop message ordered thread pool, in 60S.")
-            }
             this.messageStorageCache.forEach { _: String, u: MessageStorage -> u.close()}
             this.messageStorageCache.clear()
             this.bookKeeper.close()

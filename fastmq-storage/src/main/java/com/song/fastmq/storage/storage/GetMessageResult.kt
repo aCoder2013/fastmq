@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage
 
-import com.song.fastmq.storage.common.message.Message
+import com.song.fastmq.common.message.Message
 
 /**
  * @author song

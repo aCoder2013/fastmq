@@ -2,7 +2,7 @@ package com.song.fastmq.broker
 
 import com.song.fastmq.broker.exception.FastMQServiceException
 import com.song.fastmq.broker.support.BrokerChannelInitializer
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.utils.Utils
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import io.netty.bootstrap.ServerBootstrap
@@ -107,6 +107,9 @@ class BrokerService(private val port: Int = 7164) : Closeable {
 
     override fun close() {
         this.lock.withLock {
+            if(state == State.Closed){
+                return
+            }
             acceptorGroup.shutdownGracefully()
             workerGroup.shutdownGracefully()
             this.messageStorageFactory.close()

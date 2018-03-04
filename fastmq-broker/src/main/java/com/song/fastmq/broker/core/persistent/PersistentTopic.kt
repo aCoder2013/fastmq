@@ -1,8 +1,8 @@
 package com.song.fastmq.broker.core.persistent
 
 import com.song.fastmq.broker.core.Topic
-import com.song.fastmq.storage.common.message.Message
-import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.common.message.Message
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.ByteBuf

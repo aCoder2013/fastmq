@@ -1,7 +1,7 @@
 package com.song.fastmq.storage.storage.impl
 
-import com.song.fastmq.storage.common.message.Message
-import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.common.message.Message
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.ConsumerInfo
 import com.song.fastmq.storage.storage.GetMessageResult
 import com.song.fastmq.storage.storage.Offset

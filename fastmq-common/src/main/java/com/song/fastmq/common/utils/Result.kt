@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.utils
+package com.song.fastmq.common.utils
 
 import java.util.concurrent.CountDownLatch
 

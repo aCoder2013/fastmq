@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.concurrent
+package com.song.fastmq.common.concurrent
 
 import org.slf4j.LoggerFactory
 

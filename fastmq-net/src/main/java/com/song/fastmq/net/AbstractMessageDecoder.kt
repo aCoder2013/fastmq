@@ -35,7 +35,6 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
                 }
                 BrokerApi.Command.Type.PRODUCER_SUCCESS -> {
                     handleProducerSuccess(command.producerSuccess, buffer)
-                    logger.info("Producer success :{}.", command.toString())
                 }
                 BrokerApi.Command.Type.SEND -> {
                     checkArgument(command.hasSend())
@@ -135,7 +134,6 @@ abstract class AbstractMessageDecoder : ChannelInboundHandlerAdapter() {
     }
 
     companion object {
-
         private val logger = LoggerFactory.getLogger(AbstractMessageDecoder::class.java)
     }
 

@@ -38,6 +38,5 @@ class DefaultProducerTest {
             println(messageId)
             Thread.sleep(1000)
         }
-        Thread.sleep(100000)
     }
 }

@@ -2,8 +2,8 @@ package io.openmessaging.fastmq.consumer
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.song.fastmq.net.proto.Commands
-import com.song.fastmq.storage.common.domain.FastMQConfigKeys
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.utils.Utils
 import io.netty.buffer.Unpooled
 import io.openmessaging.KeyValue
 import io.openmessaging.Message

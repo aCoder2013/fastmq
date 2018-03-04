@@ -3,9 +3,9 @@ package com.song.fastmq.storage.storage.impl
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.collect.Lists
 import com.google.common.collect.Queues
-import com.song.fastmq.storage.common.message.Message
-import com.song.fastmq.storage.common.message.MessageId
-import com.song.fastmq.storage.common.utils.OnCompletedObserver
+import com.song.fastmq.common.message.Message
+import com.song.fastmq.common.message.MessageId
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.*
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.metadata.Log
@@ -180,7 +180,6 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                         override fun onError(e: Throwable) {
                             observable.onError(e)
                         }
-
                     })
                 }))
             }, null, null)

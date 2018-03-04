@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.utils
+package com.song.fastmq.common.utils
 
 import org.slf4j.LoggerFactory
 import java.lang.management.ManagementFactory

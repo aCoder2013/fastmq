@@ -1,6 +1,6 @@
 package io.openmessaging.fastmq.net
 
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.utils.Utils
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer

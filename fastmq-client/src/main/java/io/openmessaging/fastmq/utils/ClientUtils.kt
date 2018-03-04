@@ -2,7 +2,7 @@ package io.openmessaging.fastmq.utils
 
 import com.google.protobuf.ByteString
 import com.song.fastmq.net.proto.BrokerApi
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.utils.Utils
 import io.openmessaging.BytesMessage
 import io.openmessaging.KeyValue
 import io.openmessaging.OMS
