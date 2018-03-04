@@ -87,26 +87,26 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
             this.messageStorageFactory.open(topic).subscribe(object : OnCompletedObserver<MessageStorage>() {
                 override fun onError(e: Throwable) {
                     logger.error("Open producer failed_" + e.message, e)
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(requestId, BrokerApi.ServerError.UnknownError, Throwables.getStackTraceAsString(e)).toByteArray()))
                 }
 
                 override fun onNext(t: MessageStorage) {
                     producers.putIfAbsent(producerId, Producer(PersistentTopic(topic, t), this@ServerCnx, producerName, producerId))
-                }
-
-                override fun onComplete() {
+                    val producerSuccess = BrokerApi.CommandProducerSuccess
+                            .newBuilder()
+                            .setProducerName(UUID.randomUUID().toString().replace("-", ""))
+                            .setProducerId(producerId)
+                            .setRequestId(0L)
+                            .build()
+                    val command = BrokerApi.Command
+                            .newBuilder()
+                            .setProducerSuccess(producerSuccess)
+                            .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS)
+                            .build()
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 }
             })
         }
-
-        val producerSuccess = BrokerApi.CommandProducerSuccess
-                .newBuilder()
-                .setProducerName(UUID.randomUUID().toString().replace("-", ""))
-                .setRequestId(0L).build()
-        val command = BrokerApi.Command
-                .newBuilder()
-                .setProducerSuccess(producerSuccess)
-                .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS).build()
-        ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
     }
 
     override fun handleSend(commandSend: BrokerApi.CommandSend) {

@@ -33,13 +33,18 @@ class ClientCnx : AbstractHandler() {
     }
 
     override fun handleProducerSuccess(commandProducerSuccess: BrokerApi.CommandProducerSuccess, payload: ByteBuf) {
-        logger.debug("{} Received producer success response from server: {} - producer-name: {}", ctx?.channel(),
-                commandProducerSuccess.requestId, commandProducerSuccess.producerName)
+        logger.info("{} Received producer success response from server: {} - producerName: {} - producerId:{}", ctx.channel(),
+                commandProducerSuccess.requestId, commandProducerSuccess.producerName, commandProducerSuccess.producerId)
+        producers[commandProducerSuccess.producerId]?.run {
+            markRegisterDone()
+        } ?: run {
+            logger.warn("Unknown producer[{}-{}]", commandProducerSuccess.producerId, commandProducerSuccess.producerName)
+        }
     }
 
     override fun handleSendError(sendError: BrokerApi.CommandSendError) {
-        logger.warn("{} Received send error from server: {}", ctx?.channel(), sendError)
-        ctx?.close()
+        logger.warn("{} Received send error from server: {}", ctx.channel(), sendError)
+        ctx.close()
     }
 
     override fun handleSendReceipt(sendReceipt: BrokerApi.CommandSendReceipt) {
@@ -54,7 +59,7 @@ class ClientCnx : AbstractHandler() {
         producers[producerId]?.ackReceived(this, sequenceId, ledgerId, entryId) ?:
                 logger.warn("Producer[{}] not exist,ignore received message id {}:{}",
                         producerId, ledgerId, entryId)
-        logger.debug("{} Got send receipt from producer[{}]: msg---{}, msgId---{}:{}", ctx?.channel(), producerId, sequenceId, ledgerId, entryId)
+        logger.debug("{} Got send receipt from producer[{}]: msg---{}, msgId---{}:{}", ctx.channel(), producerId, sequenceId, ledgerId, entryId)
     }
 
     fun registerProducer(producerId: Long, producer: DefaultProducer) {
@@ -70,7 +75,9 @@ class ClientCnx : AbstractHandler() {
     }
 
     override fun handleError(error: BrokerApi.CommandError) {
-        logger.error("Failed : " + error.toString())
+        logger.error("Received error of type ${error.error} from broker : $error.message")
+        ctx.close()
+        TODO("Handle connection failure event")
     }
 
     override fun handleMessage(message: BrokerApi.CommandMessage) {

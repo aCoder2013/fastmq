@@ -1,10 +1,10 @@
 package io.openmessaging.fastmq.producer
 
 import com.google.common.base.Preconditions.checkArgument
-import com.song.fastmq.net.proto.BrokerApi
-import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.common.domain.FastMQConfigKeys
 import com.song.fastmq.common.utils.Utils
+import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.net.proto.Commands
 import io.netty.buffer.Unpooled
 import io.openmessaging.*
 import io.openmessaging.exception.OMSException
@@ -57,6 +57,10 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     @Volatile
     private var msgIdGenerator = 0L
 
+    private val mutex = ReentrantLock()
+
+    private val connectedCondition = mutex.newCondition()
+
     private val receivedLock = ReentrantLock()
 
     private val sendPromises = ConcurrentHashMap<Long, Promise<SendResult>>()
@@ -70,9 +74,14 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     @Throws(Exception::class)
     override fun startup() {
         if (state.compareAndSet(State.NONE, State.CONNECTING)) {
-            this.cnxClient = cnxPool.getConnection(Utils.string2SocketAddress(bootstrapServers[0]))
-            registerProducer()
-            this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
+            this.mutex.withLock {
+                this.cnxClient = cnxPool.getConnection(Utils.string2SocketAddress(bootstrapServers[0]))
+                registerProducer()
+                while (state.get() != State.CONNECTED) {
+                    connectedCondition.await()
+                }
+                logger.info("Producer[{}-{}-{}] connected to broker", this.topic, this.name, this.producerId)
+            }
         } else {
             throw FastMqClientException("Producer state is not right ,maybe started before ,$state")
         }
@@ -91,7 +100,32 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
         val byteBuf = Unpooled.buffer(toByteArray.size)
         byteBuf.writeBytes(toByteArray)
         cnxClient?.ctx?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
-        this.cnxClient?.registerProducer(producerId, this) ?: throw FastMqClientException("")
+        this.cnxClient?.registerProducer(producerId, this) ?: throw FastMqClientException("Connection loss")
+        logger.info("producer Id ->" + this.producerId)
+    }
+
+    /**
+     * @return true if producer is try to connect to broker
+     */
+    fun isConnecting(): Boolean = this.state.get() == State.CONNECTING
+
+    fun markRegisterDone() {
+        this.mutex.withLock {
+            if (this.state.compareAndSet(State.CONNECTING, State.CONNECTED)) {
+                connectedCondition.signal()
+                logger.info("Producer[{}-{}-{}] connected to broker successful!", this.topic, this.name, this.producerId)
+            } else {
+                connectedCondition.signal()
+                throw OMSException(ErrorCode.SYSTEM_ERROR.name, "Register producer to broker failed,current state:" + state)
+            }
+        }
+    }
+
+    fun markConnectionLoss() {
+        this.mutex.withLock {
+            this.state.set(State.BROKEN)
+            connectedCondition.signal()
+        }
     }
 
     @Throws(OMSException::class)
@@ -182,7 +216,8 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
     enum class State {
         NONE,
         CONNECTING,
-        CONNECTED
+        CONNECTED,
+        BROKEN
     }
 
     companion object {

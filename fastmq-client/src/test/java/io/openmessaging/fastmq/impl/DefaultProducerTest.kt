@@ -6,6 +6,7 @@ import io.openmessaging.PropertyKeys
 import io.openmessaging.fastmq.domain.BytesMessageImpl
 import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.internal.DefaultKeyValue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -15,7 +16,7 @@ import java.util.*
  */
 class DefaultProducerTest {
 
-    private var producer: Producer? = null
+    private lateinit var producer: Producer
 
     @Before
     fun setUp() {
@@ -24,19 +25,24 @@ class DefaultProducerTest {
         properties.put(PropertyKeys.SRC_TOPIC, "Test-topic-3")
         properties.put(PropertyKeys.PRODUCER_ID, System.currentTimeMillis())
         producer = messagingAccessPoint.createProducer(properties)
-        producer?.startup()
+        producer.startup()
     }
 
     @Test
     fun send() {
-        var i =0
-        while (i++ < 100){
+        var i = 0
+        while (i++ < 100) {
             val message = BytesMessageImpl()
             message.setBody("Hello World".toByteArray())
-            val sendResult = producer?.send(message) ?: throw RuntimeException("Producer shouldn't be null")
+            val sendResult = producer.send(message) ?: throw RuntimeException("Producer shouldn't be null")
             val messageId = MessageId.fromByteArray(Base64.getDecoder().decode(sendResult.messageId()))
             println(messageId)
             Thread.sleep(1000)
         }
+    }
+
+    @After
+    fun tearDown() {
+        this.producer.shutdown()
     }
 }
