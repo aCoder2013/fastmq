@@ -32,12 +32,14 @@ class DefaultProducerTest {
     fun send() {
         var i = 0
         while (i++ < 100) {
+            //Todo:完善关闭
+            val start = System.currentTimeMillis()
             val message = BytesMessageImpl()
             message.setBody("Hello World".toByteArray())
             val sendResult = producer.send(message) ?: throw RuntimeException("Producer shouldn't be null")
             val messageId = MessageId.fromByteArray(Base64.getDecoder().decode(sendResult.messageId()))
             println(messageId)
-            Thread.sleep(1000)
+            println("cost :" + (System.currentTimeMillis() - start) + "ms")
         }
     }
 

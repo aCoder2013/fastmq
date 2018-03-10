@@ -15,7 +15,7 @@ import io.reactivex.ObservableEmitter
  */
 class PersistentTopic(private val topic: String, private val messageStorage: MessageStorage) : Topic {
 
-    override fun getName() = topic
+    override fun getTopic() = topic
 
     override fun publishMessage(headersAndPayload: ByteBuf): Observable<Offset> {
         return Observable.create<Offset> { observable: ObservableEmitter<Offset> ->

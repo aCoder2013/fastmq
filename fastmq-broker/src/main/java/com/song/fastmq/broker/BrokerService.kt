@@ -2,6 +2,7 @@ package com.song.fastmq.broker
 
 import com.song.fastmq.broker.exception.FastMQServiceException
 import com.song.fastmq.broker.support.BrokerChannelInitializer
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.Utils
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
@@ -19,7 +20,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.commons.lang.SystemUtils
-import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -107,7 +107,7 @@ class BrokerService(private val port: Int = 7164) : Closeable {
 
     override fun close() {
         this.lock.withLock {
-            if(state == State.Closed){
+            if (state == State.Closed) {
                 return
             }
             acceptorGroup.shutdownGracefully()

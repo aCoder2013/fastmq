@@ -11,7 +11,7 @@ interface Topic {
 
     fun publishMessage(headersAndPayload: ByteBuf) :Observable<Offset>
 
-    fun getName(): String
+    fun getTopic(): String
 
     fun close()
 }

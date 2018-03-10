@@ -101,7 +101,6 @@ class DefaultProducer(private val properties: KeyValue, private val cnxPool: Rem
         byteBuf.writeBytes(toByteArray)
         cnxClient?.ctx?.writeAndFlush(byteBuf) ?: throw OMSException(ErrorCode.CONNECTION_LOSS.code.toString(), "Connection loss to broker server.")
         this.cnxClient?.registerProducer(producerId, this) ?: throw FastMqClientException("Connection loss")
-        logger.info("producer Id ->" + this.producerId)
     }
 
     /**

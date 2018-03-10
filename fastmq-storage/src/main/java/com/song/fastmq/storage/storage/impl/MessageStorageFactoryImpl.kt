@@ -6,7 +6,6 @@ import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.MetadataStorage
 import com.song.fastmq.storage.storage.OffsetStorage
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
-import com.song.fastmq.storage.storage.support.LedgerStorageException
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import org.apache.bookkeeper.client.BookKeeper
@@ -16,12 +15,8 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.x.async.AsyncCuratorFramework
-import org.apache.zookeeper.Watcher
-import org.apache.zookeeper.ZooKeeper
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -33,8 +28,6 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     @Volatile
     private var closed: Boolean = false
-
-    private val zooKeeper: ZooKeeper
 
     private val bookKeeper: BookKeeper
 
@@ -56,22 +49,7 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     init {
         val servers = clientConfiguration.zkServers
-        val countDownLatch = CountDownLatch(1)
-
-        zooKeeper = ZooKeeper(servers, clientConfiguration.zkTimeout) { event ->
-            if (event.state == Watcher.Event.KeeperState.SyncConnected) {
-                logger.info("Connected to zookeeper ,connectString = {}", servers)
-                countDownLatch.countDown()
-            } else {
-                logger.error("Failed to connect zookeeper,connectString = {}", servers)
-            }
-        }
-        if (!countDownLatch.await(clientConfiguration.zkTimeout.toLong(), TimeUnit.MILLISECONDS) || zooKeeper.state != ZooKeeper.States.CONNECTED) {
-            throw LedgerStorageException(
-                    "Error connecting to zookeeper server ,connectString = $servers.")
-        }
-
-        this.bookKeeper = BookKeeper(clientConfiguration, zooKeeper)
+        this.bookKeeper = BookKeeper(clientConfiguration)
         val retryPolicy = ExponentialBackoffRetry(1000, 3)
         curatorFramework = CuratorFrameworkFactory.newClient(servers, retryPolicy)
         curatorFramework.start()
@@ -111,17 +89,22 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
         }
     }
 
+    override fun close(topic: String) {
+        if (this.messageStorageCache.containsKey(topic)) {
+            this.messageStorageCache.remove(topic)
+        }
+    }
+
     @Synchronized
     override fun close() {
         if (!closed) {
             this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
             this.messageOrderedThreadPool.shutdown()
-            this.messageStorageCache.forEach { _: String, u: MessageStorage -> u.close()}
+            this.messageStorageCache.forEach { _: String, u: MessageStorage -> u.close() }
             this.messageStorageCache.clear()
             this.bookKeeper.close()
             this.offsetStorage.close()
             this.curatorFramework.close()
-            this.zooKeeper.close()
             closed = true
         }
     }

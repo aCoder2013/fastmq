@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * @author song
  */
-class Producer(private val topic: Topic, val cnx: ServerCnx, private val producerName: String, private val producerId: Long) {
+class Producer(val topic: Topic, val cnx: ServerCnx, private val producerName: String, private val producerId: Long) {
 
     @Volatile
     private var isClosed = AtomicBoolean(false)

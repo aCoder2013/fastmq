@@ -237,7 +237,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                 } else {
                     val logSegment = this.ledgers[ledgerId]
                     if (logSegment == null || logSegment.entries == 0L) {
-                        this.executor.submit({
+                        this.executor.submit(safeRun {
                             queryMessage(Offset(ledgerId + 1, 0), maxMsgNum)
                         })
                         return@safeRun
@@ -354,8 +354,14 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
     @Synchronized
     @Throws(InterruptedException::class, LedgerStorageException::class)
     override fun close() {
-        this.currentLedger.close()
-        this.isClosed = true
+        if (this.isClosed) {
+            logger.warn("Message storage[{}] is already closed.", this.topic)
+        } else {
+            this.currentLedger.close()
+            this.isClosed = true
+            this.state.set(State.CLOSED)
+            logger.info("Message storage[{}] is closed.", this.topic)
+        }
     }
 
     override fun createComplete(rc: Int, lh: LedgerHandle, ctx: Any?) {

@@ -53,6 +53,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         producers.values.forEach({
             try {
                 it.close()
+                this.messageStorageFactory.close(it.topic.getTopic())
             } catch (e: Exception) {
                 logger.error("Close producer failed,maybe already closed", e)
             }

@@ -18,6 +18,8 @@ interface MessageStorageFactory {
      */
     fun open(name: String): Observable<MessageStorage>
 
+    fun close(topic: String)
+
     fun close()
 }
 
