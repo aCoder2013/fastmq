@@ -1,6 +1,7 @@
 package io.openmessaging.fastmq.net
 
 import com.google.common.collect.Lists
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
 import io.netty.buffer.ByteBuf
@@ -10,7 +11,6 @@ import io.openmessaging.fastmq.consumer.DefaultPullConsumer
 import io.openmessaging.fastmq.domain.BytesMessageImpl
 import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.fastmq.producer.DefaultProducer
-import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
 /**

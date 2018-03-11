@@ -1,9 +1,10 @@
 package io.openmessaging.fastmq.consumer
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.Utils
+import com.song.fastmq.net.proto.Commands
 import io.netty.buffer.Unpooled
 import io.openmessaging.KeyValue
 import io.openmessaging.Message
@@ -14,7 +15,6 @@ import io.openmessaging.fastmq.domain.MessageId
 import io.openmessaging.fastmq.net.ClientCnx
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
-import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledExecutorService

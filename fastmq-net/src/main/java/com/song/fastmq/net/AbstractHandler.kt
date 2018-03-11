@@ -18,7 +18,7 @@ open class AbstractHandler : AbstractMessageDecoder() {
         super.channelActive(ctx)
         this.remoteAddress = ctx.channel().remoteAddress()
         this.ctx = ctx
-        logger.debug("Channel connect to {} successfully.", this.remoteAddress.toString())
+        logger.info("Channel connect to {} successfully.", this.remoteAddress.toString())
     }
 
     @Throws(Exception::class)

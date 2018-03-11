@@ -2,6 +2,7 @@ package io.openmessaging.fastmq.producer
 
 import com.google.common.base.Preconditions.checkArgument
 import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.Utils
 import com.song.fastmq.net.proto.BrokerApi
 import com.song.fastmq.net.proto.Commands
@@ -18,7 +19,6 @@ import io.openmessaging.fastmq.exception.FastMqClientException
 import io.openmessaging.fastmq.net.ClientCnx
 import io.openmessaging.fastmq.net.RemotingConnectionPool
 import io.openmessaging.fastmq.utils.ClientUtils
-import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicLongFieldUpdater

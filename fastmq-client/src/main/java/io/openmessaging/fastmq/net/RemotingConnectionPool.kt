@@ -1,5 +1,6 @@
 package io.openmessaging.fastmq.net
 
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.Utils
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.PooledByteBufAllocator
@@ -17,7 +18,6 @@ import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
 import io.netty.util.concurrent.DefaultThreadFactory
 import org.apache.commons.lang3.SystemUtils
-import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap

@@ -37,7 +37,7 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     val offsetStorage: OffsetStorage
 
-    private val messageStorageCache = ConcurrentHashMap<String, MessageStorage>()
+    private val messageStorageCache = ConcurrentHashMap<String, MessageStorageImpl>()
 
     private val curatorFramework: CuratorFramework
 
@@ -61,9 +61,13 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     override fun open(topic: String): Observable<MessageStorage> {
         return Observable.create<MessageStorage> { observable: ObservableEmitter<MessageStorage> ->
             if (this.messageStorageCache.contains(topic)) {
-                observable.onNext(this.messageStorageCache[topic]!!)
-                observable.onComplete()
-                return@create
+                val messageStorage = this.messageStorageCache[topic]
+                messageStorage?.run {
+                    if (state.get() == MessageStorageImpl.State.CLOSED) {
+                        logger.warn("[{}] Message storage is in {} state,removing it from cache to recreate one.", topic, state.get())
+                        messageStorageCache.remove(topic)
+                    }
+                }
             }
             val throwable = AtomicReference<Throwable>()
             val messageStorage = this.messageStorageCache.computeIfAbsent(topic) {
@@ -86,12 +90,6 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
                 observable.onNext(messageStorage)
                 observable.onComplete()
             }
-        }
-    }
-
-    override fun close(topic: String) {
-        if (this.messageStorageCache.containsKey(topic)) {
-            this.messageStorageCache.remove(topic)
         }
     }
 

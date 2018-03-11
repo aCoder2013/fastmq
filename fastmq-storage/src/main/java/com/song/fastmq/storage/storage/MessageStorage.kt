@@ -13,7 +13,6 @@ interface MessageStorage {
 
     fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult>
 
-
     fun getNumberOfMessages() :Long
 
     @Throws(InterruptedException::class, LedgerStorageException::class)

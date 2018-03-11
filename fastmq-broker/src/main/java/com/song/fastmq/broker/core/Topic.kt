@@ -9,9 +9,15 @@ import io.reactivex.Observable
  */
 interface Topic {
 
-    fun publishMessage(headersAndPayload: ByteBuf) :Observable<Offset>
+    fun subscribe(serverCnx: ServerCnx): Observable<Consumer>
+
+    fun publishMessage(headersAndPayload: ByteBuf): Observable<Offset>
 
     fun getTopic(): String
+
+    fun addProducer(producer: Producer)
+
+    fun removeProducer(producer: Producer)
 
     fun close()
 }

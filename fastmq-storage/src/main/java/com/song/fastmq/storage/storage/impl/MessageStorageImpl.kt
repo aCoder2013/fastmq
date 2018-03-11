@@ -35,10 +35,10 @@ import java.util.concurrent.atomic.AtomicReference
 class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, private val config: BookKeeperConfig,
                          private val metadataStorage: MetadataStorage, val executor: OrderedSafeExecutor) : MessageStorage, AsyncCallback.CreateCallback {
 
-    private val state = AtomicReference<State>()
+
+    val state = AtomicReference<State>()
 
     private var isClosed: Boolean = false
-        get() = this.state.get() == State.CLOSED
 
     private val ledgers = ConcurrentSkipListMap<Long, LogSegment>()
 
@@ -233,7 +233,8 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                 checkArgument(maxMsgNum > 0)
                 val ledgerId = offset.ledgerId
                 if (ledgerId == this.currentLedger.id) {
-                    TODO("Read from cache")
+                    logger.info("从当前的读取了!!!!")
+                    TODO("Fix read from current ledger")
                 } else {
                     val logSegment = this.ledgers[ledgerId]
                     if (logSegment == null || logSegment.entries == 0L) {
@@ -456,7 +457,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
         }
     }
 
-    internal enum class State {
+    enum class State {
         NONE,// Uninitialized
         INITIALIZING,
         LEDGER_OPENED, // Ready to write into

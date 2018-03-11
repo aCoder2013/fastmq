@@ -2,7 +2,7 @@ package com.song.fastmq.broker.core
 
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Throwables
-import com.song.fastmq.broker.core.persistent.PersistentTopic
+import com.song.fastmq.broker.BrokerService
 import com.song.fastmq.common.domain.FastMQConfigKeys
 import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.OnCompletedObserver
@@ -10,9 +10,7 @@ import com.song.fastmq.net.AbstractHandler
 import com.song.fastmq.net.proto.BrokerApi
 import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.storage.storage.ConsumerInfo
-import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
-import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import com.song.fastmq.storage.storage.support.OffsetStorageException
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
@@ -24,7 +22,7 @@ import java.util.concurrent.TimeoutException
 /**
  * @author song
  */
-class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : AbstractHandler() {
+class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
 
     private var state = State.NONE
 
@@ -50,15 +48,19 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
 
     override fun channelInactive(ctx: ChannelHandlerContext) {
         super.channelInactive(ctx)
-        producers.values.forEach({
-            try {
-                it.close()
-                this.messageStorageFactory.close(it.topic.getTopic())
-            } catch (e: Exception) {
-                logger.error("Close producer failed,maybe already closed", e)
-            }
-        })
-        producers.clear()
+        try {
+            producers.values.forEach({
+                try {
+                    it.close()
+                } catch (e: Exception) {
+                    logger.error("Close producer failed,maybe already closed", e)
+                }
+            })
+            producers.clear()
+            consumers.clear()
+        } catch (e: Exception) {
+            logger.error("Close producers or consumers failed_" + e.message, e)
+        }
     }
 
     override fun channelWritabilityChanged(ctx: ChannelHandlerContext) {
@@ -85,14 +87,19 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         var existingProducer = producers[producerId]
         if (existingProducer == null) {
             logger.info("[{}][{}] Try to create producer with id [{}]", remoteAddress, topic, producerId)
-            this.messageStorageFactory.open(topic).subscribe(object : OnCompletedObserver<MessageStorage>() {
+            this.brokerService.getTopic(topic).subscribe(object : OnCompletedObserver<Topic>() {
                 override fun onError(e: Throwable) {
-                    logger.error("Open producer failed_" + e.message, e)
+                    logger.error("Open topic failed_" + e.message, e)
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(requestId, BrokerApi.ServerError.UnknownError, Throwables.getStackTraceAsString(e)).toByteArray()))
                 }
 
-                override fun onNext(t: MessageStorage) {
-                    producers.putIfAbsent(producerId, Producer(PersistentTopic(topic, t), this@ServerCnx, producerName, producerId))
+                override fun onNext(t: Topic) {
+                    var producer = Producer(t, this@ServerCnx, producerName, producerId)
+                    val previous = producers.putIfAbsent(producerId, producer)
+                    if (previous != null) {
+                        producer = previous
+                    }
+                    t.addProducer(producer)
                     val producerSuccess = BrokerApi.CommandProducerSuccess
                             .newBuilder()
                             .setProducerName(UUID.randomUUID().toString().replace("-", ""))
@@ -138,18 +145,27 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
 
         val consumer = this.consumers[consumerId]
         if (consumer == null) {
-            this.messageStorageFactory.open(topic)
-                    .subscribe(object : OnCompletedObserver<MessageStorage>() {
+            this.brokerService.getTopic(topic).subscribe(object : OnCompletedObserver<Topic>() {
+                override fun onError(e: Throwable) {
+                    logger.error("[$topic][$consumerId] Open message storage failed_" + e.message, e)
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                            .newError(requestId,
+                                    BrokerApi.ServerError.UnknownError,
+                                    Throwables.getStackTraceAsString(e)).toByteArray()))
+                }
+
+                override fun onNext(t: Topic) {
+                    t.subscribe(this@ServerCnx).subscribe(object : OnCompletedObserver<Consumer>() {
                         override fun onError(e: Throwable) {
-                            logger.error("[$topic][$consumerId] Open message storage failed_" + e.message, e)
+                            logger.error("[$topic][$consumerId] Open consumer failed_" + e.message, e)
                             ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                                     .newError(requestId,
                                             BrokerApi.ServerError.UnknownError,
                                             Throwables.getStackTraceAsString(e)).toByteArray()))
                         }
 
-                        override fun onNext(t: MessageStorage) {
-                            val previous = consumers.putIfAbsent(consumerId, Consumer(this@ServerCnx, t))
+                        override fun onNext(t: Consumer) {
+                            val previous = consumers.putIfAbsent(consumerId, t)
                             if (previous != null) {
                                 ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                                         .newError(requestId,
@@ -160,6 +176,9 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
                             }
                         }
                     })
+                }
+
+            })
         }
     }
 
@@ -176,7 +195,7 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
 
     override fun handleFetchOffset(fetchOffset: BrokerApi.CommandFetchOffset) {
         try {
-            val offset = messageStorageFactory.offsetStorage
+            val offset = brokerService.messageStorageFactory.offsetStorage
                     .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
             ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
                     .newFetchOffsetResponse(fetchOffset.topic, fetchOffset.consumerId,
@@ -184,6 +203,11 @@ class ServerCnx(private val messageStorageFactory: MessageStorageFactoryImpl) : 
         } catch (e: OffsetStorageException) {
             logger.error(e.message, e)
         }
+    }
+
+    fun removeProducer(producer: Producer) {
+        logger.info("[{}] Removed producer: {}", remoteAddress, producer)
+        producers.remove(producer.producerId)
     }
 
     companion object {

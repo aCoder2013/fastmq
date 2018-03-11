@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * @author song
  */
-class Producer(val topic: Topic, val cnx: ServerCnx, private val producerName: String, private val producerId: Long) {
+class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, val producerId: Long) {
 
     @Volatile
     private var isClosed = AtomicBoolean(false)
@@ -57,7 +57,8 @@ class Producer(val topic: Topic, val cnx: ServerCnx, private val producerName: S
     @Synchronized
     fun close() {
         if (this.isClosed.compareAndSet(false, true)) {
-            topic.close()
+            this.topic.removeProducer(this)
+            this.cnx.removeProducer(this)
             isClosed.set(true)
         } else {
             logger.warn("Producer[{}] {}-{} is already closed.", this.topic, this.producerName, this.producerId)
@@ -66,6 +67,24 @@ class Producer(val topic: Topic, val cnx: ServerCnx, private val producerName: S
 
     override fun toString(): String {
         return "Producer(topic=$topic, producerName='$producerName', producerId=$producerId)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Producer
+
+        if (topic.getTopic() != other.topic.getTopic()) return false
+        if (producerName != other.producerName) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = topic.getTopic().hashCode()
+        result = 31 * result + producerName.hashCode()
+        return result
     }
 
     companion object {

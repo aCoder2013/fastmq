@@ -1,9 +1,13 @@
 package com.song.fastmq.broker
 
+import com.song.fastmq.broker.core.Topic
+import com.song.fastmq.broker.core.persistent.PersistentTopic
 import com.song.fastmq.broker.exception.FastMQServiceException
 import com.song.fastmq.broker.support.BrokerChannelInitializer
 import com.song.fastmq.common.logging.LoggerFactory
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.common.utils.Utils
+import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import io.netty.bootstrap.ServerBootstrap
@@ -18,9 +22,12 @@ import io.netty.channel.epoll.EpollServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.util.concurrent.DefaultThreadFactory
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.commons.lang.SystemUtils
 import java.io.Closeable
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -29,13 +36,15 @@ import kotlin.concurrent.withLock
  */
 class BrokerService(private val port: Int = 7164) : Closeable {
 
-    private val messageStorageFactory: MessageStorageFactoryImpl
+    val messageStorageFactory: MessageStorageFactoryImpl
 
     private val acceptorGroup: EventLoopGroup
 
     private val workerGroup: EventLoopGroup
 
     private val lock = ReentrantLock()
+
+    private val topics = ConcurrentHashMap<String, Topic>()
 
     private val isClosedCondition = lock.newCondition()
 
@@ -90,10 +99,35 @@ class BrokerService(private val port: Int = 7164) : Closeable {
                 bootstrap.channel(NioServerSocketChannel::class.java)
             }
 
-            bootstrap.childHandler(BrokerChannelInitializer(messageStorageFactory))
+            bootstrap.childHandler(BrokerChannelInitializer(this))
             bootstrap.bind(port).sync()
             logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
             state = State.Started
+        }
+    }
+
+    fun getTopic(topic: String): Observable<Topic> {
+        return Observable.create<Topic> { observable: ObservableEmitter<Topic> ->
+            val topicExist = topics[topic]
+            if (topicExist != null) {
+                observable.onNext(topicExist)
+                observable.onComplete()
+                return@create
+            }
+            messageStorageFactory.open(topic).subscribe(object : OnCompletedObserver<MessageStorage>() {
+
+                override fun onError(e: Throwable) {
+                    observable.onError(e)
+                }
+
+                override fun onNext(t: MessageStorage) {
+                    observable.onNext(topics.computeIfAbsent(topic) {
+                        PersistentTopic(topic, t)
+                    })
+                    observable.onComplete()
+                }
+            })
+            return@create
         }
     }
 
