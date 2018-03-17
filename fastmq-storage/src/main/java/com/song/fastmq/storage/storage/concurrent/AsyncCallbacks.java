@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage.concurrent;
 
-import com.song.fastmq.storage.storage.GetMessageResult;
+import com.song.fastmq.storage.storage.BatchMessage;
 import com.song.fastmq.storage.storage.Offset;
 import com.song.fastmq.storage.storage.Version;
 
@@ -39,7 +39,7 @@ public class AsyncCallbacks {
 
     public interface GetMessageCallback {
 
-        void readEntryComplete(GetMessageResult result);
+        void readEntryComplete(BatchMessage result);
 
         void readEntryFailed(Throwable throwable);
 

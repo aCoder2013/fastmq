@@ -73,11 +73,9 @@ class MetadataStorageImpl(private val asyncCuratorFramework: AsyncCuratorFramewo
                             } else {
                                 observable.onComplete()
                             }
-                            return@whenComplete
                         }
             } catch (e: JsonProcessingException) {
                 observable.onError(e)
-                return@create
             }
         }
     }

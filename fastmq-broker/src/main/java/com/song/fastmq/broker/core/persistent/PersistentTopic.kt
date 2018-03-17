@@ -60,7 +60,7 @@ class PersistentTopic(private val topic: String, private val messageStorage: Mes
     override fun removeProducer(producer: Producer) {
         checkArgument(producer.topic == this)
         if (producers.remove(producer)) {
-            logger.info("Remove producer[] from topic[P{}].", producer.producerName, producer.topic.getTopic())
+            logger.info("Remove producer[] from topic[{}].", producer.producerName, producer.topic.getTopic())
         }
     }
 

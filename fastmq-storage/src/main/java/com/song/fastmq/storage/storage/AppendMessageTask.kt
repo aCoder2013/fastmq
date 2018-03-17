@@ -43,7 +43,7 @@ class AppendMessageTask(private val messageStorage: MessageStorageImpl, private 
     override fun addComplete(rc: Int, lh: LedgerHandle, entryId: Long, ctx: Any?) {
         checkArgument(this.ledgerHandle.id == lh.id)
         this.entryId = entryId
-        logger.debug("[{}] write-complete: ledger-id={} entry-id={} size={} rc={}", this.messageStorage.topic,
+        logger.info("[{}] write-complete: ledger-id={} entry-id={} size={} rc={}", this.messageStorage.topic,
                 lh.id, entryId, dataLength, rc)
         if (rc != BKException.Code.OK) {
             this.observable.onError(MessageStorageException(BKException.create(rc)))

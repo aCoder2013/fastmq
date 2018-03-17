@@ -3,7 +3,8 @@ package com.song.fastmq.storage.storage.support
 /**
  * @author song
  */
-class LedgerClosedException : Exception {
+class NoMoreMessageException : Exception{
+
     constructor() : super()
     constructor(message: String?) : super(message)
     constructor(message: String?, cause: Throwable?) : super(message, cause)

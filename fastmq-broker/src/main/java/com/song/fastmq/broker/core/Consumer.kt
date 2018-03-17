@@ -5,7 +5,7 @@ import com.song.fastmq.common.domain.FastMQConfigKeys
 import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.net.proto.BrokerApi
-import com.song.fastmq.storage.storage.GetMessageResult
+import com.song.fastmq.storage.storage.BatchMessage
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.Unpooled
@@ -24,12 +24,12 @@ class Consumer(private val cnx: ServerCnx, private val messageStorage: MessageSt
         builder.consumerId = consumerId
         val messages = Lists.newArrayListWithExpectedSize<BrokerApi.CommandSend>(maxToRead)
         messageStorage.queryMessage(offset, maxToRead)
-                .blockingSubscribe(object : OnCompletedObserver<GetMessageResult>() {
+                .blockingSubscribe(object : OnCompletedObserver<BatchMessage>() {
                     override fun onError(e: Throwable) {
                         logger.error("Read message failed_" + e.message, e)
                     }
 
-                    override fun onNext(t: GetMessageResult) {
+                    override fun onNext(t: BatchMessage) {
                         t.messages.forEach {
                             val id = BrokerApi.MessageIdData.newBuilder()
                                     .setLedgerId(it.messageId.ledgerId)

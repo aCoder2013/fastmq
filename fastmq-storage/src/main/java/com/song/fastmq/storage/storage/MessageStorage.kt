@@ -11,7 +11,7 @@ interface MessageStorage {
 
     fun appendMessage(message: Message): Observable<Offset>
 
-    fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult>
+    fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<BatchMessage>
 
     fun getNumberOfMessages() :Long
 

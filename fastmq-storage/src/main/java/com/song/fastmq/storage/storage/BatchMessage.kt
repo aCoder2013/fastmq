@@ -5,4 +5,4 @@ import com.song.fastmq.common.message.Message
 /**
  * @author song
  */
-class GetMessageResult(var nextReadOffset: Offset = Offset.NULL_OFFSET, val messages: List<Message>)
+class BatchMessage(var nextReadOffset: Offset = Offset.NULL_OFFSET, val messages: List<Message>)

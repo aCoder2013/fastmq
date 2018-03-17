@@ -10,8 +10,10 @@ import com.song.fastmq.storage.storage.*
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.metadata.Log
 import com.song.fastmq.storage.storage.metadata.LogSegment
+import com.song.fastmq.storage.storage.support.LedgerClosedException
 import com.song.fastmq.storage.storage.support.LedgerStorageException
 import com.song.fastmq.storage.storage.support.MessageStorageException
+import com.song.fastmq.storage.storage.support.NoMoreMessageException
 import io.netty.buffer.Unpooled
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
@@ -208,9 +210,10 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                         observable.onError(MessageStorageException("Waiting for new ledger creation to complete"))
                         return@safeRun
                     }
-                    logger.debug("Create a new ledger for {}.", this.topic)
+                    logger.info("Create a new ledger for {}.", this.topic)
                     if (this.state.compareAndSet(State.LEDGER_CLOSED, State.LEDGER_CREATING)) {
                         this.lastLedgerCreationInitiationTimestamp = System.nanoTime()
+                        this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
                         this.bookKeeper.asyncCreateLedger(config.ensSize, config.writeQuorumSize, config.ackQuorumSize, config.digestType,
                                 config.password, this, null, null)
                     } else {
@@ -227,53 +230,53 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
         }
     }
 
-    override fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult> {
-        return Observable.create<GetMessageResult> { observable: ObservableEmitter<GetMessageResult> ->
+    override fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<BatchMessage> {
+        return Observable.create<BatchMessage> { observable: ObservableEmitter<BatchMessage> ->
             this.executor.submitOrdered(this.topic, safeRun {
                 checkArgument(maxMsgNum > 0)
+                val state = state.get()
+                if (state == State.Fenced || state == State.CLOSED) {
+                    observable.onError(LedgerClosedException("Attempted to use a fenced of closed managed ledger"))
+                    return@safeRun
+                }
                 val ledgerId = offset.ledgerId
-                if (ledgerId == this.currentLedger.id) {
-                    logger.info("从当前的读取了!!!!")
-                    TODO("Fix read from current ledger")
-                } else {
-                    val logSegment = this.ledgers[ledgerId]
-                    if (logSegment == null || logSegment.entries == 0L) {
-                        this.executor.submit(safeRun {
-                            queryMessage(Offset(ledgerId + 1, 0), maxMsgNum)
-                        })
-                        return@safeRun
-                    }
-                    getLedgerHandle(ledgerId).subscribe(object : OnCompletedObserver<LedgerHandle>() {
+                val logSegment = this.ledgers[ledgerId]
+                if (logSegment == null) {
+                    observable.onError(MessageStorageException("$topic Ledger[$ledgerId] didn't exist."))
+                    return@safeRun
+                }
+                getLedgerHandle(ledgerId).subscribe(object : OnCompletedObserver<LedgerHandle>() {
 
-                        override fun onNext(t: LedgerHandle) {
+                    override fun onNext(t: LedgerHandle) {
 
-                            val firstEntry = offset.entryId
+                        val firstEntry = offset.entryId
 
-                            val lastPosition = lastConfirmedEntry
+                        val lastPosition = lastConfirmedEntry
 
-                            val lastEntryInLedger = if (lastPosition.ledgerId == t.id) {
-                                lastPosition.entryId
-                            } else {
-                                t.lastAddConfirmed
-                            }
+                        val lastEntryInLedger = if (lastPosition.ledgerId == t.id) {
+                            lastPosition.entryId
+                        } else {
+                            t.lastAddConfirmed
+                        }
 
-                            if (firstEntry > lastEntryInLedger) {
-                                logger.info("[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one."
-                                        , topic, ledgerId, lastEntryInLedger)
+                        if (firstEntry > lastEntryInLedger) {
+                            logger.info("[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one.", topic, ledgerId, lastEntryInLedger)
+                            if (ledgerId != currentLedger.id) {
                                 val nextLedgerId = ledgers.ceilingKey(ledgerId + 1)
-                                if (ledgerId == currentLedger.id || nextLedgerId == null) {
-                                    observable.onNext(GetMessageResult(messages = Collections.emptyList()))
+                                if (nextLedgerId == null) {
+                                    observable.onNext(BatchMessage(messages = Collections.emptyList()))
                                     observable.onComplete()
+                                    return
                                 } else {
-                                    executor.submitOrdered(ledgerId, safeRun {
+                                    executor.submitOrdered(nextLedgerId, safeRun {
                                         queryMessage(Offset(nextLedgerId, 0), maxMsgNum)
-                                                .subscribe(object : OnCompletedObserver<GetMessageResult>() {
+                                                .subscribe(object : OnCompletedObserver<BatchMessage>() {
 
                                                     override fun onError(e: Throwable) {
                                                         observable.onError(e)
                                                     }
 
-                                                    override fun onNext(t: GetMessageResult) {
+                                                    override fun onNext(t: BatchMessage) {
                                                         observable.onNext(t)
                                                     }
 
@@ -284,47 +287,56 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                                                 })
                                     })
                                 }
-                                return
+                            } else {
+                                logger.info("[{}] No more message to read from current ledger [{}].", topic, ledgerId)
+                                observable.onError(NoMoreMessageException("No more message to read from current ledger :" + ledgerId))
                             }
-
-                            val lastEntry = Math.min(firstEntry + maxMsgNum - 1, lastEntryInLedger)
-                            t.asyncReadEntries(firstEntry, lastEntry, { rc, lh, seq, _ ->
-                                if (rc != BKException.Code.OK) {
-                                    observable.onError(MessageStorageException(BKException.create(rc)))
-                                    return@asyncReadEntries
-                                } else {
-                                    var totalSize: Long = 0
-                                    val messages = Lists.newArrayListWithExpectedSize<Message>(maxMsgNum)
-                                    while (seq.hasMoreElements()) {
-                                        val ledgerEntry = seq.nextElement()
-                                        totalSize += ledgerEntry.length
-                                        val entryBuffer = ledgerEntry.entryBuffer
-                                        val array = ByteArray(entryBuffer.readableBytes())
-                                        entryBuffer.getBytes(entryBuffer.readerIndex(), array)
-                                        val message = Message(messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId), data = array)
-                                        messages.add(message)
-                                    }
-                                    observable.onNext(GetMessageResult(Offset(ledgerId, messages[messages.size - 1].messageId.entryId + 1), messages))
-                                    observable.onComplete()
-                                    return@asyncReadEntries
+                            return
+                        }
+                        val lastEntry = Math.min(firstEntry + maxMsgNum - 1, lastEntryInLedger)
+                        logger.debug("[{}] Reading entries from ledger {} - first={} last={}", this@MessageStorageImpl.topic, t.id, firstEntry, lastEntry)
+                        t.asyncReadEntries(firstEntry, lastEntry, { rc, _, seq, _ ->
+                            if (rc != BKException.Code.OK) {
+                                observable.onError(MessageStorageException(BKException.create(rc)))
+                                return@asyncReadEntries
+                            } else {
+                                var totalSize: Long = 0
+                                val messages = Lists.newArrayListWithExpectedSize<Message>(maxMsgNum)
+                                while (seq.hasMoreElements()) {
+                                    val ledgerEntry = seq.nextElement()
+                                    totalSize += ledgerEntry.length
+                                    val entryBuffer = ledgerEntry.entryBuffer
+                                    val array = ByteArray(entryBuffer.readableBytes())
+                                    entryBuffer.getBytes(entryBuffer.readerIndex(), array)
+                                    val message = Message(messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId), data = array)
+                                    messages.add(message)
                                 }
-                            }, null)
-                        }
+                                observable.onNext(BatchMessage(Offset(ledgerId, messages[messages.size - 1].messageId.entryId + 1), messages))
+                                observable.onComplete()
+                                return@asyncReadEntries
+                            }
+                        }, null)
+                    }
 
-                        override fun onComplete() {
-                        }
+                    override fun onComplete() {
+                    }
 
-                        override fun onError(e: Throwable) {
-                            logger.error("Error open ledger handle [{}],read offset {} - {}", ledgerId, offset, e.message)
-                            observable.onError(e)
-                        }
-                    })
-                }
+                    override fun onError(e: Throwable) {
+                        logger.error("Error open ledger handle [{}],read offset {} - {}", ledgerId, offset, e.message)
+                        observable.onError(e)
+                    }
+                })
             })
         }
     }
 
     private fun getLedgerHandle(ledgerId: Long): Observable<LedgerHandle> {
+        if (this.currentLedger.id == ledgerId) {
+            return Observable.create<LedgerHandle> {
+                it.onNext(this.currentLedger)
+                it.onComplete()
+            }
+        }
         val ledgerHandle = this.ledgerCache[ledgerId]
         if (ledgerHandle != null) {
             return ledgerHandle
@@ -346,6 +358,10 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                 }, null)
             }
         })
+    }
+
+    private fun internalReadFromLedger(ledgerHandle: LedgerHandle) {
+
     }
 
     override fun getNumberOfMessages(): Long {
@@ -382,6 +398,7 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                         task.ledgerHandle = this.currentLedger
                         task.start()
                     })
+                    this.pendingAppendMessageQueue.clear()
                 }
                 this.state.set(State.LEDGER_OPENED)
                 lastLedgerCreatedTimestamp = System.currentTimeMillis()

@@ -1,5 +1,6 @@
 package io.openmessaging.fastmq.consumer
 
+import com.google.common.base.Preconditions.checkArgument
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.song.fastmq.common.domain.FastMQConfigKeys
 import com.song.fastmq.common.logging.LoggerFactory
@@ -47,7 +48,7 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
 
     private val state = AtomicReference<State>(State.NONE)
 
-    private var clientCnx: ClientCnx? = null
+    private lateinit var clientCnx: ClientCnx
 
     private val schedulePullMessagePool: ScheduledExecutorService
 
@@ -67,17 +68,14 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
 
     override fun shutdown() {
         synchronized(this) {
-            check(state.get() != State.CLOSED, {
-                "Consumer[$consumerId] is already closed!"
-            })
+            checkArgument(state.get() != State.CLOSED, "Consumer[$consumerId] is already closed!")
             this.schedulePullMessagePool.shutdown()
+            clientCnx.ctx.close().syncUninterruptibly()
             this.state.set(State.CLOSED)
         }
     }
 
-    override fun properties(): KeyValue {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun properties(): KeyValue = this.properties
 
     override fun ack(messageId: String?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -91,14 +89,14 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
         if (state.compareAndSet(State.NONE, State.CONNECTING)) {
             clientCnx = remotingConnectionPool.getConnection(Utils.string2SocketAddress(bootstrapServers[0]))
             val subscribe = Commands.newSubscribe(this.queueName, this.consumerId, requestIdGenerator.incrementAndGet(this), this.consumername)
-            clientCnx?.let {
-                it.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(subscribe.toByteArray())) ?: throw OMSRuntimeException("-1", "Connect to broker failed!")
+            clientCnx.let {
+                it.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(subscribe.toByteArray())) ?: throw OMSRuntimeException("-1", "Connect to broker failed!")
                 it.registerConsumer(consumerId, this)
-            } ?: throw OMSRuntimeException("-1", "Get connection failed!")
+            }
             this.state.compareAndSet(State.CONNECTING, State.FETCH_OFFSET)
             val fetchOffset = Commands.newFetchOffset(queueName, consumerId, requestIdGenerator.incrementAndGet(this))
-            clientCnx?.let {
-                it.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(fetchOffset.toByteArray())) ?:
+            clientCnx.let {
+                it.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(fetchOffset.toByteArray())) ?:
                         throw OMSRuntimeException("-1", "Connect to broker failed!")
             }
         } else {
@@ -107,12 +105,18 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
     }
 
     @Throws(InterruptedException::class)
-    override fun poll(): Message {
+    override fun poll(): Message? {
+        if (this.state.get() == State.CLOSED) {
+            return null
+        }
         return this.messageQueue.take()
     }
 
-    override fun poll(properties: KeyValue?): Message {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun poll(properties: KeyValue?): Message? {
+        if (this.state.get() == State.CLOSED) {
+            return null
+        }
+        return this.messageQueue.take()
     }
 
     fun receivedMessage(messages: Iterable<Message>) {
@@ -155,7 +159,7 @@ class DefaultPullConsumer(private val queueName: String, private val properties:
                             .newPullMessage(consumer.queueName, consumer.consumerId,
                                     requestIdGenerator.incrementAndGet(consumer),
                                     maxMessage, readOffset.ledgerId, readOffset.entryId)
-                    consumer.clientCnx?.ctx?.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+                    consumer.clientCnx.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 } else {
                     logger.info("Pull message request is canceled, because there is enough messages in the queue!")
                 }
