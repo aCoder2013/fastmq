@@ -1,5 +1,6 @@
 package com.song.fastmq.storage.storage.impl
 
+import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.message.Message
 import com.song.fastmq.common.utils.JsonUtils
 import com.song.fastmq.common.utils.OnCompletedObserver
@@ -15,14 +16,12 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.x.async.AsyncCuratorFramework
-import org.apache.logging.log4j.core.config.Configurator
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.runners.MockitoJUnitRunner
-import org.slf4j.LoggerFactory
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
@@ -47,8 +46,6 @@ class MessageStorageImplTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        Configurator
-                .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
         val initLatch = CountDownLatch(1)
         curatorFramework = CuratorFrameworkFactory
                 .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))

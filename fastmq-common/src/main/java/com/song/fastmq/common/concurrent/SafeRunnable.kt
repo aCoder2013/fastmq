@@ -1,6 +1,7 @@
 package com.song.fastmq.common.concurrent
 
-import org.slf4j.LoggerFactory
+import com.song.fastmq.common.logging.LoggerFactory
+
 
 /**
  * Created by song on 2017/11/5.

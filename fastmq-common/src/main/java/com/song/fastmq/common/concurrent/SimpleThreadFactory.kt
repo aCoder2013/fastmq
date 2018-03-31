@@ -1,7 +1,7 @@
 package com.song.fastmq.common.concurrent
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import org.slf4j.LoggerFactory
+import com.song.fastmq.common.logging.LoggerFactory
 import java.util.concurrent.ThreadFactory
 
 /**
@@ -24,7 +24,6 @@ class SimpleThreadFactory(name: String) : ThreadFactory {
     }
 
     companion object {
-
         private val logger = LoggerFactory.getLogger(SimpleThreadFactory::class.java)
     }
 }

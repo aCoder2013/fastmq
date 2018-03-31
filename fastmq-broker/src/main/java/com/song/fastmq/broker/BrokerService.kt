@@ -121,9 +121,7 @@ class BrokerService(private val port: Int = 7164) : Closeable {
                 }
 
                 override fun onNext(t: MessageStorage) {
-                    observable.onNext(topics.computeIfAbsent(topic) {
-                        PersistentTopic(topic, t)
-                    })
+                    observable.onNext(topics.computeIfAbsent(topic) { PersistentTopic(topic, t) })
                     observable.onComplete()
                 }
             })

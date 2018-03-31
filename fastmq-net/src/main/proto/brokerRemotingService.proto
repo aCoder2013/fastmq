@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_package = "com.song.fastmq.net.proto";
+package com.song.fastmq.broker.net;
+option java_outer_classname = "BrokerRemotingApi";
+
+service BrokerRemotingService {
+  rpc handleProducerRequest (ProducerRequest) returns (ProducerSuccessReply) {
+
+  }
+}
+
+/// Create a new Producer on a topic, assigning the given producer_id,
+/// all messages sent with this producer_id will be persisted on the topic
+message ProducerRequest {
+  string topic = 1;
+  uint64 producer_id = 2;
+
+  /// If a producer name is specified, the name will be used,
+  /// otherwise the broker will generate a unique name
+  string producer_name = 3;
+}
+
+/// Response from CommandProducer
+message ProducerSuccessReply {
+  string producer_name = 1;
+  uint64 producer_id = 2;
+}

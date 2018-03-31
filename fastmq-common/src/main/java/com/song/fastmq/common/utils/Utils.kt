@@ -1,6 +1,6 @@
 package com.song.fastmq.common.utils
 
-import org.slf4j.LoggerFactory
+import com.song.fastmq.common.logging.LoggerFactory
 import java.lang.management.ManagementFactory
 import java.net.Inet6Address
 import java.net.InetAddress

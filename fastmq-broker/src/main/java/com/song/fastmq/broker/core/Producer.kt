@@ -5,7 +5,6 @@ import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.net.proto.Commands
 import com.song.fastmq.storage.storage.Offset
 import io.netty.buffer.ByteBuf
-import io.netty.buffer.Unpooled
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 import java.util.concurrent.atomic.AtomicBoolean
@@ -14,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * @author song
  */
-class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, val producerId: Long) {
+class Producer(val topic: Topic, val producerName: String, val producerId: Long) {
 
     @Volatile
     private var isClosed = AtomicBoolean(false)
@@ -22,7 +21,7 @@ class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, v
     fun publishMessage(producerId: Long, sequenceId: Long, payload: ByteBuf) {
         if (isClosed()) {
             val sendError = Commands.newSendError(producerId, sequenceId, MessagePublichException("Producer is already closed!"))
-            cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
+//            cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
             return
         }
         this.topic.publishMessage(payload)
@@ -31,13 +30,13 @@ class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, v
                     override fun onNext(t: Offset) {
                         logger.debug("Successfully publish message with offset {}.", t)
                         val sendReceipt = Commands.newSendReceipt(producerId, sequenceId, t.ledgerId, t.entryId)
-                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
+//                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
                     }
 
                     override fun onError(e: Throwable) {
                         logger.error("Publish message failed_${e.message}", e)
                         val sendError = Commands.newSendError(producerId, sequenceId, e)
-                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
+//                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
                     }
 
                     override fun onSubscribe(d: Disposable) {
@@ -58,7 +57,7 @@ class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, v
     fun close() {
         if (this.isClosed.compareAndSet(false, true)) {
             this.topic.removeProducer(this)
-            this.cnx.removeProducer(this)
+//            this.cnx.removeProducer(this)
             isClosed.set(true)
         } else {
             logger.warn("Producer[{}] {}-{} is already closed.", this.topic, this.producerName, this.producerId)

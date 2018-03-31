@@ -8,7 +8,6 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.x.async.AsyncCuratorFramework
-import org.apache.logging.log4j.core.config.Configurator
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -38,8 +37,6 @@ class ZkOffsetStorageImplTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        Configurator
-                .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
         curatorFramework = CuratorFrameworkFactory
                 .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))
         curatorFramework.start()

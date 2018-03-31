@@ -7,8 +7,6 @@ import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.ChannelOption
 import io.netty.channel.EventLoopGroup
-import io.netty.channel.epoll.EpollEventLoopGroup
-import io.netty.channel.epoll.EpollSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioSocketChannel
@@ -17,7 +15,6 @@ import io.netty.handler.codec.LengthFieldPrepender
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
 import io.netty.util.concurrent.DefaultThreadFactory
-import org.apache.commons.lang3.SystemUtils
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
@@ -40,11 +37,11 @@ class RemotingConnectionPool : Closeable {
         this.eventLoopGroup = getEventLoopGroup()
         bootstrap = Bootstrap()
         bootstrap.group(eventLoopGroup)
-        if (SystemUtils.IS_OS_LINUX && eventLoopGroup is EpollEventLoopGroup) {
-            bootstrap.channel(EpollSocketChannel::class.java)
-        } else {
+//        if (SystemUtils.IS_OS_LINUX && eventLoopGroup is EpollEventLoopGroup) {
+//            bootstrap.channel(EpollSocketChannel::class.java)
+//        } else {
             bootstrap.channel(NioSocketChannel::class.java)
-        }
+//        }
 
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
         bootstrap.option(ChannelOption.TCP_NODELAY, true)
@@ -82,7 +79,8 @@ class RemotingConnectionPool : Closeable {
         val threadFactory = DefaultThreadFactory("fastmq-client-io")
 
         return try {
-            EpollEventLoopGroup(numThreads, threadFactory)
+//            EpollEventLoopGroup(numThreads, threadFactory)
+            NioEventLoopGroup(numThreads, threadFactory)
         } catch (e: ExceptionInInitializerError) {
             logger.debug("Unable to load EpollEventLoop", e)
             NioEventLoopGroup(numThreads, threadFactory)
