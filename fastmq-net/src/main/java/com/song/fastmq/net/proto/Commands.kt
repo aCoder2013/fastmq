@@ -7,6 +7,21 @@ import com.song.fastmq.net.proto.BrokerApi.*
  */
 object Commands {
 
+    fun newProducer(topic: String, producerId: Long, producerName: String, requestId: Long): Command {
+        val producer = BrokerApi.CommandProducer
+                .newBuilder()
+                .setProducerId(producerId)
+                .setProducerName(producerName)
+                .setTopic(topic)
+                .setRequestId(requestId)
+                .build()
+        return BrokerApi.Command
+                .newBuilder()
+                .setProducer(producer)
+                .setType(BrokerApi.Command.Type.PRODUCER)
+                .build()
+    }
+
     fun newSend(sendCommand: CommandSend): Command {
         val res = Command.newBuilder()
                 .setType(Command.Type.SEND)
@@ -129,4 +144,19 @@ object Commands {
                 .setFetchOffsetResponse(fetchOffsetResponse)
                 .build()
     }
+
+
+    fun newProducerSuccess(producerName: String, requestId: Long): BrokerApi.Command {
+        val producerSuccess = BrokerApi.CommandProducerSuccess
+                .newBuilder()
+                .setProducerName(producerName)
+                .setRequestId(requestId)
+                .build()
+        return Command
+                .newBuilder()
+                .setProducerSuccess(producerSuccess)
+                .setType(Command.Type.PRODUCER_SUCCESS)
+                .build()
+    }
+
 }

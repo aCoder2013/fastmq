@@ -9,7 +9,7 @@ import java.net.SocketAddress
  */
 open class AbstractHandler : AbstractMessageDecoder() {
 
-    var ctx: ChannelHandlerContext? = null
+    lateinit var ctx: ChannelHandlerContext
 
     var remoteAddress: SocketAddress? = null
 

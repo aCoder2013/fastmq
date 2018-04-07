@@ -1,6 +1,5 @@
 package com.song.fastmq.storage.storage.impl
 
-import com.song.fastmq.storage.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.MetadataStorage
@@ -50,7 +49,8 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     private val messageOrderedThreadPool = OrderedSafeExecutor
             .newBuilder()
-//            .name("fastmq-message-workers")
+            .name("fastmq-message-workers")
+            .numThreads(Runtime.getRuntime().availableProcessors() * 2)
             .build()
 
     init {
@@ -90,15 +90,9 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
             val messageStorage = this.messageStorageCache.computeIfAbsent(topic) {
                 val ms = MessageStorageImpl(topic, bookKeeper, bookKeeperConfig, metadataStorage, messageOrderedThreadPool)
                 ms.initialize()
-                        .blockingSubscribe(object : OnCompletedObserver<Void>() {
-                            override fun onError(e: Throwable) {
-                                throwable.compareAndSet(null, e)
-                            }
-
-                            override fun onComplete() {
-                            }
-
-                        })
+                        .blockingSubscribe(
+                                {},
+                                { throwable.compareAndSet(null, it) })
                 return@computeIfAbsent ms
             }
             if (throwable.get() != null) {
@@ -112,17 +106,17 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     @Synchronized
     override fun close(name: String) {
-       if(!closed){
-           this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
-           this.messageStorageCache.clear()
-           this.messageOrderedThreadPool.shutdown()
-           if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-               logger.error("Unable to stop message ordered thread pool, in 60S.")
-           }
-           this.bookKeeper.close()
-           this.curatorFramework.close()
-           closed = true
-       }
+        if (!closed) {
+            this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
+            this.messageStorageCache.clear()
+            this.messageOrderedThreadPool.shutdown()
+            if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                logger.error("Unable to stop message ordered thread pool, in 60S.")
+            }
+            this.bookKeeper.close()
+            this.curatorFramework.close()
+            closed = true
+        }
     }
 
     companion object {
