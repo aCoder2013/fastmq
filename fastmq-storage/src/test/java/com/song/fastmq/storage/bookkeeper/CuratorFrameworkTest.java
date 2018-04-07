@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.bookkeeper;
 
-import com.song.fastmq.storage.common.utils.JsonUtils;
+import com.song.fastmq.common.utils.JsonUtils;
 import java.util.EnumSet;
 import java.util.concurrent.CountDownLatch;
 import org.apache.curator.RetryPolicy;

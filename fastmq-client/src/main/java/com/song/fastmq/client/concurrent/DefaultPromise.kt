@@ -1,9 +1,9 @@
 package com.song.fastmq.client.concurrent
 
+import com.song.fastmq.common.logging.LoggerFactory
 import io.openmessaging.Promise
 import io.openmessaging.PromiseListener
 import io.openmessaging.exception.OMSRuntimeException
-import org.slf4j.LoggerFactory
 
 /**
  * @author song

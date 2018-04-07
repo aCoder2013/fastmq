@@ -29,8 +29,7 @@ class BrokerServiceTest {
 
     companion object {
         init {
-            Configurator
-                    .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
+            Configurator.initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
         }
     }
 

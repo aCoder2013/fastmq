@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class MetadataStorageImplTest {
 
-    private var zookeeper: ZooKeeper? = null
+    private lateinit var zookeeper: ZooKeeper
 
-    private var metadataStorage: MetadataStorage? = null
+    private lateinit var metadataStorage: MetadataStorage
 
     @Before
     @Throws(Exception::class)
@@ -48,7 +48,7 @@ class MetadataStorageImplTest {
     @Throws(Exception::class)
     fun getLogInfo() {
         val name = "HelloWorldTest1"
-        metadataStorage?.getLogInfo(name)?.blockingSubscribe {
+        metadataStorage.getLogInfo(name).blockingSubscribe {
             Assert.assertEquals(name, it.name)
         }
     }
@@ -57,7 +57,7 @@ class MetadataStorageImplTest {
     fun getLogInfoAsync() {
         val latch = CountDownLatch(1)
         val name = "HelloWorldTest1"
-        metadataStorage?.getLogInfo(name)?.subscribe {
+        metadataStorage.getLogInfo(name).subscribe {
             latch.countDown()
             Assert.assertEquals(name, it.name)
         }
@@ -70,10 +70,10 @@ class MetadataStorageImplTest {
         val latch = CountDownLatch(1)
         val counter = AtomicInteger()
         val name = "HelloWorldTest1"
-        metadataStorage!!.getLogInfo(name).subscribe {
+        metadataStorage.getLogInfo(name).subscribe {
             CommonPool.executeBlocking(Runnable {
                 it.segments = Collections.singletonList(LogSegment())
-                metadataStorage!!.updateLogInfo(name, it).blockingSubscribe {
+                metadataStorage.updateLogInfo(name, it).blockingSubscribe {
                     counter.incrementAndGet()
                     latch.countDown()
                 }
@@ -88,7 +88,7 @@ class MetadataStorageImplTest {
     fun asyncRemoveLedger() {
         val latch = CountDownLatch(1)
         val counter = AtomicInteger()
-        metadataStorage!!.removeLogInfo("HelloWorldTest1").subscribe {
+        metadataStorage.removeLogInfo("HelloWorldTest1").subscribe {
             counter.incrementAndGet()
             latch.countDown()
         }
@@ -99,6 +99,6 @@ class MetadataStorageImplTest {
     @After
     @Throws(Exception::class)
     fun tearDown() {
-        zookeeper!!.close()
+        zookeeper.close()
     }
 }

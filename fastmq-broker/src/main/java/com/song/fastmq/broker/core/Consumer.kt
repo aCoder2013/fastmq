@@ -1,34 +1,38 @@
 package com.song.fastmq.broker.core
 
 import com.google.common.collect.Lists
+import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.logging.LoggerFactory
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.net.proto.BrokerApi
+import com.song.fastmq.storage.storage.BatchMessage
 import com.song.fastmq.storage.common.domain.MessageConstants
 import com.song.fastmq.storage.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.GetMessageResult
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.Offset
-import org.slf4j.LoggerFactory
+import io.netty.buffer.Unpooled
 import java.util.*
 
 /**
  * @author song
  */
-class Consumer(private val messageStorage: MessageStorage) {
+class Consumer(private val cnx: ServerCnx, private val messageStorage: MessageStorage) {
 
     /**
      * todo:return Observable
      */
-    fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int): BrokerApi.Command {
+    fun readMessage(consumerId: Long, offset: Offset, maxToRead: Int) {
         val builder = BrokerApi.CommandMessage.newBuilder()
         builder.consumerId = consumerId
         val messages = Lists.newArrayListWithExpectedSize<BrokerApi.CommandSend>(maxToRead)
         messageStorage.queryMessage(offset, maxToRead)
-                .blockingSubscribe(object : OnCompletedObserver<GetMessageResult>() {
+                .blockingSubscribe(object : OnCompletedObserver<BatchMessage>() {
                     override fun onError(e: Throwable) {
                         logger.error("Read message failed_" + e.message, e)
                     }
 
-                    override fun onNext(t: GetMessageResult) {
+                    override fun onNext(t: BatchMessage) {
                         t.messages.forEach {
                             val id = BrokerApi.MessageIdData.newBuilder()
                                     .setLedgerId(it.messageId.ledgerId)
@@ -50,14 +54,13 @@ class Consumer(private val messageStorage: MessageStorage) {
                     }
 
                     override fun onComplete() {
+                        val command = BrokerApi.Command.newBuilder()
+                                .setType(BrokerApi.Command.Type.MESSAGE)
+                                .setMessage(builder.build())
+                                .build()
+                        cnx.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                     }
-
                 })
-
-        return BrokerApi.Command.newBuilder()
-                .setType(BrokerApi.Command.Type.MESSAGE)
-                .setMessage(builder.build())
-                .build()
     }
 
     companion object {

@@ -1,6 +1,6 @@
 package com.song.fastmq.storage.storage
 
-import com.song.fastmq.storage.common.message.Message
+import com.song.fastmq.common.message.Message
 import com.song.fastmq.storage.storage.support.LedgerStorageException
 import io.reactivex.Observable
 
@@ -11,7 +11,9 @@ interface MessageStorage {
 
     fun appendMessage(message: Message): Observable<Offset>
 
-    fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<GetMessageResult>
+    fun queryMessage(offset: Offset, maxMsgNum: Int): Observable<BatchMessage>
+
+    fun getNumberOfMessages() :Long
 
     @Throws(InterruptedException::class, LedgerStorageException::class)
     fun close()

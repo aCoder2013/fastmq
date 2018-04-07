@@ -1,7 +1,13 @@
 package com.song.fastmq.broker
 
+import com.song.fastmq.broker.core.Topic
+import com.song.fastmq.broker.core.persistent.PersistentTopic
+import com.song.fastmq.broker.exception.FastMQServiceException
 import com.song.fastmq.broker.support.BrokerChannelInitializer
-import com.song.fastmq.storage.common.utils.Utils
+import com.song.fastmq.common.logging.LoggerFactory
+import com.song.fastmq.common.utils.OnCompletedObserver
+import com.song.fastmq.common.utils.Utils
+import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
 import com.song.fastmq.storage.storage.impl.MessageStorageFactoryImpl
 import io.netty.bootstrap.ServerBootstrap
@@ -16,21 +22,33 @@ import io.netty.channel.epoll.EpollServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.util.concurrent.DefaultThreadFactory
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.commons.lang.SystemUtils
-import org.slf4j.LoggerFactory
 import java.io.Closeable
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * @author song
  */
 class BrokerService(private val port: Int = 7164) : Closeable {
 
-    private val messageStorageFactory: MessageStorageFactoryImpl
+    val messageStorageFactory: MessageStorageFactoryImpl
 
     private val acceptorGroup: EventLoopGroup
 
     private val workerGroup: EventLoopGroup
+
+    private val lock = ReentrantLock()
+
+    private val topics = ConcurrentHashMap<String, Topic>()
+
+    private val isClosedCondition = lock.newCondition()
+
+    private var state = State.Init
 
     init {
         val clientConfiguration = ClientConfiguration()
@@ -62,32 +80,81 @@ class BrokerService(private val port: Int = 7164) : Closeable {
 
     @Throws(Exception::class)
     fun start() {
-        val bootstrap = ServerBootstrap()
-        bootstrap.group(acceptorGroup, workerGroup)
-                .option(ChannelOption.SO_BACKLOG, 512)
-                .option(ChannelOption.SO_REUSEADDR, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                        AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
-        if (workerGroup is EpollEventLoopGroup) {
-            bootstrap.channel(EpollServerSocketChannel::class.java)
-            bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
-        } else {
-            bootstrap.channel(NioServerSocketChannel::class.java)
-        }
+        this.lock.withLock {
+            if (state != State.Init) {
+                throw FastMQServiceException("Cannot start the service more than once.")
+            }
+            val bootstrap = ServerBootstrap()
+            bootstrap.group(acceptorGroup, workerGroup)
+                    .option(ChannelOption.SO_BACKLOG, 512)
+                    .option(ChannelOption.SO_REUSEADDR, true)
+                    .childOption(ChannelOption.TCP_NODELAY, true)
+                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                    .childOption(ChannelOption.RCVBUF_ALLOCATOR,
+                            AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
+            if (workerGroup is EpollEventLoopGroup) {
+                bootstrap.channel(EpollServerSocketChannel::class.java)
+                bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)
+            } else {
+                bootstrap.channel(NioServerSocketChannel::class.java)
+            }
 
-        bootstrap.childHandler(BrokerChannelInitializer(messageStorageFactory))
-        bootstrap.bind(port).sync()
-        logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
+            bootstrap.childHandler(BrokerChannelInitializer(this))
+            bootstrap.bind(port).sync()
+            logger.info("Started FastMQ Broker[{}] on port {}.", Utils.getLocalAddress(), port)
+            state = State.Started
+        }
+    }
+
+    fun getTopic(topic: String): Observable<Topic> {
+        return Observable.create<Topic> { observable: ObservableEmitter<Topic> ->
+            val topicExist = topics[topic]
+            if (topicExist != null) {
+                observable.onNext(topicExist)
+                observable.onComplete()
+                return@create
+            }
+            messageStorageFactory.open(topic).subscribe(object : OnCompletedObserver<MessageStorage>() {
+
+                override fun onError(e: Throwable) {
+                    observable.onError(e)
+                }
+
+                override fun onNext(t: MessageStorage) {
+                    observable.onNext(topics.computeIfAbsent(topic) {
+                        PersistentTopic(topic, t)
+                    })
+                    observable.onComplete()
+                }
+            })
+            return@create
+        }
+    }
+
+    fun waitUntilClosed() {
+        this.lock.withLock {
+            while (state != State.Closed) {
+                isClosedCondition.await()
+            }
+        }
     }
 
     override fun close() {
-        acceptorGroup.shutdownGracefully()
-        workerGroup.shutdownGracefully()
-        logger.info("Broker service shut down.")
+        this.lock.withLock {
+            if (state == State.Closed) {
+                return
+            }
+            acceptorGroup.shutdownGracefully()
+            workerGroup.shutdownGracefully()
+            this.messageStorageFactory.close()
+            logger.info("Broker service shut down.")
+            state = State.Closed
+        }
     }
 
+    enum class State {
+        Init, Started, Closed
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(BrokerService::class.java)

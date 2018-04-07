@@ -1,6 +1,6 @@
 package com.song.fastmq.client.consumer
 
-import com.song.fastmq.storage.common.utils.JsonUtils
+import com.song.fastmq.common.utils.JsonUtils
 import io.openmessaging.BytesMessage
 import io.openmessaging.MessagingAccessPointFactory
 import io.openmessaging.PullConsumer

@@ -1230,6 +1230,11 @@ public final class BrokerApi {
      */
     com.google.protobuf.ByteString
         getProducerNameBytes();
+
+    /**
+     * <code>uint64 producer_id = 3;</code>
+     */
+    long getProducerId();
   }
   /**
    * <pre>
@@ -1315,6 +1320,29 @@ public final class BrokerApi {
       producerName_ = value.toStringUtf8();
     }
 
+    public static final int PRODUCER_ID_FIELD_NUMBER = 3;
+    private long producerId_;
+    /**
+     * <code>uint64 producer_id = 3;</code>
+     */
+    public long getProducerId() {
+      return producerId_;
+    }
+    /**
+     * <code>uint64 producer_id = 3;</code>
+     */
+    private void setProducerId(long value) {
+      
+      producerId_ = value;
+    }
+    /**
+     * <code>uint64 producer_id = 3;</code>
+     */
+    private void clearProducerId() {
+      
+      producerId_ = 0L;
+    }
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (requestId_ != 0L) {
@@ -1322,6 +1350,9 @@ public final class BrokerApi {
       }
       if (!producerName_.isEmpty()) {
         output.writeString(2, getProducerName());
+      }
+      if (producerId_ != 0L) {
+        output.writeUInt64(3, producerId_);
       }
       unknownFields.writeTo(output);
     }
@@ -1338,6 +1369,10 @@ public final class BrokerApi {
       if (!producerName_.isEmpty()) {
         size += com.google.protobuf.CodedOutputStream
           .computeStringSize(2, getProducerName());
+      }
+      if (producerId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(3, producerId_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
@@ -1506,6 +1541,29 @@ public final class BrokerApi {
         return this;
       }
 
+      /**
+       * <code>uint64 producer_id = 3;</code>
+       */
+      public long getProducerId() {
+        return instance.getProducerId();
+      }
+      /**
+       * <code>uint64 producer_id = 3;</code>
+       */
+      public Builder setProducerId(long value) {
+        copyOnWrite();
+        instance.setProducerId(value);
+        return this;
+      }
+      /**
+       * <code>uint64 producer_id = 3;</code>
+       */
+      public Builder clearProducerId() {
+        copyOnWrite();
+        instance.clearProducerId();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:com.song.fastmq.broker.net.CommandProducerSuccess)
     }
     @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
@@ -1532,6 +1590,8 @@ public final class BrokerApi {
               other.requestId_ != 0L, other.requestId_);
           producerName_ = visitor.visitString(!producerName_.isEmpty(), producerName_,
               !other.producerName_.isEmpty(), other.producerName_);
+          producerId_ = visitor.visitLong(producerId_ != 0L, producerId_,
+              other.producerId_ != 0L, other.producerId_);
           if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
               .INSTANCE) {
           }
@@ -1568,6 +1628,11 @@ public final class BrokerApi {
                   java.lang.String s = input.readStringRequireUtf8();
 
                   producerName_ = s;
+                  break;
+                }
+                case 24: {
+
+                  producerId_ = input.readUInt64();
                   break;
                 }
               }

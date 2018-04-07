@@ -1,11 +1,11 @@
 package com.song.fastmq.storage.storage.impl
 
+import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.storage.storage.MessageStorage
 import com.song.fastmq.storage.storage.MessageStorageFactory
 import com.song.fastmq.storage.storage.MetadataStorage
 import com.song.fastmq.storage.storage.OffsetStorage
 import com.song.fastmq.storage.storage.config.BookKeeperConfig
-import com.song.fastmq.storage.storage.support.LedgerStorageException
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import org.apache.bookkeeper.client.BookKeeper
@@ -15,12 +15,8 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.x.async.AsyncCuratorFramework
-import org.apache.zookeeper.Watcher
-import org.apache.zookeeper.ZooKeeper
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -33,8 +29,6 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     @Volatile
     private var closed: Boolean = false
 
-    private val zooKeeper: ZooKeeper
-
     private val bookKeeper: BookKeeper
 
     private val asyncCuratorFramework: AsyncCuratorFramework
@@ -43,34 +37,19 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
 
     val offsetStorage: OffsetStorage
 
-    private val messageStorageCache = ConcurrentHashMap<String, MessageStorage>()
+    private val messageStorageCache = ConcurrentHashMap<String, MessageStorageImpl>()
 
     private val curatorFramework: CuratorFramework
 
     private val messageOrderedThreadPool = OrderedSafeExecutor
             .newBuilder()
             .name("fastmq-message-workers")
-            .numThreads(Runtime.getRuntime().availableProcessors() * 2)
+            .numThreads(20)
             .build()
 
     init {
         val servers = clientConfiguration.zkServers
-        val countDownLatch = CountDownLatch(1)
-
-        zooKeeper = ZooKeeper(servers, clientConfiguration.zkTimeout) { event ->
-            if (event.state == Watcher.Event.KeeperState.SyncConnected) {
-                logger.info("Connected to zookeeper ,connectString = {}", servers)
-                countDownLatch.countDown()
-            } else {
-                logger.error("Failed to connect zookeeper,connectString = {}", servers)
-            }
-        }
-        if (!countDownLatch.await(clientConfiguration.zkTimeout.toLong(), TimeUnit.MILLISECONDS) || zooKeeper.state != ZooKeeper.States.CONNECTED) {
-            throw LedgerStorageException(
-                    "Error connecting to zookeeper server ,connectString = $servers.")
-        }
-
-        this.bookKeeper = BookKeeper(clientConfiguration, zooKeeper)
+        this.bookKeeper = BookKeeper(clientConfiguration)
         val retryPolicy = ExponentialBackoffRetry(1000, 3)
         curatorFramework = CuratorFrameworkFactory.newClient(servers, retryPolicy)
         curatorFramework.start()
@@ -82,17 +61,27 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     override fun open(topic: String): Observable<MessageStorage> {
         return Observable.create<MessageStorage> { observable: ObservableEmitter<MessageStorage> ->
             if (this.messageStorageCache.contains(topic)) {
-                observable.onNext(this.messageStorageCache[topic]!!)
-                observable.onComplete()
-                return@create
+                val messageStorage = this.messageStorageCache[topic]
+                messageStorage?.run {
+                    if (state.get() == MessageStorageImpl.State.CLOSED) {
+                        logger.warn("[{}] Message storage is in {} state,removing it from cache to recreate one.", topic, state.get())
+                        messageStorageCache.remove(topic)
+                    }
+                }
             }
             val throwable = AtomicReference<Throwable>()
             val messageStorage = this.messageStorageCache.computeIfAbsent(topic) {
                 val ms = MessageStorageImpl(topic, bookKeeper, bookKeeperConfig, metadataStorage, messageOrderedThreadPool)
                 ms.initialize()
-                        .blockingSubscribe(
-                                {},
-                                { throwable.compareAndSet(null, it) })
+                        .blockingSubscribe(object : OnCompletedObserver<Void>() {
+                            override fun onError(e: Throwable) {
+                                throwable.compareAndSet(null, e)
+                            }
+
+                            override fun onComplete() {
+                            }
+
+                        })
                 return@computeIfAbsent ms
             }
             if (throwable.get() != null) {
@@ -105,15 +94,14 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     }
 
     @Synchronized
-    override fun close(name: String) {
+    override fun close() {
         if (!closed) {
             this.messageStorageCache.forEach { _, u: MessageStorage -> run { u.close() } }
-            this.messageStorageCache.clear()
             this.messageOrderedThreadPool.shutdown()
-            if (!this.messageOrderedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                logger.error("Unable to stop message ordered thread pool, in 60S.")
-            }
+            this.messageStorageCache.forEach { _: String, u: MessageStorage -> u.close() }
+            this.messageStorageCache.clear()
             this.bookKeeper.close()
+            this.offsetStorage.close()
             this.curatorFramework.close()
             closed = true
         }

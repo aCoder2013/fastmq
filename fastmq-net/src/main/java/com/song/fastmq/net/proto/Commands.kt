@@ -1,5 +1,6 @@
 package com.song.fastmq.net.proto
 
+import com.google.common.base.Throwables
 import com.song.fastmq.net.proto.BrokerApi.*
 
 /**
@@ -51,7 +52,7 @@ object Commands {
         sendErrorBuilder.producerId = producerId
         sendErrorBuilder.sequenceId = sequenceId
         sendErrorBuilder.error = ServerError.PersistenceError
-        sendErrorBuilder.message = t.message
+        sendErrorBuilder.message = Throwables.getStackTraceAsString(t)
         val sendError = sendErrorBuilder.build()
         val res = Command.newBuilder().setType(Command.Type.SEND_ERROR).setSendError(sendError)
         return res.build()

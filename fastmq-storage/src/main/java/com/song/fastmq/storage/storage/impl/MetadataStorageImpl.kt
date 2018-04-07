@@ -1,7 +1,7 @@
 package com.song.fastmq.storage.storage.impl
 
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.song.fastmq.storage.common.utils.JsonUtils
+import com.song.fastmq.common.utils.JsonUtils
 import com.song.fastmq.storage.storage.MetadataStorage
 import com.song.fastmq.storage.storage.metadata.Log
 import io.reactivex.Observable
@@ -73,11 +73,9 @@ class MetadataStorageImpl(private val asyncCuratorFramework: AsyncCuratorFramewo
                             } else {
                                 observable.onComplete()
                             }
-                            return@whenComplete
                         }
             } catch (e: JsonProcessingException) {
                 observable.onError(e)
-                return@create
             }
         }
     }

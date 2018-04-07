@@ -1,8 +1,8 @@
 package com.song.fastmq.storage.storage.impl;
 
-import com.song.fastmq.storage.common.utils.JsonUtils;
-import com.song.fastmq.storage.common.utils.JsonUtils.JsonException;
-import com.song.fastmq.storage.common.utils.Result;
+import com.song.fastmq.common.utils.JsonUtils;
+import com.song.fastmq.common.utils.JsonUtils.JsonException;
+import com.song.fastmq.common.utils.Result;
 import com.song.fastmq.storage.storage.ConsumerInfo;
 import com.song.fastmq.storage.storage.MetadataStorage;
 import com.song.fastmq.storage.storage.Offset;
@@ -12,6 +12,7 @@ import com.song.fastmq.storage.storage.metadata.LogSegment;
 import com.song.fastmq.storage.storage.support.OffsetStorageException;
 import com.song.fastmq.storage.storage.utils.ZkUtils;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -19,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.curator.x.async.AsyncCuratorFramework;
@@ -110,10 +112,10 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
 
     @Override
     public void persistOffset(ConsumerInfo consumerInfo) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
         if (this.offsetCache.containsKey(consumerInfo)) {
+            CountDownLatch latch = new CountDownLatch(1);
             Offset offset = this.offsetCache.get(consumerInfo);
-            String path = getReaderPath(consumerInfo);
+            String path = buildConsumerPath(consumerInfo);
             try {
                 this.asyncCuratorFramework.setData()
                     .forPath(path, JsonUtils.toJson(offset).getBytes())
@@ -140,8 +142,8 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
 
     @Override
     public void removeOffset(ConsumerInfo consumerInfo) {
-        this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.guaranteed))
-            .forPath(getReaderPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
+        this.asyncCuratorFramework.delete().withOptions(EnumSet.of(DeleteOption.quietly))
+            .forPath(buildConsumerPath(consumerInfo)).whenComplete((aVoid, throwable) -> {
             if (throwable != null) {
                 logger.error("Delete consumer offset failed", throwable);
             } else {
@@ -151,6 +153,19 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
         });
     }
 
+    @Override public void close() {
+        this.offsetCache.clear();
+        this.offsetThreadPool.shutdown();
+        try {
+            if (!this.offsetThreadPool.awaitTermination(60L, TimeUnit.SECONDS)) {
+                logger.warn("Offset thread pool did not terminate in the specified time.");
+                List<Runnable> droppedTasks = this.offsetThreadPool.shutdownNow();
+                logger.warn("Offset thread pool was abruptly shut down. " + droppedTasks.size() + " tasks will not be executed.");
+            }
+        } catch (InterruptedException ignore) {
+        }
+    }
+
     /**
      * Async get offset from zookeeper, if it doesn't exist then create a offset
      * with default setting.
@@ -158,7 +173,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
     private CompletableFuture<Offset> asyncEnsureOffsetExist(ConsumerInfo consumerInfo,
         ReadOffsetCallback callback) {
         CompletableFuture<Offset> future = new CompletableFuture<>();
-        String path = getReaderPath(consumerInfo);
+        String path = buildConsumerPath(consumerInfo);
         this.asyncCuratorFramework.checkExists()
             .forPath(path)
             .whenComplete((stat, throwable) -> {
@@ -167,7 +182,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
                     return;
                 }
                 if (stat == null) {
-                    offsetThreadPool.submit(() -> metadataStorage.getLogInfo(consumerInfo.getTopic())
+                    this.offsetThreadPool.submit(() -> metadataStorage.getLogInfo(consumerInfo.getTopic())
                         .subscribe(log -> {
                             long ledgerId = 0;
                             if (log.getSegments().size() > 0) {
@@ -217,7 +232,7 @@ public class ZkOffsetStorageImpl implements OffsetStorage {
         return future;
     }
 
-    private String getReaderPath(ConsumerInfo consumerInfo) {
+    private String buildConsumerPath(ConsumerInfo consumerInfo) {
         return ZK_OFFSET_STORAGE_PREFIX_PATH + consumerInfo.getTopic() + ZkUtils.INSTANCE.getSEPARATOR()
             + consumerInfo
             .getConsumerName();
