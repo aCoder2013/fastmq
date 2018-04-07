@@ -3,7 +3,6 @@ package com.song.fastmq.client.utils
 import com.google.protobuf.ByteString
 import com.song.fastmq.client.domain.Message
 import com.song.fastmq.net.proto.BrokerApi
-import com.song.fastmq.storage.common.utils.Utils
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
@@ -39,14 +38,6 @@ object ClientUtils {
         })
         check(bootstrapServers.isNotEmpty())
         return bootstrapServers
-    }
-
-
-    fun buildInstanceName(): String {
-        val localAddress = Utils.getLocalAddress()
-        localAddress.let {
-            return it + "@" + Utils.getPid()
-        }
     }
 
     /**

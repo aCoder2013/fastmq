@@ -1,4 +1,4 @@
-package com.song.fastmq.storage.common.domain
+package com.song.fastmq.common.domain
 
 /**
  *

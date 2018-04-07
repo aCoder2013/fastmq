@@ -8,10 +8,9 @@ import com.song.fastmq.client.domain.MessageId
 import com.song.fastmq.client.exception.FastMqClientException
 import com.song.fastmq.client.net.ClientCnx
 import com.song.fastmq.client.net.RemotingConnectionPool
-import com.song.fastmq.client.producer.DefaultProducer
 import com.song.fastmq.client.utils.ClientUtils
+import com.song.fastmq.common.utils.Utils
 import com.song.fastmq.net.proto.Commands
-import com.song.fastmq.storage.common.utils.Utils
 import io.netty.buffer.Unpooled
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
@@ -78,7 +77,7 @@ class DefaultPullConsumer(private val topic: String,
                         synchronized(this@DefaultPullConsumer) {
                             logger.error("[$topic] [$consumerName] Failed to create consumer:{}", it)
                             clientCnx.removeConsumer(consumerId)
-                            if (state.get() == DefaultProducer.State.CLOSING || state.get() == DefaultProducer.State.CLOSED) {
+                            if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
                                 clientCnx.channel().close()
                                 return@exceptionally null
                             }

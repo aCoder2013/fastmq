@@ -8,11 +8,6 @@ import org.junit.Test
 class ClientUtilsTest {
 
     @Test
-    fun buildInstanceName() {
-        println(ClientUtils.buildInstanceName())
-    }
-
-    @Test
     fun msgConvert() {
     }
 

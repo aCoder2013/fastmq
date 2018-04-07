@@ -3,7 +3,7 @@ package com.song.fastmq.broker.core
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Throwables
 import com.song.fastmq.broker.BrokerService
-import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.domain.MessageConstants
 import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.net.AbstractHandler
@@ -17,7 +17,6 @@ import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeoutException
 
 /**
  * @author song
@@ -118,23 +117,19 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
     }
 
     override fun handleSend(commandSend: BrokerApi.CommandSend) {
-        if (commandSend.headersMap[FastMQConfigKeys.PRODUCER_ID].isNullOrBlank()
-                || commandSend.headersMap[FastMQConfigKeys.SEQUENCE_ID].isNullOrBlank()) {
+        if (commandSend.headersMap[MessageConstants.PRODUCER_ID].isNullOrBlank()
+                || commandSend.headersMap[MessageConstants.SEQUENCE_ID].isNullOrBlank()) {
             logger.warn("Ignore invalid message ,{}", commandSend.toString())
             return
         }
-        val producerId = commandSend.headersMap[FastMQConfigKeys.PRODUCER_ID]!!.toLong()
-        val sequenceId = commandSend.headersMap[FastMQConfigKeys.SEQUENCE_ID]!!.toLong()
+        val producerId = commandSend.headersMap[MessageConstants.PRODUCER_ID]!!.toLong()
+        val sequenceId = commandSend.headersMap[MessageConstants.SEQUENCE_ID]!!.toLong()
         val producer = this.producers[producerId]
         if (producer == null) {
             logger.warn("[{}] Producer doesn't exist [{}].", remoteAddress, producerId)
             return
         }
-        try {
-            producer.publishMessage(producerId, sequenceId, Unpooled.wrappedBuffer(commandSend.toByteArray()))
-        } catch (e: TimeoutException) {
-            logger.info("[{}] Create producer timeout after 3S,{}", remoteAddress, producerId)
-        }
+        producer.publishMessage(producerId, sequenceId, Unpooled.wrappedBuffer(commandSend.toByteArray()))
     }
 
     override fun handleSubscribe(subscribe: BrokerApi.CommandSubscribe) {
@@ -185,12 +180,13 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
     override fun handlePullMessage(pullMessage: BrokerApi.CommandPullMessage) {
         val consumerId = pullMessage.consumerId
         val messageId = pullMessage.messageId
-        this.consumers[consumerId]?.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage) ?: run {
-            logger.error("Consumer not exist :{} ", consumerId)
-            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                    .newError(pullMessage.requestId,
-                            BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
-        }
+        this.consumers[consumerId]?.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
+                ?: run {
+                    logger.error("Consumer not exist :{} ", consumerId)
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
+                            .newError(pullMessage.requestId,
+                                    BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
+                }
     }
 
     override fun handleFetchOffset(fetchOffset: BrokerApi.CommandFetchOffset) {

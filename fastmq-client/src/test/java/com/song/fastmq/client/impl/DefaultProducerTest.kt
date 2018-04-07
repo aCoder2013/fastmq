@@ -1,7 +1,6 @@
 package com.song.fastmq.client.impl
 
 import com.song.fastmq.client.domain.Message
-import com.song.fastmq.client.net.RemotingConnectionPool
 import com.song.fastmq.client.producer.DefaultProducer
 import org.junit.Before
 import org.junit.Test
@@ -13,12 +12,12 @@ class DefaultProducerTest {
 
     private lateinit var producer: DefaultProducer
 
-    private val connectionPool = RemotingConnectionPool()
+//    private val connectionPool = RemotingConnectionPool()
 
     @Before
     fun setUp() {
-        producer = DefaultProducer(connectionPool)
-        producer.start()
+//        producer = DefaultProducer(connectionPool)
+//        producer.start()
     }
 
     @Test
