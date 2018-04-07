@@ -1,7 +1,7 @@
 package com.song.fastmq.broker.core
 
 import com.google.common.collect.Lists
-import com.song.fastmq.common.domain.FastMQConfigKeys
+import com.song.fastmq.common.domain.MessageConstants
 import com.song.fastmq.common.logging.LoggerFactory
 import com.song.fastmq.common.utils.OnCompletedObserver
 import com.song.fastmq.net.proto.BrokerApi
@@ -38,7 +38,7 @@ class Consumer(private val cnx: ServerCnx, private val messageStorage: MessageSt
                             val message = BrokerApi.CommandSend
                                     .newBuilder()
                                     .mergeFrom(it.data)
-                                    .putHeaders(FastMQConfigKeys.MESSAGE_ID, Base64.getEncoder().encodeToString(id.toByteArray()))
+                                    .putHeaders(MessageConstants.MESSAGE_ID, Base64.getEncoder().encodeToString(id.toByteArray()))
                                     .build()
                             messages.add(message)
                         }
