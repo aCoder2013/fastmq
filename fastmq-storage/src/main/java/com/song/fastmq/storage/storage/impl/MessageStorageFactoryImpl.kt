@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicReference
  * Created by song on 2017/11/4.
  */
 class MessageStorageFactoryImpl @Throws(Exception::class)
-constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConfig: BookKeeperConfig) : MessageStorageFactory {
+constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConfig: BookKeeperConfig) :
+    MessageStorageFactory {
 
     @Volatile
     private var closed: Boolean = false
@@ -42,10 +43,10 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
     private val curatorFramework: CuratorFramework
 
     private val messageOrderedThreadPool = OrderedSafeExecutor
-            .newBuilder()
+        .newBuilder()
 //            .name("fastmq-message-workers")
 //            .numThreads(20)
-            .build()
+        .build()
 
     init {
         val servers = clientConfiguration.zkServers
@@ -64,24 +65,29 @@ constructor(clientConfiguration: ClientConfiguration, private val bookKeeperConf
                 val messageStorage = this.messageStorageCache[topic]
                 messageStorage?.run {
                     if (state.get() == MessageStorageImpl.State.CLOSED) {
-                        logger.warn("[{}] Message storage is in {} state,removing it from cache to recreate one.", topic, state.get())
+                        logger.warn(
+                            "[{}] Message storage is in {} state,removing it from cache to recreate one.",
+                            topic,
+                            state.get()
+                        )
                         messageStorageCache.remove(topic)
                     }
                 }
             }
             val throwable = AtomicReference<Throwable>()
             val messageStorage = this.messageStorageCache.computeIfAbsent(topic) {
-                val ms = MessageStorageImpl(topic, bookKeeper, bookKeeperConfig, metadataStorage, messageOrderedThreadPool)
+                val ms =
+                    MessageStorageImpl(topic, bookKeeper, bookKeeperConfig, metadataStorage, messageOrderedThreadPool)
                 ms.initialize()
-                        .blockingSubscribe(object : OnCompletedObserver<Void>() {
-                            override fun onError(e: Throwable) {
-                                throwable.compareAndSet(null, e)
-                            }
+                    .blockingSubscribe(object : OnCompletedObserver<Void>() {
+                        override fun onError(e: Throwable) {
+                            throwable.compareAndSet(null, e)
+                        }
 
-                            override fun onComplete() {
-                            }
+                        override fun onComplete() {
+                        }
 
-                        })
+                    })
                 return@computeIfAbsent ms
             }
             if (throwable.get() != null) {

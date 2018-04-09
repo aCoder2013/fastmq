@@ -16,7 +16,8 @@ class DefaultPullConsumerTest {
 
     @Before
     fun setUp() {
-        val messagingAccessPoint = MessagingAccessPointFactory.getMessagingAccessPoint("openmessaging:fastmq://127.0.0.1:7164/namespace")
+        val messagingAccessPoint =
+            MessagingAccessPointFactory.getMessagingAccessPoint("openmessaging:fastmq://127.0.0.1:7164/namespace")
         this.consumer = messagingAccessPoint.createPullConsumer("Test-topic-3")
         this.consumer.startup()
     }

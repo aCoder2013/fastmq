@@ -29,15 +29,16 @@ class MetadataStorageImpl(private val asyncCuratorFramework: AsyncCuratorFramewo
                     try {
                         val log = Log(name)
                         val bytes = JsonUtils.toJson(log).toByteArray()
-                        this.asyncCuratorFramework.create().withOptions(EnumSet.of(CreateOption.createParentsIfNeeded)).forPath(ledgerManagerPath, bytes)
-                                .whenComplete({ _, t ->
-                                    if (t != null) {
-                                        observable.onError(t)
-                                    } else {
-                                        observable.onNext(log)
-                                        observable.onComplete()
-                                    }
-                                })
+                        this.asyncCuratorFramework.create().withOptions(EnumSet.of(CreateOption.createParentsIfNeeded))
+                            .forPath(ledgerManagerPath, bytes)
+                            .whenComplete({ _, t ->
+                                if (t != null) {
+                                    observable.onError(t)
+                                } else {
+                                    observable.onNext(log)
+                                    observable.onComplete()
+                                }
+                            })
                     } catch (e: JsonUtils.JsonException) {
                         observable.onError(e)
                         return@whenComplete
@@ -65,15 +66,15 @@ class MetadataStorageImpl(private val asyncCuratorFramework: AsyncCuratorFramewo
             try {
                 val bytes = JsonUtils.get().writeValueAsBytes(log)
                 this.asyncCuratorFramework
-                        .setData()
-                        .forPath(LEDGER_NAME_PREFIX + name, bytes)
-                        .whenComplete { _, throwable ->
-                            if (throwable != null) {
-                                observable.onError(throwable)
-                            } else {
-                                observable.onComplete()
-                            }
+                    .setData()
+                    .forPath(LEDGER_NAME_PREFIX + name, bytes)
+                    .whenComplete { _, throwable ->
+                        if (throwable != null) {
+                            observable.onError(throwable)
+                        } else {
+                            observable.onComplete()
                         }
+                    }
             } catch (e: JsonProcessingException) {
                 observable.onError(e)
             }
@@ -84,16 +85,16 @@ class MetadataStorageImpl(private val asyncCuratorFramework: AsyncCuratorFramewo
         logger.info("Remove ledger [{}].", name)
         return Observable.create {
             this.asyncCuratorFramework
-                    .delete()
-                    .withOptions(EnumSet.of(DeleteOption.guaranteed))
-                    .forPath(LEDGER_NAME_PREFIX + name)
-                    .whenComplete { _, throwable ->
-                        if (throwable != null) {
-                            it.onError(throwable)
-                        } else {
-                            it.onComplete()
-                        }
+                .delete()
+                .withOptions(EnumSet.of(DeleteOption.guaranteed))
+                .forPath(LEDGER_NAME_PREFIX + name)
+                .whenComplete { _, throwable ->
+                    if (throwable != null) {
+                        it.onError(throwable)
+                    } else {
+                        it.onComplete()
                     }
+                }
         }
     }
 

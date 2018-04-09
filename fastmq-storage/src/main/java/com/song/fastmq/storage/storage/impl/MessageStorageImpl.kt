@@ -34,8 +34,10 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * Created by song on 2017/11/5.
  */
-class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, private val config: BookKeeperConfig,
-                         private val metadataStorage: MetadataStorage, val executor: OrderedSafeExecutor) : MessageStorage, AsyncCallback.CreateCallback {
+class MessageStorageImpl(
+    val topic: String, private val bookKeeper: BookKeeper, private val config: BookKeeperConfig,
+    private val metadataStorage: MetadataStorage, val executor: OrderedSafeExecutor
+) : MessageStorage, AsyncCallback.CreateCallback {
 
 
     val state = AtomicReference<State>()
@@ -116,7 +118,12 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                                 return@asyncOpenLedger
                             }
                             else -> {
-                                logger.error("[{}] Failed to open ledger {}: {}", this.topic, id, BKException.getMessage(rc))
+                                logger.error(
+                                    "[{}] Failed to open ledger {}: {}",
+                                    this.topic,
+                                    id,
+                                    BKException.getMessage(rc)
+                                )
                                 observable.onError(MessageStorageException(BKException.getMessage(rc)))
                                 return@asyncOpenLedger
                             }
@@ -154,37 +161,46 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
 
             // Create a new ledger to start writing
             this.lastLedgerCreationInitiationTimestamp = System.nanoTime()
-            this.bookKeeper.asyncCreateLedger(config.ensSize, config.writeQuorumSize, config.ackQuorumSize,
-                    config.digestType, config.password, { rc, lh, _ ->
+            this.bookKeeper.asyncCreateLedger(
+                config.ensSize, config.writeQuorumSize, config.ackQuorumSize,
+                config.digestType, config.password, { rc, lh, _ ->
 
-                //don't block bk thread
-                this.executor.submitOrdered(this.topic, safeRun({
-                    if (rc != BKException.Code.OK) {
-                        observable.onError(MessageStorageException(org.apache.bookkeeper.client.BKException.getMessage(rc)))
-                        return@safeRun
-                    }
-
-                    logger.info("[{}] Created ledger {}", this.topic, lh.id)
-                    state.set(State.LEDGER_OPENED)
-                    lastLedgerCreatedTimestamp = System.currentTimeMillis()
-                    currentLedger = lh
-                    lastConfirmedEntry = Offset(lh.id, -1)
-                    this.ledgers.put(lh.id, LogSegment(lh.id))
-
-                    // Save it back to ensure all nodes exist
-                    val log = Log()
-                    log.segments = ArrayList(this.ledgers.values)
-                    this.metadataStorage.updateLogInfo(this.topic, log).subscribe(object : OnCompletedObserver<Void>() {
-                        override fun onComplete() {
-                            observable.onComplete()
+                    //don't block bk thread
+                    this.executor.submitOrdered(this.topic, safeRun({
+                        if (rc != BKException.Code.OK) {
+                            observable.onError(
+                                MessageStorageException(
+                                    org.apache.bookkeeper.client.BKException.getMessage(
+                                        rc
+                                    )
+                                )
+                            )
+                            return@safeRun
                         }
 
-                        override fun onError(e: Throwable) {
-                            observable.onError(e)
-                        }
-                    })
-                }))
-            }, null, null)
+                        logger.info("[{}] Created ledger {}", this.topic, lh.id)
+                        state.set(State.LEDGER_OPENED)
+                        lastLedgerCreatedTimestamp = System.currentTimeMillis()
+                        currentLedger = lh
+                        lastConfirmedEntry = Offset(lh.id, -1)
+                        this.ledgers.put(lh.id, LogSegment(lh.id))
+
+                        // Save it back to ensure all nodes exist
+                        val log = Log()
+                        log.segments = ArrayList(this.ledgers.values)
+                        this.metadataStorage.updateLogInfo(this.topic, log)
+                            .subscribe(object : OnCompletedObserver<Void>() {
+                                override fun onComplete() {
+                                    observable.onComplete()
+                                }
+
+                                override fun onError(e: Throwable) {
+                                    observable.onError(e)
+                                }
+                            })
+                    }))
+                }, null, null
+            )
         }
     }
 
@@ -214,8 +230,10 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                     if (this.state.compareAndSet(State.LEDGER_CLOSED, State.LEDGER_CREATING)) {
                         this.lastLedgerCreationInitiationTimestamp = System.nanoTime()
                         this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
-                        this.bookKeeper.asyncCreateLedger(config.ensSize, config.writeQuorumSize, config.ackQuorumSize, config.digestType,
-                                config.password, this, null, null)
+                        this.bookKeeper.asyncCreateLedger(
+                            config.ensSize, config.writeQuorumSize, config.ackQuorumSize, config.digestType,
+                            config.password, this, null, null
+                        )
                     } else {
                         this.pendingAppendMessageQueue.offer(AppendMessageTask(this, buffer, observable))
                     }
@@ -260,7 +278,12 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                         }
 
                         if (firstEntry > lastEntryInLedger) {
-                            logger.info("[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one.", topic, ledgerId, lastEntryInLedger)
+                            logger.info(
+                                "[{}] No more message to read from ledger = {} lastEntry = {} ,try to move to next one.",
+                                topic,
+                                ledgerId,
+                                lastEntryInLedger
+                            )
                             if (ledgerId != currentLedger.id) {
                                 val nextLedgerId = ledgers.ceilingKey(ledgerId + 1)
                                 if (nextLedgerId == null) {
@@ -270,21 +293,21 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                                 } else {
                                     executor.submitOrdered(nextLedgerId, safeRun {
                                         queryMessage(Offset(nextLedgerId, 0), maxMsgNum)
-                                                .subscribe(object : OnCompletedObserver<BatchMessage>() {
+                                            .subscribe(object : OnCompletedObserver<BatchMessage>() {
 
-                                                    override fun onError(e: Throwable) {
-                                                        observable.onError(e)
-                                                    }
+                                                override fun onError(e: Throwable) {
+                                                    observable.onError(e)
+                                                }
 
-                                                    override fun onNext(t: BatchMessage) {
-                                                        observable.onNext(t)
-                                                    }
+                                                override fun onNext(t: BatchMessage) {
+                                                    observable.onNext(t)
+                                                }
 
-                                                    override fun onComplete() {
-                                                        observable.onComplete()
-                                                    }
+                                                override fun onComplete() {
+                                                    observable.onComplete()
+                                                }
 
-                                                })
+                                            })
                                     })
                                 }
                             } else {
@@ -294,7 +317,13 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                             return
                         }
                         val lastEntry = Math.min(firstEntry + maxMsgNum - 1, lastEntryInLedger)
-                        logger.debug("[{}] Reading entries from ledger {} - first={} last={}", this@MessageStorageImpl.topic, t.id, firstEntry, lastEntry)
+                        logger.debug(
+                            "[{}] Reading entries from ledger {} - first={} last={}",
+                            this@MessageStorageImpl.topic,
+                            t.id,
+                            firstEntry,
+                            lastEntry
+                        )
                         t.asyncReadEntries(firstEntry, lastEntry, { rc, _, seq, _ ->
                             if (rc != BKException.Code.OK) {
                                 observable.onError(MessageStorageException(BKException.create(rc)))
@@ -308,10 +337,20 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                                     val entryBuffer = ledgerEntry.entryBuffer
                                     val array = ByteArray(entryBuffer.readableBytes())
                                     entryBuffer.getBytes(entryBuffer.readerIndex(), array)
-                                    val message = Message(messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId), data = array)
+                                    val message = Message(
+                                        messageId = MessageId(ledgerEntry.ledgerId, ledgerEntry.entryId),
+                                        data = array
+                                    )
                                     messages.add(message)
                                 }
-                                observable.onNext(BatchMessage(Offset(ledgerId, messages[messages.size - 1].messageId.entryId + 1), messages))
+                                observable.onNext(
+                                    BatchMessage(
+                                        Offset(
+                                            ledgerId,
+                                            messages[messages.size - 1].messageId.entryId + 1
+                                        ), messages
+                                    )
+                                )
                                 observable.onComplete()
                                 return@asyncReadEntries
                             }
@@ -343,19 +382,25 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
         }
         return this.ledgerCache.computeIfAbsent(ledgerId, { lld: Long ->
             Observable.create<LedgerHandle> {
-                this.bookKeeper.asyncOpenLedgerNoRecovery(lld, this.config.digestType, this.config.password, { rc, lh, _ ->
-                    this.executor.submitOrdered(ledgerId, safeRun {
-                        if (rc != BKException.Code.OK) {
-                            ledgerCache.remove(ledgerId)
-                            it.onError(MessageStorageException(BKException.getMessage(rc)))
-                            return@safeRun
-                        } else {
-                            it.onNext(lh)
-                            it.onComplete()
-                            return@safeRun
-                        }
-                    })
-                }, null)
+                this.bookKeeper.asyncOpenLedgerNoRecovery(
+                    lld,
+                    this.config.digestType,
+                    this.config.password,
+                    { rc, lh, _ ->
+                        this.executor.submitOrdered(ledgerId, safeRun {
+                            if (rc != BKException.Code.OK) {
+                                ledgerCache.remove(ledgerId)
+                                it.onError(MessageStorageException(BKException.getMessage(rc)))
+                                return@safeRun
+                            } else {
+                                it.onNext(lh)
+                                it.onComplete()
+                                return@safeRun
+                            }
+                        })
+                    },
+                    null
+                )
             }
         })
     }
@@ -408,17 +453,26 @@ class MessageStorageImpl(val topic: String, private val bookKeeper: BookKeeper, 
                         this.pendingAppendMessageQueue.forEach {
                             it.failed(throwable)
                         }
-                        logger.error("[{}] Failed to update log metadata , z-node version mismatch. Closing message storage", this.topic)
+                        logger.error(
+                            "[{}] Failed to update log metadata , z-node version mismatch. Closing message storage",
+                            this.topic
+                        )
                         this.state.set(State.Fenced)
                         return@subscribe
                     }
                 } else {
-                    logger.warn("[{}] Error updating meta data with the new list of ledgers: {}", this.topic, throwable.message)
+                    logger.warn(
+                        "[{}] Error updating meta data with the new list of ledgers: {}",
+                        this.topic,
+                        throwable.message
+                    )
                     ledgers.remove(lh.id)
                     bookKeeper.asyncDeleteLedger(lh.id, { rc1, _ ->
                         if (rc1 != BKException.Code.OK) {
-                            logger.warn("[{}] Failed to delete ledger {}: {}", this.topic, lh.id,
-                                    BKException.getMessage(rc1))
+                            logger.warn(
+                                "[{}] Failed to delete ledger {}: {}", this.topic, lh.id,
+                                BKException.getMessage(rc1)
+                            )
                         }
                     }, null)
                     synchronized(MessageStorageImpl::class) {

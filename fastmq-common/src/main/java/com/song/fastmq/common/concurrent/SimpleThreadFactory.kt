@@ -14,8 +14,8 @@ class SimpleThreadFactory(name: String) : ThreadFactory {
     init {
         val builder = ThreadFactoryBuilder()
         builder
-                .setNameFormat(name)
-                .setUncaughtExceptionHandler { t, e -> logger.error("Uncaught exception of thread_" + t.toString(), e) }
+            .setNameFormat(name)
+            .setUncaughtExceptionHandler { t, e -> logger.error("Uncaught exception of thread_" + t.toString(), e) }
         this.threadFactory = builder.build()
     }
 

@@ -10,24 +10,24 @@ object Commands {
 
     fun newProducer(topic: String, producerId: Long, producerName: String, requestId: Long): Command {
         val producer = BrokerApi.CommandProducer
-                .newBuilder()
-                .setProducerId(producerId)
-                .setProducerName(producerName)
-                .setTopic(topic)
-                .setRequestId(requestId)
-                .build()
+            .newBuilder()
+            .setProducerId(producerId)
+            .setProducerName(producerName)
+            .setTopic(topic)
+            .setRequestId(requestId)
+            .build()
         return BrokerApi.Command
-                .newBuilder()
-                .setProducer(producer)
-                .setType(BrokerApi.Command.Type.PRODUCER)
-                .build()
+            .newBuilder()
+            .setProducer(producer)
+            .setType(BrokerApi.Command.Type.PRODUCER)
+            .build()
     }
 
     fun newSend(sendCommand: CommandSend): Command {
         val res = Command.newBuilder()
-                .setType(Command.Type.SEND)
-                .setSend(sendCommand)
-                .build()
+            .setType(Command.Type.SEND)
+            .setSend(sendCommand)
+            .build()
         return res
     }
 
@@ -42,8 +42,8 @@ object Commands {
         sendReceiptBuilder.messageId = messageId
         val sendReceipt = sendReceiptBuilder.build()
         val res = Command.newBuilder()
-                .setType(Command.Type.SEND_RECEIPT)
-                .setSendReceipt(sendReceipt)
+            .setType(Command.Type.SEND_RECEIPT)
+            .setSendReceipt(sendReceipt)
         return res.build()
     }
 
@@ -65,22 +65,22 @@ object Commands {
         cmdErrorBuilder.message = message
         val cmdError = cmdErrorBuilder.build()
         return Command.newBuilder()
-                .setType(Command.Type.ERROR)
-                .setError(cmdError)
-                .build()
+            .setType(Command.Type.ERROR)
+            .setError(cmdError)
+            .build()
     }
 
     fun newSubscribe(topic: String, consumerId: Long, requestId: Long, consumerName: String): Command {
         val builder = CommandSubscribe.newBuilder()
         val subscribe = builder.setTopic(topic)
-                .setConsumerId(consumerId)
-                .setConsumerName(consumerName)
-                .setRequestId(requestId)
-                .build()
+            .setConsumerId(consumerId)
+            .setConsumerName(consumerName)
+            .setRequestId(requestId)
+            .build()
         return Command.newBuilder()
-                .setType(Command.Type.SUBSCRIBE)
-                .setSubscribe(subscribe)
-                .build()
+            .setType(Command.Type.SUBSCRIBE)
+            .setSubscribe(subscribe)
+            .build()
     }
 
     fun newSuccess(requestId: Long): Command {
@@ -88,12 +88,19 @@ object Commands {
         builder.requestId = requestId
         val success = builder.build()
         return Command.newBuilder()
-                .setType(Command.Type.SUCCESS)
-                .setSuccess(success)
-                .build()
+            .setType(Command.Type.SUCCESS)
+            .setSuccess(success)
+            .build()
     }
 
-    fun newPullMessage(topic: String, consumerId: Long, requestId: Long, maxMessage: Int, ledgerId: Long, entryId: Long): Command {
+    fun newPullMessage(
+        topic: String,
+        consumerId: Long,
+        requestId: Long,
+        maxMessage: Int,
+        ledgerId: Long,
+        entryId: Long
+    ): Command {
         val builder = CommandPullMessage.newBuilder()
         builder.topic = topic
         builder.consumerId = consumerId
@@ -102,9 +109,9 @@ object Commands {
         builder.messageId = MessageIdData.newBuilder().setLedgerId(ledgerId).setEntryId(entryId).build()
         val pullMessage = builder.build()
         return Command.newBuilder()
-                .setType(Command.Type.PULL_MESSAGE)
-                .setPullMessage(pullMessage)
-                .build()
+            .setType(Command.Type.PULL_MESSAGE)
+            .setPullMessage(pullMessage)
+            .build()
     }
 
     fun newMessage(consumerId: Long, ledgerId: Long, entryId: Long, messages: Iterable<CommandSend>): Command {
@@ -114,50 +121,50 @@ object Commands {
         builder.addAllMessages(messages)
         val message = builder.build()
         return Command.newBuilder()
-                .setType(Command.Type.MESSAGE)
-                .setMessage(message)
-                .build()
+            .setType(Command.Type.MESSAGE)
+            .setMessage(message)
+            .build()
     }
 
     fun newFetchOffset(topic: String, consumerId: Long, requestId: Long): Command {
         val commandFetchOffset = CommandFetchOffset
-                .newBuilder()
-                .setTopic(topic)
-                .setConsumerId(consumerId)
-                .setConsumerName(consumerId.toString())
-                .setRequestId(requestId)
-                .build()
+            .newBuilder()
+            .setTopic(topic)
+            .setConsumerId(consumerId)
+            .setConsumerName(consumerId.toString())
+            .setRequestId(requestId)
+            .build()
         return Command.newBuilder()
-                .setType(Command.Type.FETCH_CONSUMER_OFFSET)
-                .setFetchOffset(commandFetchOffset)
-                .build()
+            .setType(Command.Type.FETCH_CONSUMER_OFFSET)
+            .setFetchOffset(commandFetchOffset)
+            .build()
     }
 
     fun newFetchOffsetResponse(topic: String, consumerId: Long, ledgerId: Long, entryId: Long): Command {
         val fetchOffsetResponse = CommandFetchOffsetResponse
-                .newBuilder()
-                .setTopic(topic)
-                .setConsumerId(consumerId)
-                .setMessageId(MessageIdData.newBuilder().setLedgerId(ledgerId).setEntryId(entryId))
-                .build()
+            .newBuilder()
+            .setTopic(topic)
+            .setConsumerId(consumerId)
+            .setMessageId(MessageIdData.newBuilder().setLedgerId(ledgerId).setEntryId(entryId))
+            .build()
         return Command.newBuilder()
-                .setType(Command.Type.FETCH_CONSUMER_OFFSET_RESPONSE)
-                .setFetchOffsetResponse(fetchOffsetResponse)
-                .build()
+            .setType(Command.Type.FETCH_CONSUMER_OFFSET_RESPONSE)
+            .setFetchOffsetResponse(fetchOffsetResponse)
+            .build()
     }
 
 
     fun newProducerSuccess(producerName: String, requestId: Long): BrokerApi.Command {
         val producerSuccess = BrokerApi.CommandProducerSuccess
-                .newBuilder()
-                .setProducerName(producerName)
-                .setRequestId(requestId)
-                .build()
+            .newBuilder()
+            .setProducerName(producerName)
+            .setRequestId(requestId)
+            .build()
         return Command
-                .newBuilder()
-                .setProducerSuccess(producerSuccess)
-                .setType(Command.Type.PRODUCER_SUCCESS)
-                .build()
+            .newBuilder()
+            .setProducerSuccess(producerSuccess)
+            .setType(Command.Type.PRODUCER_SUCCESS)
+            .build()
     }
 
 }

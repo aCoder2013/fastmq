@@ -11,7 +11,7 @@ public class Message {
     private byte[] body;
 
     private Map<String, String> properties = new HashMap<>();
-    
+
     public byte[] getBody() {
         return body;
     }

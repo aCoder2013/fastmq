@@ -6,5 +6,4 @@ package com.song.fastmq.common.concurrent
 class Futures {
 
 
-
 }

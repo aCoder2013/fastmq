@@ -1,65 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>fastmq</artifactId>
-    <groupId>com.song.fastmq</groupId>
-    <version>${fastmq.version}</version>
-  </parent>
-  <modelVersion>4.0.0</modelVersion>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>fastmq</artifactId>
+        <groupId>com.song.fastmq</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-  <properties>
-    <openmessaging-api.version>0.1.0-alpha</openmessaging-api.version>
-  </properties>
+    <properties>
+        <openmessaging-api.version>0.1.0-alpha</openmessaging-api.version>
+    </properties>
 
-  <artifactId>fastmq-client</artifactId>
+    <artifactId>fastmq-client</artifactId>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.song.fastmq</groupId>
-      <artifactId>fastmq-net</artifactId>
-      <version>${fastmq.version}</version>
-    </dependency>
+    <dependencies>
+        <dependency>
+            <groupId>com.song.fastmq</groupId>
+            <artifactId>fastmq-net</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
-    <dependency>
-      <groupId>com.song.fastmq</groupId>
-      <artifactId>fastmq-common</artifactId>
-      <version>${fastmq.version}</version>
-    </dependency>
+        <dependency>
+            <groupId>com.song.fastmq</groupId>
+            <artifactId>fastmq-common</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
 
-    <dependency>
-      <groupId>io.openmessaging</groupId>
-      <artifactId>openmessaging-api</artifactId>
-      <version>${openmessaging-api.version}</version>
-    </dependency>
+        <dependency>
+            <groupId>io.openmessaging</groupId>
+            <artifactId>openmessaging-api</artifactId>
+            <version>${openmessaging-api.version}</version>
+        </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.10.0</version>
-      <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.10.0</version>
+            <scope>test</scope>
+        </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.10.0</version>
-      <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.10.0</version>
+            <scope>test</scope>
+        </dependency>
 
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.10.0</version>
-      <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.10.0</version>
+            <scope>test</scope>
+        </dependency>
 
-  </dependencies>
+    </dependencies>
 
 </project>

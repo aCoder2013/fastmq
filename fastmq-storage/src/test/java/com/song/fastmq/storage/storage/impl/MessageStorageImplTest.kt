@@ -48,18 +48,20 @@ class MessageStorageImplTest {
     @Throws(Exception::class)
     fun setUp() {
         Configurator
-                .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
+            .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
         val initLatch = CountDownLatch(1)
         curatorFramework = CuratorFrameworkFactory
-                .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))
+            .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))
         curatorFramework.start()
         val asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework)
         val connectionString = "127.0.0.1:2181"
         val metadataStorage = MetadataStorageImpl(asyncCuratorFramework)
         offsetStorage = ZkOffsetStorageImpl(metadataStorage, asyncCuratorFramework)
         bookKeeper = BookKeeper(connectionString)
-        messageStorage = MessageStorageImpl("test", bookKeeper, BookKeeperConfig(), metadataStorage,
-                OrderedSafeExecutor.newBuilder().numThreads(Runtime.getRuntime().availableProcessors()).build())
+        messageStorage = MessageStorageImpl(
+            "test", bookKeeper, BookKeeperConfig(), metadataStorage,
+            OrderedSafeExecutor.newBuilder().numThreads(Runtime.getRuntime().availableProcessors()).build()
+        )
         messageStorage.initialize().blockingSubscribe(object : OnCompletedObserver<Void>() {
 
             override fun onComplete() {
@@ -82,12 +84,12 @@ class MessageStorageImplTest {
         val latch = CountDownLatch(10)
         for (i in 1..10) {
             this.messageStorage.appendMessage(Message(data = "Hello World".toByteArray()))
-                    .blockingSubscribe({
-                        latch.countDown()
-                    }, {
-                        it.printStackTrace()
-                        fail(it.message)
-                    })
+                .blockingSubscribe({
+                    latch.countDown()
+                }, {
+                    it.printStackTrace()
+                    fail(it.message)
+                })
         }
         latch.await()
         assertEquals(total + 10, this.messageStorage.numberOfMessages.get())
@@ -97,18 +99,18 @@ class MessageStorageImplTest {
     fun appendMessageAsync() {
         val latch = CountDownLatch(1)
         this.messageStorage.appendMessage(Message(data = "Hello World".toByteArray()))
-                .subscribe(object : OnCompletedObserver<Offset>() {
+            .subscribe(object : OnCompletedObserver<Offset>() {
 
-                    override fun onNext(t: Offset) {
-                        latch.countDown()
-                    }
+                override fun onNext(t: Offset) {
+                    latch.countDown()
+                }
 
-                    override fun onError(e: Throwable) {
-                        latch.countDown()
-                        e.printStackTrace()
-                        fail(e.message)
-                    }
-                })
+                override fun onError(e: Throwable) {
+                    latch.countDown()
+                    e.printStackTrace()
+                    fail(e.message)
+                }
+            })
         latch.await()
     }
 
@@ -117,39 +119,39 @@ class MessageStorageImplTest {
         val latch = CountDownLatch(1)
         val consumerInfo = ConsumerInfo("consumer-1", "test")
         this.messageStorage.appendMessage(message = Message(data = "Hello World".toByteArray()))
-                .blockingSubscribe(object : OnCompletedObserver<Offset>() {
+            .blockingSubscribe(object : OnCompletedObserver<Offset>() {
 
-                    override fun onNext(t: Offset) {
-                        assertNotNull(t)
-                        Thread({
-                            val offset = offsetStorage.queryOffset(consumerInfo)
-                            messageStorage.queryMessage(offset, 100)
-                                    .subscribe(object : OnCompletedObserver<BatchMessage>() {
+                override fun onNext(t: Offset) {
+                    assertNotNull(t)
+                    Thread({
+                        val offset = offsetStorage.queryOffset(consumerInfo)
+                        messageStorage.queryMessage(offset, 100)
+                            .subscribe(object : OnCompletedObserver<BatchMessage>() {
 
-                                        override fun onNext(t: BatchMessage) {
-                                            println(JsonUtils.toJsonQuietly(t))
-                                            assertTrue { t.messages.isNotEmpty() }
-                                            offsetStorage.commitOffset(consumerInfo, t.nextReadOffset)
-                                            offsetStorage.persistOffset(consumerInfo)
-                                        }
+                                override fun onNext(t: BatchMessage) {
+                                    println(JsonUtils.toJsonQuietly(t))
+                                    assertTrue { t.messages.isNotEmpty() }
+                                    offsetStorage.commitOffset(consumerInfo, t.nextReadOffset)
+                                    offsetStorage.persistOffset(consumerInfo)
+                                }
 
-                                        override fun onComplete() {
-                                            latch.countDown()
-                                        }
+                                override fun onComplete() {
+                                    latch.countDown()
+                                }
 
-                                        override fun onError(e: Throwable) {
-                                            e.printStackTrace()
-                                            latch.countDown()
-                                        }
-                                    })
-                        }).start()
-                    }
+                                override fun onError(e: Throwable) {
+                                    e.printStackTrace()
+                                    latch.countDown()
+                                }
+                            })
+                    }).start()
+                }
 
-                    override fun onError(e: Throwable) {
-                        e.printStackTrace()
-                        latch.countDown()
-                    }
-                })
+                override fun onError(e: Throwable) {
+                    e.printStackTrace()
+                    latch.countDown()
+                }
+            })
         latch.await()
     }
 
@@ -162,18 +164,18 @@ class MessageStorageImplTest {
         Thread({
             for (i in 1..total) {
                 messageStorage.appendMessage(Message(data = "Hello World : $i".toByteArray()))
-                        .blockingSubscribe(object : OnCompletedObserver<Offset>() {
+                    .blockingSubscribe(object : OnCompletedObserver<Offset>() {
 
-                            override fun onNext(t: Offset) {
-                                currentLedgerId = t.ledgerId
-                                logger.info("Append message done [{}].", t)
-                            }
+                        override fun onNext(t: Offset) {
+                            currentLedgerId = t.ledgerId
+                            logger.info("Append message done [{}].", t)
+                        }
 
-                            override fun onError(e: Throwable) {
-                                e.printStackTrace()
-                                Assert.fail(e.message)
-                            }
-                        })
+                        override fun onError(e: Throwable) {
+                            e.printStackTrace()
+                            Assert.fail(e.message)
+                        }
+                    })
             }
         }).start()
         var offset = offsetStorage.queryOffset(consumerInfo)

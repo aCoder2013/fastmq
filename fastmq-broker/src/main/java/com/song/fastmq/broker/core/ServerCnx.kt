@@ -89,7 +89,15 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
             this.brokerService.getTopic(topic).subscribe(object : OnCompletedObserver<Topic>() {
                 override fun onError(e: Throwable) {
                     logger.error("Open topic failed_" + e.message, e)
-                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands.newError(requestId, BrokerApi.ServerError.UnknownError, Throwables.getStackTraceAsString(e)).toByteArray()))
+                    ctx.writeAndFlush(
+                        Unpooled.wrappedBuffer(
+                            Commands.newError(
+                                requestId,
+                                BrokerApi.ServerError.UnknownError,
+                                Throwables.getStackTraceAsString(e)
+                            ).toByteArray()
+                        )
+                    )
                 }
 
                 override fun onNext(t: Topic) {
@@ -100,16 +108,16 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
                     }
                     t.addProducer(producer)
                     val producerSuccess = BrokerApi.CommandProducerSuccess
-                            .newBuilder()
-                            .setProducerName(UUID.randomUUID().toString().replace("-", ""))
-                            .setProducerId(producerId)
-                            .setRequestId(0L)
-                            .build()
+                        .newBuilder()
+                        .setProducerName(UUID.randomUUID().toString().replace("-", ""))
+                        .setProducerId(producerId)
+                        .setRequestId(0L)
+                        .build()
                     val command = BrokerApi.Command
-                            .newBuilder()
-                            .setProducerSuccess(producerSuccess)
-                            .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS)
-                            .build()
+                        .newBuilder()
+                        .setProducerSuccess(producerSuccess)
+                        .setType(BrokerApi.Command.Type.PRODUCER_SUCCESS)
+                        .build()
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 }
             })
@@ -118,7 +126,8 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
 
     override fun handleSend(commandSend: BrokerApi.CommandSend) {
         if (commandSend.headersMap[MessageConstants.PRODUCER_ID].isNullOrBlank()
-                || commandSend.headersMap[MessageConstants.SEQUENCE_ID].isNullOrBlank()) {
+            || commandSend.headersMap[MessageConstants.SEQUENCE_ID].isNullOrBlank()
+        ) {
             logger.warn("Ignore invalid message ,{}", commandSend.toString())
             return
         }
@@ -143,29 +152,47 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
             this.brokerService.getTopic(topic).subscribe(object : OnCompletedObserver<Topic>() {
                 override fun onError(e: Throwable) {
                     logger.error("[$topic][$consumerId] Open message storage failed_" + e.message, e)
-                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                            .newError(requestId,
+                    ctx.writeAndFlush(
+                        Unpooled.wrappedBuffer(
+                            Commands
+                                .newError(
+                                    requestId,
                                     BrokerApi.ServerError.UnknownError,
-                                    Throwables.getStackTraceAsString(e)).toByteArray()))
+                                    Throwables.getStackTraceAsString(e)
+                                ).toByteArray()
+                        )
+                    )
                 }
 
                 override fun onNext(t: Topic) {
                     t.subscribe(this@ServerCnx).subscribe(object : OnCompletedObserver<Consumer>() {
                         override fun onError(e: Throwable) {
                             logger.error("[$topic][$consumerId] Open consumer failed_" + e.message, e)
-                            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                                    .newError(requestId,
+                            ctx.writeAndFlush(
+                                Unpooled.wrappedBuffer(
+                                    Commands
+                                        .newError(
+                                            requestId,
                                             BrokerApi.ServerError.UnknownError,
-                                            Throwables.getStackTraceAsString(e)).toByteArray()))
+                                            Throwables.getStackTraceAsString(e)
+                                        ).toByteArray()
+                                )
+                            )
                         }
 
                         override fun onNext(t: Consumer) {
                             val previous = consumers.putIfAbsent(consumerId, t)
                             if (previous != null) {
-                                ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                                        .newError(requestId,
+                                ctx.writeAndFlush(
+                                    Unpooled.wrappedBuffer(
+                                        Commands
+                                            .newError(
+                                                requestId,
                                                 BrokerApi.ServerError.UnknownError,
-                                                "Consumer is already present on the connection").toByteArray()))
+                                                "Consumer is already present on the connection"
+                                            ).toByteArray()
+                                    )
+                                )
                             } else {
                                 ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands.newSuccess(requestId).toByteArray()))
                             }
@@ -180,22 +207,38 @@ class ServerCnx(private val brokerService: BrokerService) : AbstractHandler() {
     override fun handlePullMessage(pullMessage: BrokerApi.CommandPullMessage) {
         val consumerId = pullMessage.consumerId
         val messageId = pullMessage.messageId
-        this.consumers[consumerId]?.readMessage(consumerId, Offset(messageId.ledgerId, messageId.entryId), pullMessage.maxMessage)
+        this.consumers[consumerId]?.readMessage(
+            consumerId,
+            Offset(messageId.ledgerId, messageId.entryId),
+            pullMessage.maxMessage
+        )
                 ?: run {
                     logger.error("Consumer not exist :{} ", consumerId)
-                    ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                            .newError(pullMessage.requestId,
-                                    BrokerApi.ServerError.UnknownError, "Consumer is not ready!").toByteArray()))
+                    ctx.writeAndFlush(
+                        Unpooled.wrappedBuffer(
+                            Commands
+                                .newError(
+                                    pullMessage.requestId,
+                                    BrokerApi.ServerError.UnknownError, "Consumer is not ready!"
+                                ).toByteArray()
+                        )
+                    )
                 }
     }
 
     override fun handleFetchOffset(fetchOffset: BrokerApi.CommandFetchOffset) {
         try {
             val offset = brokerService.messageStorageFactory.offsetStorage
-                    .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
-            ctx.writeAndFlush(Unpooled.wrappedBuffer(Commands
-                    .newFetchOffsetResponse(fetchOffset.topic, fetchOffset.consumerId,
-                            offset.ledgerId, offset.entryId).toByteArray()))
+                .queryOffset(ConsumerInfo(fetchOffset.consumerName, fetchOffset.topic))
+            ctx.writeAndFlush(
+                Unpooled.wrappedBuffer(
+                    Commands
+                        .newFetchOffsetResponse(
+                            fetchOffset.topic, fetchOffset.consumerId,
+                            offset.ledgerId, offset.entryId
+                        ).toByteArray()
+                )
+            )
         } catch (e: OffsetStorageException) {
             logger.error(e.message, e)
         }

@@ -3,7 +3,7 @@ package com.song.fastmq.broker.exception;
 /**
  * @author song
  */
-public class TopicClosedException extends RuntimeException{
+public class TopicClosedException extends RuntimeException {
 
     public TopicClosedException() {
     }

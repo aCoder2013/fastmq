@@ -74,35 +74,39 @@ class DefaultProducer : Producer {
     private fun connect() {
         this.cnxClient.registerProducer(producerId, this)
         cnxClient
-                .sendCommandAsync(Unpooled.wrappedBuffer(Commands
-                        .newProducer(topic, producerId, producerName, ClientUtils.getNextRequestId()).toByteArray()),
-                        ClientUtils.getNextRequestId())
-                .thenAccept({
-                    val producerName = it.first
-                    synchronized(this@DefaultProducer) {
-                        if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
-                            cnxClient.removeProducer(producerId)
-                            cnxClient.channel().close()
-                            return@thenAccept
-                        }
-                        logger.info("[{}] [{}] Created producer on cnx {}", topic, producerName, cnxClient.channel())
-                        if (this.producerName.isBlank()) {
-                            this.producerName = producerName
-                        }
-                        this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
-                    }
-                }).exceptionally {
-                    synchronized(this@DefaultProducer) {
-                        logger.error("[$topic] [$producerName] Failed to create producer:{}", it)
+            .sendCommandAsync(
+                Unpooled.wrappedBuffer(
+                    Commands
+                        .newProducer(topic, producerId, producerName, ClientUtils.getNextRequestId()).toByteArray()
+                ),
+                ClientUtils.getNextRequestId()
+            )
+            .thenAccept({
+                val producerName = it.first
+                synchronized(this@DefaultProducer) {
+                    if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
                         cnxClient.removeProducer(producerId)
-                        if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
-                            cnxClient.channel().close()
-                            return@exceptionally null
-                        }
-                        state.set(State.FAILED)
+                        cnxClient.channel().close()
+                        return@thenAccept
                     }
-                    return@exceptionally null
+                    logger.info("[{}] [{}] Created producer on cnx {}", topic, producerName, cnxClient.channel())
+                    if (this.producerName.isBlank()) {
+                        this.producerName = producerName
+                    }
+                    this.state.compareAndSet(State.CONNECTING, State.CONNECTED)
                 }
+            }).exceptionally {
+                synchronized(this@DefaultProducer) {
+                    logger.error("[$topic] [$producerName] Failed to create producer:{}", it)
+                    cnxClient.removeProducer(producerId)
+                    if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
+                        cnxClient.channel().close()
+                        return@exceptionally null
+                    }
+                    state.set(State.FAILED)
+                }
+                return@exceptionally null
+            }
     }
 
     override fun send(message: Message): MessageId? {
@@ -123,13 +127,13 @@ class DefaultProducer : Producer {
         message.properties[MessageConstants.SEQUENCE_ID] = sequenceId.toString()
         message.properties[MessageConstants.PRODUCER_ID] = producerId.toString()
         cnxClient.ctx.writeAndFlush(Unpooled.wrappedBuffer(ClientUtils.msgConvert(message).toByteArray()))
-                .addListener { it ->
-                    if (!it.isSuccess) {
-                        this.pendingRequest.remove(sequenceId)
-                        future.completeExceptionally(it.cause())
-                        return@addListener
-                    }
+            .addListener { it ->
+                if (!it.isSuccess) {
+                    this.pendingRequest.remove(sequenceId)
+                    future.completeExceptionally(it.cause())
+                    return@addListener
                 }
+            }
         return future
     }
 
@@ -146,7 +150,13 @@ class DefaultProducer : Producer {
                 }
                 this.pendingRequest.remove(sequenceId)
             } else {
-                logger.warn("Ignore invalid send receipt of producer[{}] : msg---{},msgId---{}:{} ", producerId, sequenceId, ledgerId, entryId)
+                logger.warn(
+                    "Ignore invalid send receipt of producer[{}] : msg---{},msgId---{}:{} ",
+                    producerId,
+                    sequenceId,
+                    ledgerId,
+                    entryId
+                )
             }
         }
     }
@@ -168,7 +178,8 @@ class DefaultProducer : Producer {
 
         private val logger = LoggerFactory.getLogger(DefaultProducer::class.java)
 
-        private val msgIdGeneratorUpdater = AtomicLongFieldUpdater.newUpdater(DefaultProducer::class.java, "msgIdGenerator")
+        private val msgIdGeneratorUpdater =
+            AtomicLongFieldUpdater.newUpdater(DefaultProducer::class.java, "msgIdGenerator")
 
     }
 }

@@ -13,9 +13,10 @@ import java.util.concurrent.TimeUnit
 object CommonPool {
 
     private val COMMON_POOL = ThreadPoolExecutor(
-            Utils.AVAILABLE_PROCESSORS, Utils.AVAILABLE_PROCESSORS * 4,
-            120L, TimeUnit.SECONDS, LinkedBlockingQueue(),
-            SimpleThreadFactory("common-pool"))
+        Utils.AVAILABLE_PROCESSORS, Utils.AVAILABLE_PROCESSORS * 4,
+        120L, TimeUnit.SECONDS, LinkedBlockingQueue(),
+        SimpleThreadFactory("common-pool")
+    )
 
     fun executeBlocking(runnable: Runnable) = COMMON_POOL.execute(object : SafeRunnable() {
 

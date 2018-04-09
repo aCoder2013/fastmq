@@ -21,32 +21,33 @@ class Producer(val topic: Topic, val cnx: ServerCnx, val producerName: String, v
 
     fun publishMessage(producerId: Long, sequenceId: Long, payload: ByteBuf) {
         if (isClosed()) {
-            val sendError = Commands.newSendError(producerId, sequenceId, MessagePublichException("Producer is already closed!"))
+            val sendError =
+                Commands.newSendError(producerId, sequenceId, MessagePublichException("Producer is already closed!"))
             cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
             return
         }
         this.topic.publishMessage(payload)
-                .subscribe(object : Observer<Offset> {
+            .subscribe(object : Observer<Offset> {
 
-                    override fun onNext(t: Offset) {
-                        logger.debug("Successfully publish message with offset {}.", t)
-                        val sendReceipt = Commands.newSendReceipt(producerId, sequenceId, t.ledgerId, t.entryId)
-                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
-                    }
+                override fun onNext(t: Offset) {
+                    logger.debug("Successfully publish message with offset {}.", t)
+                    val sendReceipt = Commands.newSendReceipt(producerId, sequenceId, t.ledgerId, t.entryId)
+                    cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendReceipt.toByteArray()))
+                }
 
-                    override fun onError(e: Throwable) {
-                        logger.error("Publish message failed_${e.message}", e)
-                        val sendError = Commands.newSendError(producerId, sequenceId, e)
-                        cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
-                    }
+                override fun onError(e: Throwable) {
+                    logger.error("Publish message failed_${e.message}", e)
+                    val sendError = Commands.newSendError(producerId, sequenceId, e)
+                    cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(sendError.toByteArray()))
+                }
 
-                    override fun onSubscribe(d: Disposable) {
-                    }
+                override fun onSubscribe(d: Disposable) {
+                }
 
-                    override fun onComplete() {
-                        logger.debug("Producer[$producerId] publish message[$sequenceId] done.")
-                    }
-                })
+                override fun onComplete() {
+                    logger.debug("Producer[$producerId] publish message[$sequenceId] done.")
+                }
+            })
     }
 
     /**

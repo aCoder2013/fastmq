@@ -39,9 +39,9 @@ class ZkOffsetStorageImplTest {
     @Throws(Exception::class)
     fun setUp() {
         Configurator
-                .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
+            .initialize("FastMQ", Thread.currentThread().contextClassLoader, "log4j2.xml")
         curatorFramework = CuratorFrameworkFactory
-                .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))
+            .newClient("127.0.0.1:2181", ExponentialBackoffRetry(1000, 3))
         curatorFramework.start()
         val asyncCuratorFramework = AsyncCuratorFramework.wrap(curatorFramework)
         offsetStorage = ZkOffsetStorageImpl(metadataStorage, asyncCuratorFramework)

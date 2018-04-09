@@ -11,14 +11,20 @@ import io.reactivex.Observable
 interface MetadataStorage {
 
     /**
-     * Get ledgerStream by name
+     * Get Log by name
      *
      * @param name name of the topic
      * @return the log with given name
      */
     fun getLogInfo(name: String): Observable<Log>
 
+    /**
+     * Update log by name
+     */
     fun updateLogInfo(name: String, log: Log): Observable<Void>
 
+    /**
+     * Remove log by name
+     */
     fun removeLogInfo(name: String): Observable<Void>
 }

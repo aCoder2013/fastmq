@@ -18,16 +18,16 @@ class RxJavaTest {
     fun just() {
         val latch = CountDownLatch(1)
         Observable.just("test")
-                .map {
-                    println("map->" + Thread.currentThread().name)
-                    "prefix->$it"
-                }
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.computation())
-                .subscribe {
-                    println(Thread.currentThread().name)
-                    latch.countDown()
-                }
+            .map {
+                println("map->" + Thread.currentThread().name)
+                "prefix->$it"
+            }
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.computation())
+            .subscribe {
+                println(Thread.currentThread().name)
+                latch.countDown()
+            }
         latch.await()
     }
 
@@ -40,15 +40,15 @@ class RxJavaTest {
             it.onNext("test")
             it.onComplete()
         }
-                .observeOn(Schedulers.computation())
-                .map {
-                    println("$it -> ${Thread.currentThread().name}")
-                }
-                .subscribeOn(ioScheduler)
-                .subscribe {
-                    println("Done ->" + Thread.currentThread().name)
-                    latch.countDown()
-                }
+            .observeOn(Schedulers.computation())
+            .map {
+                println("$it -> ${Thread.currentThread().name}")
+            }
+            .subscribeOn(ioScheduler)
+            .subscribe {
+                println("Done ->" + Thread.currentThread().name)
+                latch.countDown()
+            }
         latch.await()
         ioScheduler.shutdown()
     }

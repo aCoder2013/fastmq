@@ -66,8 +66,10 @@ class ClientCnx : AbstractHandler() {
     }
 
     override fun handleProducerSuccess(commandProducerSuccess: BrokerApi.CommandProducerSuccess, payload: ByteBuf) {
-        logger.debug("{} Received producer success response from server: {} - producer-name: {}", ctx?.channel(),
-                commandProducerSuccess.requestId, commandProducerSuccess.producerName)
+        logger.debug(
+            "{} Received producer success response from server: {} - producer-name: {}", ctx?.channel(),
+            commandProducerSuccess.requestId, commandProducerSuccess.producerName
+        )
     }
 
     override fun handleSendError(sendError: BrokerApi.CommandSendError) {
@@ -85,9 +87,18 @@ class ClientCnx : AbstractHandler() {
             entryId = sendReceipt.messageId.entryId
         }
         producers[producerId]?.ackReceived(sequenceId, ledgerId, entryId)
-                ?: logger.warn("Producer[{}] not exist,ignore received message id {}:{}",
-                        producerId, ledgerId, entryId)
-        logger.debug("{} Got send receipt from producer[{}]: msg---{}, msgId---{}:{}", ctx.channel(), producerId, sequenceId, ledgerId, entryId)
+                ?: logger.warn(
+                    "Producer[{}] not exist,ignore received message id {}:{}",
+                    producerId, ledgerId, entryId
+                )
+        logger.debug(
+            "{} Got send receipt from producer[{}]: msg---{}, msgId---{}:{}",
+            ctx.channel(),
+            producerId,
+            sequenceId,
+            ledgerId,
+            entryId
+        )
     }
 
     override fun handleSuccess(success: BrokerApi.CommandSuccess) {
@@ -131,7 +142,12 @@ class ClientCnx : AbstractHandler() {
             logger.info("PullConsumer[{}] Update read offset from {} to {}", pullConsumer.readOffset, messageId)
             pullConsumer.refreshReadOffset(MessageId(messageId.ledgerId, messageId.entryId))
         } else {
-            logger.warn("Consumer[{}] with offset ledgerId = {} entryId = {}  not exist.", consumerId, messageId.ledgerId, messageId.entryId)
+            logger.warn(
+                "Consumer[{}] with offset ledgerId = {} entryId = {}  not exist.",
+                consumerId,
+                messageId.ledgerId,
+                messageId.entryId
+            )
         }
     }
 

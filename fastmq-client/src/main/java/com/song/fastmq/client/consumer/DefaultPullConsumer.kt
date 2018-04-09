@@ -23,8 +23,10 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * @author song
  */
-class DefaultPullConsumer(private val topic: String,
-                          private val remotingConnectionPool: RemotingConnectionPool) : PullConsumer {
+class DefaultPullConsumer(
+    private val topic: String,
+    private val remotingConnectionPool: RemotingConnectionPool
+) : PullConsumer {
 
     private val consumerId: Long = ClientUtils.getNextConsumerId()
 
@@ -43,10 +45,11 @@ class DefaultPullConsumer(private val topic: String,
     private lateinit var clientCnx: ClientCnx
 
     private val schedulePullMessagePool: ScheduledExecutorService = Executors
-            .newSingleThreadScheduledExecutor(
-                    ThreadFactoryBuilder()
-                            .setNameFormat("Scheduled-pull-message-pool-%d")
-                            .build())
+        .newSingleThreadScheduledExecutor(
+            ThreadFactoryBuilder()
+                .setNameFormat("Scheduled-pull-message-pool-%d")
+                .build()
+        )
 
     private val messageQueue = LinkedBlockingQueue<Message>(MAX_MESSAGE_CACHE_CAPACITY)
 
@@ -56,35 +59,49 @@ class DefaultPullConsumer(private val topic: String,
         checkArgument(consumerName.isBlank(), "Consumer name can't be null or empty, it should be globally unique.")
         if (state.compareAndSet(State.NONE, State.CONNECTING)) {
             clientCnx = remotingConnectionPool.getConnection(Utils.string2SocketAddress(bootstrapServers[0]))
-            val subscribe = Commands.newSubscribe(this.topic, this.consumerId, requestIdGenerator.incrementAndGet(this), this.consumerName)
+            val subscribe = Commands.newSubscribe(
+                this.topic,
+                this.consumerId,
+                requestIdGenerator.incrementAndGet(this),
+                this.consumerName
+            )
             clientCnx.registerConsumer(consumerId, this)
             clientCnx.sendCommandAsync(Unpooled.wrappedBuffer(subscribe.toByteArray()), ClientUtils.getNextRequestId())
-                    .thenAccept {
-                        synchronized(this@DefaultPullConsumer) {
-                            if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
-                                clientCnx.removeConsumer(consumerId)
-                                clientCnx.channel().close()
-                                return@thenAccept
-                            }
-                            logger.info("[{}] [{}] Created consumer on cnx {},start to fetch offset", topic, consumerName, clientCnx.channel())
-                            clientCnx.ctx.writeAndFlush(Unpooled
-                                    .wrappedBuffer(Commands
-                                            .newFetchOffset(topic, consumerId, ClientUtils.getNextRequestId()).toByteArray()))
-                            state.set(State.CONNECTED)
-                        }
-                    }
-                    .exceptionally {
-                        synchronized(this@DefaultPullConsumer) {
-                            logger.error("[$topic] [$consumerName] Failed to create consumer:{}", it)
+                .thenAccept {
+                    synchronized(this@DefaultPullConsumer) {
+                        if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
                             clientCnx.removeConsumer(consumerId)
-                            if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
-                                clientCnx.channel().close()
-                                return@exceptionally null
-                            }
-                            state.set(State.FAILED)
+                            clientCnx.channel().close()
+                            return@thenAccept
                         }
-                        return@exceptionally null
+                        logger.info(
+                            "[{}] [{}] Created consumer on cnx {},start to fetch offset",
+                            topic,
+                            consumerName,
+                            clientCnx.channel()
+                        )
+                        clientCnx.ctx.writeAndFlush(
+                            Unpooled
+                                .wrappedBuffer(
+                                    Commands
+                                        .newFetchOffset(topic, consumerId, ClientUtils.getNextRequestId()).toByteArray()
+                                )
+                        )
+                        state.set(State.CONNECTED)
                     }
+                }
+                .exceptionally {
+                    synchronized(this@DefaultPullConsumer) {
+                        logger.error("[$topic] [$consumerName] Failed to create consumer:{}", it)
+                        clientCnx.removeConsumer(consumerId)
+                        if (state.get() == State.CLOSING || state.get() == State.CLOSED) {
+                            clientCnx.channel().close()
+                            return@exceptionally null
+                        }
+                        state.set(State.FAILED)
+                    }
+                    return@exceptionally null
+                }
         } else {
             throw FastMqClientException("Consumer is already starting or has started!")
         }
@@ -121,7 +138,7 @@ class DefaultPullConsumer(private val topic: String,
         if (this.state.compareAndSet(State.FETCH_OFFSET, State.CONNECTED)) {
             this.readOffset = messageId
             this.schedulePullMessagePool
-                    .scheduleAtFixedRate(PullMessageWorker(this), 0L, 200L, TimeUnit.MILLISECONDS)
+                .scheduleAtFixedRate(PullMessageWorker(this), 0L, 200L, TimeUnit.MILLISECONDS)
             logger.info("[{}] [{}] Start to pull message from offset :{}.", topic, clientCnx.channel(), readOffset)
         } else if (this.state.get() == State.CONNECTED) {
             synchronized(this@DefaultPullConsumer) {
@@ -160,9 +177,11 @@ class DefaultPullConsumer(private val topic: String,
                 if (maxMessage > 0) {
                     val readOffset = consumer.readOffset
                     val command = Commands
-                            .newPullMessage(consumer.topic, consumer.consumerId,
-                                    requestIdGenerator.incrementAndGet(consumer),
-                                    maxMessage, readOffset.ledgerId, readOffset.entryId)
+                        .newPullMessage(
+                            consumer.topic, consumer.consumerId,
+                            requestIdGenerator.incrementAndGet(consumer),
+                            maxMessage, readOffset.ledgerId, readOffset.entryId
+                        )
                     consumer.clientCnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 } else {
                     logger.info("Pull message request is canceled, because there is enough messages in the queue!")

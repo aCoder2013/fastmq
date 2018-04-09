@@ -90,7 +90,7 @@ public class BookKeeperTest {
         lh = bkc.openLedger(ledgerId, BookKeeper.DigestType.MAC, ledgerPassword);
 
         // Read all available entries
-        Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries-1);
+        Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
 
         while (entries.hasMoreElements()) {
             ByteBuffer result = ByteBuffer.wrap(entries.nextElement().getEntry());

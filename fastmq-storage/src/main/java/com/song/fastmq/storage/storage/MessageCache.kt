@@ -7,6 +7,5 @@ interface MessageCache {
 
     fun getName(): String
 
-    
 
 }

@@ -67,19 +67,19 @@ class PersistentTopic(private val topic: String, private val messageStorage: Mes
     override fun publishMessage(headersAndPayload: ByteBuf): Observable<Offset> {
         return Observable.create<Offset> { observable: ObservableEmitter<Offset> ->
             messageStorage.appendMessage(Message(MessageId.EMPTY, headersAndPayload.array()))
-                    .subscribe(object : OnCompletedObserver<Offset>() {
+                .subscribe(object : OnCompletedObserver<Offset>() {
 
-                        override fun onNext(t: Offset) {
-                            headersAndPayload.release()
-                            observable.onNext(t)
-                            observable.onComplete()
-                        }
+                    override fun onNext(t: Offset) {
+                        headersAndPayload.release()
+                        observable.onNext(t)
+                        observable.onComplete()
+                    }
 
-                        override fun onError(e: Throwable) {
-                            headersAndPayload.release()
-                            observable.onError(e)
-                        }
-                    })
+                    override fun onError(e: Throwable) {
+                        headersAndPayload.release()
+                        observable.onError(e)
+                    }
+                })
         }
     }
 

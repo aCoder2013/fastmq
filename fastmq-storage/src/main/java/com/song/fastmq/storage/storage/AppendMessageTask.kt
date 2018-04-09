@@ -14,8 +14,10 @@ import org.slf4j.LoggerFactory
 /**
  * @author song
  */
-class AppendMessageTask(private val messageStorage: MessageStorageImpl, private val data: ByteBuf,
-                        private val observable: ObservableEmitter<Offset>) : SafeRunnable(), AsyncCallback.AddCallback {
+class AppendMessageTask(
+    private val messageStorage: MessageStorageImpl, private val data: ByteBuf,
+    private val observable: ObservableEmitter<Offset>
+) : SafeRunnable(), AsyncCallback.AddCallback {
 
     private var entryId: Long = 0
 
@@ -43,8 +45,10 @@ class AppendMessageTask(private val messageStorage: MessageStorageImpl, private 
     override fun addComplete(rc: Int, lh: LedgerHandle, entryId: Long, ctx: Any?) {
         checkArgument(this.ledgerHandle.id == lh.id)
         this.entryId = entryId
-        logger.info("[{}] write-complete: ledger-id={} entry-id={} size={} rc={}", this.messageStorage.topic,
-                lh.id, entryId, dataLength, rc)
+        logger.info(
+            "[{}] write-complete: ledger-id={} entry-id={} size={} rc={}", this.messageStorage.topic,
+            lh.id, entryId, dataLength, rc
+        )
         if (rc != BKException.Code.OK) {
             this.observable.onError(MessageStorageException(BKException.create(rc)))
             this.messageStorage.executor.submitOrdered(this.messageStorage.topic, SafeRunnable.safeRun {

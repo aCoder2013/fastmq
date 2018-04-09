@@ -20,7 +20,7 @@ public class BrokerStartup {
         try {
             brokerService.start();
         } catch (Exception e) {
-            logger.error("Start broker failed.", e);
+            e.printStackTrace();
             Runtime.getRuntime().exit(1);
         }
 

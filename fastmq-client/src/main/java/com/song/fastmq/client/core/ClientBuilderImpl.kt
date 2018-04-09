@@ -7,7 +7,8 @@ import java.util.concurrent.TimeUnit
 /**
  * @author song
  */
-class ClientBuilderImpl @JvmOverloads constructor(private val configuration: ClientConfiguration = ClientConfiguration()) : ClientBuilder {
+class ClientBuilderImpl @JvmOverloads constructor(private val configuration: ClientConfiguration = ClientConfiguration()) :
+    ClientBuilder {
 
     @Throws(FastMqClientException::class)
     override fun builder(): MQClient {

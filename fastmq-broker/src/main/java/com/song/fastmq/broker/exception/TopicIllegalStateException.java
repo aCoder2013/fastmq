@@ -3,7 +3,7 @@ package com.song.fastmq.broker.exception;
 /**
  * @author song
  */
-public class TopicIllegalStateException extends RuntimeException{
+public class TopicIllegalStateException extends RuntimeException {
 
     public TopicIllegalStateException() {
     }

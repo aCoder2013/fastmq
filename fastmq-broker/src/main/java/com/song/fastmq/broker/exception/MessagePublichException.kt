@@ -12,6 +12,4 @@ class MessagePublichException : Exception {
     constructor(message: String, cause: Throwable) : super(message, cause)
 
 
-
-
 }

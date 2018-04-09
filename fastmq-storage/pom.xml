@@ -5,7 +5,7 @@
     <parent>
         <artifactId>fastmq</artifactId>
         <groupId>com.song.fastmq</groupId>
-        <version>${fastmq.version}</version>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
     <properties>
         <curator-version>4.0.0</curator-version>
         <commons-lang3.version>3.5</commons-lang3.version>
-      <kotlin.version>1.2.10</kotlin.version>
+        <kotlin.version>1.2.10</kotlin.version>
     </properties>
 
     <dependencies>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.song.fastmq</groupId>
             <artifactId>fastmq-common</artifactId>
-            <version>${fastmq.version}</version>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

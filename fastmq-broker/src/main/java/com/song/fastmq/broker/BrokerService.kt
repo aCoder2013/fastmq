@@ -86,12 +86,14 @@ class BrokerService(private val port: Int = 7164) : Closeable {
             }
             val bootstrap = ServerBootstrap()
             bootstrap.group(acceptorGroup, workerGroup)
-                    .option(ChannelOption.SO_BACKLOG, 512)
-                    .option(ChannelOption.SO_REUSEADDR, true)
-                    .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                    .childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                            AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024))
+                .option(ChannelOption.SO_BACKLOG, 512)
+                .option(ChannelOption.SO_REUSEADDR, true)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childOption(
+                    ChannelOption.RCVBUF_ALLOCATOR,
+                    AdaptiveRecvByteBufAllocator(1024, 16 * 1024, 1 * 1024 * 1024)
+                )
             if (workerGroup is EpollEventLoopGroup) {
                 bootstrap.channel(EpollServerSocketChannel::class.java)
                 bootstrap.childOption(EpollChannelOption.EPOLL_MODE, EpollMode.LEVEL_TRIGGERED)

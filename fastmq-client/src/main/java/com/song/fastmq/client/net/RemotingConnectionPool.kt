@@ -23,7 +23,10 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * @author song
  */
-class RemotingConnectionPool(private val configuration: ClientConfiguration, private val eventLoopGroup: EventLoopGroup) : Closeable {
+class RemotingConnectionPool(
+    private val configuration: ClientConfiguration,
+    private val eventLoopGroup: EventLoopGroup
+) : Closeable {
 
     private val pool: ConcurrentHashMap<InetSocketAddress, ClientCnx> = ConcurrentHashMap()
 
