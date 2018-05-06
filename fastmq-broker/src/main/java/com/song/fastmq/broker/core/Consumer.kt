@@ -58,7 +58,7 @@ class Consumer(private val cnx: ServerCnx, private val messageStorage: MessageSt
                         .setType(BrokerApi.Command.Type.MESSAGE)
                         .setMessage(builder.build())
                         .build()
-                    cnx.ctx.channel()?.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
+                    cnx.ctx.writeAndFlush(Unpooled.wrappedBuffer(command.toByteArray()))
                 }
             })
     }

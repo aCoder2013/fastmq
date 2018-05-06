@@ -77,7 +77,7 @@ class MessageStorageImpl(
             logger.info("Open message storage {}.", this.topic)
             this.metadataStorage.getLogInfo(this.topic).subscribe {
                 it.segments.forEach {
-                    this.ledgers.put(it.ledgerId, it)
+                    this.ledgers[it.ledgerId] = it
                 }
                 if (this.ledgers.size > 0) {
                     val id = ledgers.lastKey().toLong()
@@ -90,7 +90,7 @@ class MessageStorageImpl(
                                 logSegment.entries = lh.lastAddConfirmed + 1
                                 logSegment.size = lh.length
                                 logSegment.timestamp = System.currentTimeMillis()
-                                ledgers.put(id, logSegment)
+                                ledgers[id] = logSegment
                                 initializeBookKeeper().subscribe(object : OnCompletedObserver<Void>() {
                                     override fun onError(e: Throwable) {
                                         observable.onError(e)
@@ -183,7 +183,7 @@ class MessageStorageImpl(
                         lastLedgerCreatedTimestamp = System.currentTimeMillis()
                         currentLedger = lh
                         lastConfirmedEntry = Offset(lh.id, -1)
-                        this.ledgers.put(lh.id, LogSegment(lh.id))
+                        this.ledgers[lh.id] = LogSegment(lh.id)
 
                         // Save it back to ensure all nodes exist
                         val log = Log()

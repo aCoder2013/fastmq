@@ -74,7 +74,8 @@ public class MQClientImpl implements MQClient {
         return NettyUtils.INSTANCE.newEventLoopGroup(configuration.getNumOfIoThreads(), threadFactory);
     }
 
-    @Override public Producer createProducer() {
+    @Override public ProducerBuilder createProducer() {
+        // TODO: 2018/4/14  
         return null;
     }
 

@@ -1,7 +1,6 @@
 package com.song.fastmq.client.consumer
 
 import com.google.common.base.Preconditions.checkArgument
-import com.google.common.collect.Lists
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.song.fastmq.client.domain.Message
 import com.song.fastmq.client.domain.MessageId
@@ -107,14 +106,12 @@ class DefaultPullConsumer(
         }
     }
 
-    override fun poll(): List<Message> {
-        val messages = Lists.newArrayList<Message>()
-        this.messageQueue.drainTo(messages, MAX_MESSAGE_PULL_NUM)
-        return messages
+    override fun poll(): Message {
+        return this.messageQueue.poll()
     }
 
-    override fun poll(pullCallback: PullCallback) {
-        pullCallback.onSuccess(poll())
+    override fun poll(timeout: Long, unit: TimeUnit): Message {
+        return this.messageQueue.poll(timeout, unit)
     }
 
     override fun updateConsumeOffset(messageId: MessageId) {

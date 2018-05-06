@@ -5,5 +5,5 @@ package com.song.fastmq.storage.storage.utils
  */
 object ZkUtils {
 
-    val SEPARATOR = "/"
+    const val SEPARATOR = "/"
 }

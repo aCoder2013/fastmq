@@ -21,7 +21,6 @@ class ClientConfiguration : Serializable, Cloneable {
         } catch (e: CloneNotSupportedException) {
             throw RuntimeException("Failed to clone ClientConfiguration")
         }
-
     }
 
     companion object {

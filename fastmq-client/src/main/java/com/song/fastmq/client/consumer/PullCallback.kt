@@ -7,7 +7,7 @@ import com.song.fastmq.client.domain.Message
  */
 interface PullCallback {
 
-    fun onSuccess(messages: List<Message>)
+    fun onSuccess(message: Message)
 
     fun onThrowable(throwable: Throwable)
 }

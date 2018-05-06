@@ -2,6 +2,7 @@ package com.song.fastmq.client.consumer
 
 import com.song.fastmq.client.domain.Message
 import com.song.fastmq.client.domain.MessageId
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -16,12 +17,13 @@ interface PullConsumer {
     /**
      * Pull the messages with nonblocking way
      */
-    fun poll(): List<Message>
+    fun poll(): Message
 
     /**
      * Pull message async way
      */
-    fun poll(pullCallback: PullCallback)
+    @Throws(InterruptedException::class)
+    fun poll(timeout: Long, unit: TimeUnit): Message
 
     /**
      * Update the offset

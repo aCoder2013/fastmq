@@ -1,7 +1,6 @@
 package com.song.fastmq.client.core;
 
 import com.song.fastmq.client.consumer.PullConsumer;
-import com.song.fastmq.client.producer.Producer;
 import java.io.Closeable;
 
 /**
@@ -13,7 +12,7 @@ public interface MQClient extends Closeable {
         return new ClientBuilderImpl();
     }
 
-    Producer createProducer();
+    ProducerBuilder createProducer();
 
     PullConsumer createPullConsumer();
 }
