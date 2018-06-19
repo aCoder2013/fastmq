@@ -1,6 +1,6 @@
 # fastmq
 
-FastMQ is a toy project written in kotin and java , so it was supposed to be a distributed message queue.
+FastMQ is a toy project written in kotlin and java , so it was supposed to be a distributed message queue.
 
 ## Architecture
 The storage engine is based on Apache BookKeeper, and communication between broker and client is built on top of netty using
